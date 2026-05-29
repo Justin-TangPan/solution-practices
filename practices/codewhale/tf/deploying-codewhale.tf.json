@@ -1,0 +1,103 @@
+{
+  "terraform": {
+    "required_providers": {
+      "huaweicloud": {
+        "source": "huawei.com/provider/huaweicloud",
+        "version": ">=1.70.1"
+      }
+    }
+  },
+  "provider": {
+    "huaweicloud": {
+      "cloud": "myhuaweicloud.com",
+      "region": "cn-north-4",
+      "insecure": true,
+      "auth_url": "https://iam.cn-north-4.myhuaweicloud.com/v3"
+    }
+  },
+  "variable": {
+    "vpc_name": { "default": "codewhale-demo", "description": "VPC名称前缀", "type": "string" },
+    "ecs_name": { "default": "codewhale-demo", "description": "ECS名称前缀", "type": "string" },
+    "ecs_flavor": { "default": "x1.2u.4g", "description": "实例规格", "type": "string" },
+    "ecs_password": { "default": "", "description": "密码", "type": "string", "sensitive": true },
+    "system_disk_size": { "default": 40, "type": "number" },
+    "bandwidth_size": { "default": 5, "type": "number" },
+    "charging_mode": { "default": "postPaid", "type": "string" },
+    "charging_unit": { "default": "month", "type": "string" },
+    "charging_period": { "default": 1, "type": "number" }
+  },
+  "locals": { "name_suffix": "${substr(uuid(), 0, 8)}" },
+  "data": {
+    "huaweicloud_images_image": {
+      "Ubuntu": {
+        "most_recent": true,
+        "name": "Ubuntu 22.04 server 64bit",
+        "visibility": "public"
+      }
+    }
+  },
+  "resource": {
+    "huaweicloud_vpc": {
+      "vpc": {
+        "name": "${var.vpc_name}-${local.name_suffix}",
+        "cidr": "172.16.0.0/16"
+      }
+    },
+    "huaweicloud_vpc_subnet": {
+      "subnet": {
+        "name": "${var.vpc_name}-${local.name_suffix}-subnet",
+        "cidr": "172.16.1.0/24",
+        "gateway_ip": "172.16.1.1",
+        "vpc_id": "${huaweicloud_vpc.vpc.id}"
+      }
+    },
+    "huaweicloud_networking_secgroup": {
+      "secgroup": { "name": "${var.ecs_name}-${local.name_suffix}" }
+    },
+    "huaweicloud_networking_secgroup_rule": {
+      "cloud_shell": {
+        "security_group_id": "${huaweicloud_networking_secgroup.secgroup.id}",
+        "description": "Cloud Shell SSH",
+        "direction": "ingress", "ethertype": "IPv4",
+        "protocol": "tcp", "ports": 22,
+        "remote_ip_prefix": "121.36.59.153/32"
+      }
+    },
+    "huaweicloud_vpc_eip": {
+      "vpc_eip": {
+        "name": "${var.vpc_name}-${local.name_suffix}-eip",
+        "bandwidth": {
+          "name": "${var.vpc_name}-${local.name_suffix}-bw",
+          "share_type": "PER", "size": "${var.bandwidth_size}",
+          "charge_mode": "traffic"
+        },
+        "publicip": { "type": "5_bgp" },
+        "charging_mode": "postPaid"
+      }
+    },
+    "huaweicloud_compute_instance": {
+      "compute_instance": {
+        "name": "${var.ecs_name}-${local.name_suffix}",
+        "image_id": "${data.huaweicloud_images_image.Ubuntu.id}",
+        "flavor_id": "${var.ecs_flavor}",
+        "security_group_ids": ["${huaweicloud_networking_secgroup.secgroup.id}"],
+        "system_disk_type": "SAS",
+        "system_disk_size": "${var.system_disk_size}",
+        "admin_pass": "${var.ecs_password}",
+        "delete_disks_on_termination": true,
+        "network": { "uuid": "${huaweicloud_vpc_subnet.subnet.id}" },
+        "agent_list": "hss,ces",
+        "eip_id": "${huaweicloud_vpc_eip.vpc_eip.id}",
+        "charging_mode": "${var.charging_mode}",
+        "tags": { "app": "codewhale" },
+        "user_data": "#!/bin/bash\necho 'root:${var.ecs_password}' | chpasswd\nLOG=\"/var/log/codewhale-bootstrap.log\"\nexec > >(tee -a \"$LOG\") 2>&1\necho \"[$(date)] Bootstrap: start\"\ncurl -fsSL -o /tmp/install_codewhale.sh \"https://tp-00940108.obs.cn-south-1.myhuaweicloud.com/install_codewhale.sh\"\nchmod +x /tmp/install_codewhale.sh\nbash /tmp/install_codewhale.sh\nRC=$?\necho \"[$(date)] Bootstrap: finished (exit=$RC)\"\nexit $RC"
+      }
+    }
+  },
+  "output": {
+    "说明": {
+      "depends_on": ["huaweicloud_vpc_eip.vpc_eip"],
+      "value": "部署完成后 SSH 登录服务器使用 CodeWhale。SSH: ssh root@${huaweicloud_vpc_eip.vpc_eip.address}。使用前配置 DEEPSEEK_API_KEY。日志: /var/log/codewhale-install.log"
+    }
+  }
+}

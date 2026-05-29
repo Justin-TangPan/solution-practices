@@ -1,0 +1,18 @@
+{
+  "variables": {
+    "grouping": {
+      "basic_config": {
+        "label": "基础配置",
+        "description": "配置资源名称和区域"
+      },
+      "network_config": {
+        "label": "网络配置",
+        "description": "配置 VPC 和网络参数"
+      },
+      "ecs_config": {
+        "label": "ECS 配置",
+        "description": "配置 Flexus X 实例规格"
+      }
+    }
+  }
+}
