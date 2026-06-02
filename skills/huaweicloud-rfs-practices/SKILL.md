@@ -112,7 +112,7 @@ Always include:
     "huaweicloud_images_image": {
         "Ubuntu": {
             "most_recent": true,
-            "name": "Ubuntu 22.04 server 64bit",
+            "name": "Ubuntu 24.04 server 64bit",
             "visibility": "public"
         }
     }
@@ -400,6 +400,150 @@ For tools that wrap pip (like ocboot's run.py), pass the mirror via their own fl
 ```
 
 **Detect stuck pip:** `ps aux | grep pip` — if a pip process has been running >5 min with near-zero CPU or network activity, kill it (`kill -9 <pid>`) and retry with mirror flag. Never use `pip install -q` in China ECS scripts; always specify a mirror.
+
+### Pitfall 12: Rust/Go Binary GLIBC Version Mismatch
+
+**Symptom:** Pre-compiled binary (Rust, Go, or Zig) downloads and extracts successfully but fails to run with:
+```
+/lib/x86_64-linux-gnu/libc.so.6: version 'GLIBC_2.38' not found
+```
+
+**Root cause:** Pre-compiled binaries are often built against a newer GLIBC (e.g. 2.38/2.39 on modern CI runners), but the default Huawei Cloud ECS image (Ubuntu 22.04) ships GLIBC 2.35. Rust binaries using `tokio`, `reqwest`, or other modern crates commonly require GLIBC >= 2.38. Go binaries built with Go 1.22+ may also exhibit similar issues with `__clock_gettime` or `pthread` symbols.
+
+**Fix:** Choose the highest Ubuntu LTS image available:
+
+```json
+"data": {
+    "huaweicloud_images_image": {
+        "Ubuntu": {
+            "most_recent": true,
+            "name": "Ubuntu 24.04 server 64bit",
+            "visibility": "public"
+        }
+    }
+}
+```
+
+**For lower-version OS requirements** (e.g. CentOS 7 with GLIBC 2.17):
+- Option A: Build the binary on the same or older OS using `cargo build --target x86_64-unknown-linux-musl` for fully static musl builds (no GLIBC dependency)
+- Option B: Use Docker with `FROM alpine:3.19` and static musl compilation
+- Option C: Include source compilation as fallback in the install script (download `{app}-src.tar.gz` from OBS, `cargo build --release`)
+
+**General rule:** Always default to the **latest** Ubuntu LTS image for ECS. Only downgrade if the application explicitly requires an older OS.
+
+### Pitfall 13: Empty Protocol String in Security Group Rules is Invalid
+
+**Symptom:** RFS deploys successfully but the security group rule for "all ports" doesn't appear, or RFS returns an error like:
+```
+error: Invalid value for parameter 'protocol'
+```
+
+**Root cause:** Using `"protocol": ""` (empty string) intending to mean "all protocols" — this is an invalid value. The `huaweicloud_networking_secgroup_rule` resource does not accept an empty string for `protocol`.
+
+**Fix:** To allow all ports from a specific IP, create separate TCP and UDP rules — or use `"tcp"` with a wide port range:
+```json
+"test_ip_tcp": {
+    "protocol": "tcp",
+    "ports": "1-65535",
+    "remote_ip_prefix": "x.x.x.x/32"
+},
+"test_ip_udp": {
+    "protocol": "udp",
+    "ports": "1-65535",
+    "remote_ip_prefix": "x.x.x.x/32"
+}
+```
+
+For cases where only SSH + application access is needed, just open the specific TCP ports:
+```json
+"remote_access": {
+    "protocol": "tcp",
+    "ports": "22,80,443,8080",
+    "remote_ip_prefix": "x.x.x.x/32"
+}
+```
+
+### Pitfall 14: SWR Mirror Is Not a Universal Docker Hub Proxy
+
+**Symptom:** Docker pull fails with `400 Bad Request` from SWR mirror for images like `supabase/studio`, even though other images like `kong` or `postgres` work fine.
+
+**Root cause:** A project-level SWR mirror (`{project-hash}.mirror.swr.myhuaweicloud.com`) only caches images that have been explicitly pulled through it before. It is not a full Docker Hub proxy cache. Images that have never been pulled through the mirror return 400, and Docker treats 400 as definitive — it **does not fall back** to the second mirror in `registry-mirrors`.
+
+**Fix — Option A (Recommended for production):** Push all required images to SWR and reference them directly in compose files. This avoids mirror dependency entirely and pulls from Huawei Cloud internal network at maximum speed.
+
+**Fix — Option B (Quick start):** For small deployments, use a reliable domestic mirror like `docker.1ms.run` as the primary source, with explicit tag-and-retry logic in the install script (not relying solely on daemon.json mirror fallback).
+
+### Pitfall 15: Reserved PostgreSQL Roles Require Superuser
+
+**Symptom:** After deployment, service containers keep restarting with `password authentication failed for user "xxx"`. Running `ALTER USER` as `postgres` fails with `"xxx" is a reserved role, only superusers can modify it`.
+
+**Root cause:** Some PostgreSQL images create reserved roles during initialization. The default `postgres` user is NOT a superuser in these images — a separate admin role (e.g. `supabase_admin`) has the actual superuser privileges.
+
+**Fix:** Identify and use the actual superuser:
+```bash
+# Find superuser roles
+docker exec db psql -U postgres -c "SELECT rolname, rolsuper FROM pg_roles;"
+
+# Then authenticate as the real superuser
+docker exec -e PGPASSWORD=$PWD db \
+  psql -U supabase_admin -h localhost -d postgres \
+  -c "ALTER USER authenticator WITH PASSWORD '$PWD';"
+```
+
+**Always include a post-deploy DB init stage** that waits for PG to be healthy, checks if service roles have passwords set, and fixes them if not.
+
+### Pitfall 16: Missing Env Vars Cause Silent Container Restart Loops
+
+**Symptom:** Containers start and immediately restart in a loop. No obvious error in `docker ps`. Each restart cycle gets faster.
+
+**Root cause:** Docker Compose services exit immediately when required env vars are missing. With `restart: unless-stopped`, Docker restarts them infinitely.
+
+**Common missing variables:**
+
+| Service | Missing Var | Error |
+|---------|-------------|-------|
+| GoTrue | `API_EXTERNAL_URL` | `required key ... missing value` |
+| Realtime | `SECRET_KEY_BASE` / `APP_NAME` | `APP_NAME not available` |
+| Supavisor | `SECRET_KEY_BASE` | `environment variable ... missing` |
+| Storage | `FILE_STORAGE_BACKEND_PATH` | `env variable not set` |
+
+**Fix:** Generate `.env` dynamically with `openssl rand` for secrets. After `docker compose up`, check container logs for `fatal`/`error` messages. Add missing schemas (`CREATE SCHEMA IF NOT EXISTS`) in a bootstrap step.
+
+### Pitfall 17: Empty Volume Mount Overrides Built-in Init Scripts
+
+**Symptom:** Database starts clean but custom roles, schemas, and extensions that should be pre-installed by the image are missing.
+
+**Root cause:** Mounting a host volume at `/docker-entrypoint-initdb.d` **replaces** the entire directory, including any init scripts baked into the image. An empty host directory effectively disables all built-in database initialization.
+
+```yaml
+# ❌ BAD: empty host dir overwrites image's built-in init scripts
+volumes:
+  - ./volumes/db/init:/docker-entrypoint-initdb.d:ro
+
+# ✅ GOOD: only mount data directory
+volumes:
+  - ./volumes/db/data:/var/lib/postgresql/data
+```
+
+**Rule:** Never mount an empty directory to `/docker-entrypoint-initdb.d`. If you need custom init scripts alongside the image's built-in ones, copy them into the directory before Docker starts, or use a custom Dockerfile.
+
+### Pitfall 18: Supabase/RDS Hybrid Architecture Is Not Feasible
+
+**Symptom:** Trying to replace Supabase's bundled PostgreSQL with managed RDS fails — missing extensions, authentication errors, broken realtime subscriptions.
+
+**Root cause:** Supabase's `supabase/postgres` image is heavily customized with C extensions (`pgsodium`, `pg_graphql`, `pg_net`, `pgmq`), reserved roles, custom postgresql.conf settings, and replication slots — none of which are available on standard managed RDS.
+
+**Decision framework:**
+
+```
+Is the app's PostgreSQL a vanilla postgres (no custom extensions/init scripts)?
+  ├─ YES → RDS viable, preferred for production
+  │   Examples: n8n, LiteLLM, Airbyte, Metabase
+  └─ NO → Custom extensions/reserved roles/special config
+      ├─ Want managed DB? → Second ECS running the custom PG image
+      └─ Accept bundled PG? → Single ECS with Docker Compose
+      Examples: Supabase, GitLab
+```
 
 ---
 

@@ -16,7 +16,7 @@ echo "y" | apt-get -qq install docker-ce
 
 
 # 配置docker镜像仓
-echo '{"registry-mirrors": ["https://b4a1f63a156e435f9aeb797bdf515250.mirror.swr.myhuaweicloud.com"，"https://docker.1ms.run"]}' >/etc/docker/daemon.json
+echo '{"registry-mirrors": ["https://b4a1f63a156e435f9aeb797bdf515250.mirror.swr.myhuaweicloud.com","https://docker.1ms.run"]}' >/etc/docker/daemon.json
 systemctl restart docker
 
 mkdir -p /root/hermes-agent

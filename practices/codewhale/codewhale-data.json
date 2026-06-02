@@ -1,0 +1,173 @@
+{
+  "title": "CodeWhale — DeepSeek V4 AI 编程助手",
+  "intro": "基于华为云 Flexus X 实例一键部署 CodeWhale，面向 DeepSeek V4 的终端原生 AI 编程智能体。单 Rust 二进制，零运行时依赖，OBS 国内加速分发，2 分钟完成部署，即刻获得百万 token 上下文的 AI 编程助手。",
+  "customers": [
+    "需要通过 DeepSeek V4 进行 AI 辅助编程的开发团队",
+    "需要本地化 AI 编程工具的企业开发者",
+    "对代码自主权和数据安全有要求的开发环境",
+    "终端原生交互的非 GUI 开发场景（服务器运维、容器内开发）"
+  ],
+  "advantages": [
+    {
+      "title": "OBS 加速分发",
+      "content": "预编译 Rust 二进制托管在华为云 OBS，国内 ECS 高速下载，GitHub 回退兜底，三级降级保障部署成功率接近 100%。"
+    },
+    {
+      "title": "零依赖部署",
+      "content": "单二进制文件，无需 Docker、Node.js、Python 运行时，从零安装仅需 2 分钟。x1.2u.4g 低规格即可流畅运行。"
+    },
+    {
+      "title": "DeepSeek V4 原生优化",
+      "content": "支持百万 token 超长上下文、前缀缓存感知降低延迟 50%+、思考模式流式推理、MiMo 多模态支持。"
+    },
+    {
+      "title": "三种智能体模式",
+      "content": "Plan（只读调查不修改文件）、Agent（默认交互式，每步需审批确认）、YOLO（全自动执行）。适配开发、调试、批量处理等不同场景。"
+    },
+    {
+      "title": "完整工具链集成",
+      "content": "内置 Shell 执行、文件操作、Git 管理、Web 搜索、MCP 客户端、LSP 诊断、子智能体并发（上限 20 个）。提供 side-git 独立快照机制保障安全。"
+    }
+  ],
+  "architecture": [
+    {
+      "title": "方案一：Flexus X 单机部署",
+      "content": "1 台 Flexus X 实例（x1.2u.4g）运行 CodeWhale CLI + API Server，配 EIP 公网访问。",
+      "fields": {
+        "架构组件": "1. EIP（弹性公网 IP，5-bgp，10Mbit/s，按流量计费）\n2. Flexus X 实例（x1.2u.4g，2vCPUs 4GiB，ODS 60GB SAS）\n3. VPC 网络（172.16.0.0/16 + 子网 172.16.1.0/24）\n4. 安全组（SSH 22 + ICMP Ping）",
+        "预置服务或软件": "1. CodeWhale CLI（DeepSeek V4 AI 编程智能体）\n2. CodeWhale API Server（HTTP/SSE 运行时 API，可选 systemd 托管）\n3. 每周自动升级 crontab",
+        "预估费用": "按需 ~0.5-1 元/小时；包月 ~230-300 元/月",
+        "部署时长": "约 2 分钟",
+        "适用场景": "个人开发者、小团队 AI 编程辅助、企业内部开发环境"
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "title": "场景 1：AI 辅助编码",
+      "content": "开发者 SSH 登录后直接运行 codewhale，通过自然语言描述需求，AI 自动生成代码、解释逻辑、重构函数。支持 Rust、Python、TypeScript、Go 等主流语言的 LSP 诊断。"
+    },
+    {
+      "title": "场景 2：自动化任务执行",
+      "content": "在 YOLO 模式下执行批量脚本编写、数据处理、日志分析等任务。AI 自动规划步骤、执行命令、验证结果。"
+    },
+    {
+      "title": "场景 3：团队开发环境标准化",
+      "content": "企业为每位开发者部署独立 CodeWhale 环境，API Key 由开发者自行配置，代码不离开 ECS 环境，保障企业代码安全。"
+    },
+    {
+      "title": "场景 4：CI/CD 流水线集成",
+      "content": "通过 HTTP/SSE API 将 CodeWhale 接入现有 CI/CD 流水线，实现自动代码审查、变更分析、测试生成。"
+    }
+  ],
+  "extensions": [
+    {
+      "title": "关联方案 1：Dify LLM 应用开发平台",
+      "content": "搭配 Dify 搭建可视化 AI 应用开发平台，CodeWhale 负责编码，Dify 负责应用编排与发布。"
+    },
+    {
+      "title": "关联方案 2：n8n 工作流自动化",
+      "content": "结合 n8n 构建自动化工作流，CodeWhale 处理复杂代码逻辑，n8n 负责流程编排与集成。"
+    },
+    {
+      "title": "关联方案 3：OpenHands AI 软件工程智能体",
+      "content": "与 OpenHands 配合使用，CodeWhale 面向终端编码场景，OpenHands 面向全栈 Web 开发场景。"
+    }
+  ],
+  "preparation": [
+    {
+      "title": "创建 rf_admin_trust 委托",
+      "content": "登录华为云 IAM 控制台 → 委托 → 创建委托 → 委托类型选「普通账号」，账号类型选「华为云」，账号任意（如 100000000001）→ 勾选「资源编排服务（RFS）操作权限 RFSAgency」→ 完成创建。"
+    },
+    {
+      "title": "获取 DeepSeek API Key",
+      "content": "访问 https://platform.deepseek.com/api_keys → 登录 → 创建 API Key → 保存密钥（部署完成后配置到 ECS）。"
+    },
+    {
+      "title": "确认账户余额",
+      "content": "确保华为云账户余额充足（建议 ≥ 50 元），ECS 为按需计费或包月。"
+    }
+  ],
+  "quick_deploy": [
+    {
+      "title": "步骤 1：上传模板到 RFS",
+      "content": "登录华为云 RFS 控制台 → 创建资源栈 → 上传模板文件（deploying-codewhale.tf.json）→ 单击“下一步”。"
+    },
+    {
+      "title": "步骤 2：配置参数",
+      "content": "网络配置：vpc_name 保持默认（codewhale-demo）\nECS 配置：设置 ecs_password（8-26位，含大写/小写/数字/特殊字符中3种）\n其他参数保持默认即可。"
+    },
+    {
+      "title": "步骤 3：确认并创建",
+      "content": "确认配置无误 → 勾选「我已知晓...」→ 单击「创建资源栈」→ 等待约 2 分钟 → 在「输出」标签页获取弹性公网 IP。"
+    },
+    {
+      "title": "步骤 4：SSH 登录并配置",
+      "content": "ssh root@<EIP>\nexport DEEPSEEK_API_KEY=\"你的密钥\"\ncodewhale auth set --provider deepseek\ncodewhale"
+    }
+  ],
+  "getting_started": [
+    {
+      "title": "交互式 TUI 模式",
+      "content": "直接运行 codewhale 进入终端交互界面。输入自然语言指令（如“写一个 Python WebSocket 服务”），AI 会规划步骤并逐项执行。"
+    },
+    {
+      "title": "一次性任务模式",
+      "content": "codewhale \"explain this function\" — 直接传入提示词，AI 执行后退出。适合脚本化调用。"
+    },
+    {
+      "title": "YOLO 自动模式",
+      "content": "codewhale --yolo \"优化项目中的所有 Python 文件\" — 自动批准所有工具调用，适合批量处理。"
+    },
+    {
+      "title": "API Server 模式（可选）",
+      "content": "配置 API Key 后：systemctl enable --now codewhale\n启动 HTTP/SSE 运行时 API，供编辑器（如 VS Code、Zed）或 CI/CD 系统集成。"
+    },
+    {
+      "title": "多模型支持",
+      "content": "除 DeepSeek V4 外，CodeWhale 还支持 NVIDIA NIM、OpenRouter、Ollama 本地模型、通用 OpenAI 兼容端点等 11+ 模型提供方。"
+    }
+  ],
+  "quick_uninstall": [
+    {
+      "title": "步骤 1：删除 RFS 资源栈",
+      "content": "登录华为云 RFS 控制台 → 找到 CodeWhale 资源栈 → 单击「删除」→ 输入 「Delete」 → 确认。"
+    },
+    {
+      "title": "步骤 2：验证资源释放",
+      "content": "删除完成后确认以下资源已全部释放：ECS 实例、弹性公网 IP、VPC 网络、安全组。可在 ECS/EIP/VPC 控制台分别确认。"
+    }
+  ],
+  "cost_planning": [
+    {
+      "title": "按需计费（推荐测试期）",
+      "content": "Flexus X 实例 x1.2u.4g：约 0.4-0.8 元/小时\nEIP 10Mbit/s 按流量：约 0.1 元/小时（流量另计，约 0.8 元/GB）\n系统盘 60GB SAS：包含在实例费用中\n合计：约 0.5-1 元/小时"
+    },
+    {
+      "title": "包月计费（推荐生产期）",
+      "content": "Flexus X 实例 x1.2u.4g：约 180-250 元/月\nEIP 10Mbit/s：约 20 元/月（不含流量）\n系统盘 60GB SAS：约 30 元/月\n合计：约 230-300 元/月"
+    }
+  ],
+  "optimization": [
+    {
+      "title": "建议 1：补充架构图",
+      "content": "当前方案描述中使用了 ASCII 架构图，建议替换为华为云官方图标绘制的标准架构图，满足 solution-standards.md 规范。"
+    },
+    {
+      "title": "建议 2：OS 兼容性扩展",
+      "content": "当前仅验证 Ubuntu 24.04，建议增加 CentOS 7.9 / openEuler 22.03 的兼容测试和脚本分支处理。"
+    },
+    {
+      "title": "建议 3：补充 .extension 参数分组",
+      "content": "已补充完成。包含 network_config 和 ecs_config 两个分组，提供中英文 i18n 描述。"
+    },
+    {
+      "title": "建议 4：增加 systemd 托管",
+      "content": "已补充完成。安装脚本增加了 codewhale.service systemd unit 文件和每周自动升级 crontab。"
+    },
+    {
+      "title": "建议 5：安全组增加最小权限规则",
+      "content": "已补充完成。增加了 ICMP ping 规则便于网络诊断，SSH 端口仅对 Cloud Shell IP 开放。"
+    }
+  ]
+}
