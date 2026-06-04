@@ -48,6 +48,7 @@ Reference files: `assets/demo/` directory contains three reference projects.
 
 ### Provider Configuration
 
+**JSON format (domestic example):**
 ```json
 "terraform": {
     "required_providers": {
@@ -66,6 +67,35 @@ Reference files: `assets/demo/` directory contains three reference projects.
     }
 }
 ```
+
+**HCL format (overseas example):**
+```hcl
+terraform {
+  required_providers {
+    huaweicloud = {
+      source  = "huawei.com/provider/huaweicloud"
+      version = ">=1.70.1"
+    }
+  }
+}
+
+provider "huaweicloud" {
+  region   = "ap-southeast-1"
+  auth_url = "https://iam.ap-southeast-1.myhuaweicloud.com/v3"
+  cloud    = "myhuaweicloud.com"
+  insecure = true
+}
+```
+
+**Common regions:**
+| Region | Code | Type |
+|--------|------|------|
+| Beijing | cn-north-4 | Domestic |
+| Guangzhou | cn-south-1 | Domestic |
+| Shanghai | cn-east-3 | Domestic |
+| Hong Kong | ap-southeast-1 | Overseas |
+| Singapore | ap-southeast-3 | Overseas |
+| Bangkok | ap-southeast-2 | Overseas |
 
 **CRITICAL:** `required_providers` is an **OBJECT** keyed by provider name — NOT an array `[{...},{...}]`. Huawei Cloud RFS only supports the `huaweicloud` provider. Do NOT add `random`, `tls`, or any other HashiCorp provider.
 
@@ -547,6 +577,102 @@ Is the app's PostgreSQL a vanilla postgres (no custom extensions/init scripts)?
 
 ---
 
+## Decision Points (User-Confirmed Patterns)
+
+The following decisions are confirmed by the user and should be applied consistently across all future solutions. **Do not assume — ask the user to confirm before applying.**
+
+### Decision 1: Template Format — HCL (.tf) vs JSON (.tf.json)
+
+| Format | Pros | Cons |
+|--------|------|------|
+| `.tf` (HCL) | Clean syntax, heredoc support, readable, native Terraform format | RFS may require JSON for some operations |
+| `.tf.json` (JSON) | RFS native, no HCL parsing needed | Verbose, no heredoc, hard to maintain multiline user_data |
+
+**Default:** Ask the user. HCL preferred for new projects unless RFS requires JSON.
+
+### Decision 2: Install Script — Inline user_data vs OBS Download
+
+| Strategy | Pros | Cons |
+|----------|------|------|
+| **Inline user_data** | Single file deployment, no OBS dependency, simpler pipeline | user_data grows large, harder to iterate independently |
+| **OBS download** | Hot-fixable without RFS template change, script is independently versioned | Requires OBS bucket, extra wget step, two files to maintain |
+
+**Default:** Ask the user. Inline is cleaner for simple deployments; OBS download is better for complex scripts that need frequent iteration.
+
+### Decision 3: Region — Domestic vs Overseas
+
+| Region Type | Docker Source | SWR Needed? | Mirror Config |
+|-------------|--------------|-------------|---------------|
+| **Domestic (cn-*)** | SWR mirror or Huawei Cloud mirror | Yes — `mirrors.huaweicloud.com` is project-level, not universal | `daemon.json` registry-mirrors + fallback |
+| **Overseas (ap-*, eu-*)** | Direct from source (Docker Hub, ghcr.io) | No — global access is fast enough | None needed |
+
+**Default:** Domestic → use SWR acceleration pattern (Pitfall 14). Overseas → pull directly from source registries, no SWR login needed.
+
+**Rationale:** Domestic ECS has poor connectivity to Docker Hub / ghcr.io. SWR mirror is project-scoped (not a universal proxy), so images must be pre-pushed to SWR. Overseas ECS has direct global access, making SWR unnecessary overhead.
+
+### Decision 4: Language — Chinese vs English
+
+| Target Audience | Description Language | Variable Descriptions | Output Messages |
+|-----------------|---------------------|----------------------|-----------------|
+| Domestic (cn-* regions) | Chinese | Chinese | Chinese |
+| Overseas (ap-*, eu-* regions) | English | English | English |
+
+**Default:** Match the region. Domestic → Chinese. Overseas → all English.
+
+### Decision 5: Script Architecture — Separate vs Inline for user_data
+
+When using **inline user_data** (Decision 2):
+- All config files (docker-compose.yaml, config.yaml, etc.) are generated via heredoc inside user_data
+- No files need to be pre-uploaded to OBS
+- The .tf file is completely self-contained
+
+When using **OBS download** (Decision 2):
+- user_data only downloads and executes the install script
+- Config files are uploaded to OBS separately
+- Install script + config files are versioned independently on OBS
+
+### Decision 6: Deployment Documentation — Required for Every Project
+
+Every solution practice **must** include a `README.md` deployment guide. The language follows Decision 4 (domestic → Chinese, overseas → English).
+
+**Required sections:**
+
+| Section | Content |
+|---------|---------|
+| Title | `# Solution Name — Tagline 一键部署` (Chinese) / `# Solution Name — Tagline One-Click Deployment` (English) |
+| 方案概述 / Solution Overview | What the software is, how it deploys on Huawei Cloud |
+| 方案架构 / Architecture | ASCII art diagram + resource table (type, spec, qty, description) |
+| 适用场景 / Use Cases | 3-5 bullet points |
+| 方案优势 / Key Benefits | 4-6 bullet points with bold keywords |
+| 部署指南 / Deployment Guide | Prerequisites, one-click deploy steps, parameter table |
+| 开始使用 / Getting Started | Access URLs, SSH commands, API call examples, config instructions |
+| 预估费用 / Estimated Cost | Per-resource cost table (hourly + monthly) with total |
+| 快速卸载 / Quick Uninstall | RFS console delete steps |
+| 更多资源 / More Resources | GitHub, upstream docs, Huawei Cloud RFS docs |
+
+**Two-tier model:**
+- `README.md` (required): Full deployment guide in the project root or `tf/` directory
+- `docs/overview.md` (optional): Short marketing summary (~30 lines)
+
+### Decision 7: OBS Naming Convention — Project Directory & Archive Name
+
+OBS bucket path (project directory) and zip archive name follow a region-based suffix convention:
+
+| Region | OBS Path / Project Dir | Zip Archive Name | Example |
+|--------|----------------------|------------------|---------|
+| Domestic (cn-north-4, etc.) | `{project}` | `{project}.zip` | `litellm/` → `litellm.zip` |
+| Hong Kong (ap-southeast-1) | `{project}-hk` | `{project}-hk.zip` | `litellm-hk/` → `litellm-hk.zip` |
+| International Site (other overseas) | `{project}-platform` | `{project}-platform.zip` | `litellm-platform/` → `litellm-platform.zip` |
+
+**Rules:**
+- OBS upload target: `obs://{bucket}/{project}[-hk|-platform].zip`
+- Local project directory name matches the OBS path: `practices/{project}[-hk|-platform]/`
+- Domestic (Beijing cn-north-4) has NO suffix — bare project name only
+- Hong Kong gets `-hk` suffix
+- Other overseas regions (Singapore, Bangkok, etc.) get `-platform` suffix
+
+---
+
 ## OBS Upload
 
 Use Python SDK to upload files to the project's OBS bucket:
@@ -564,9 +690,9 @@ c.close()
 ```
 
 Upload three files for each solution:
-1. `install_{app}.sh` — the 4-stage deployment script
-2. `deploying-{app}.tf.json` — the RFS template
-3. `{app}-platform.zip` — project archive containing both + README
+1. `install_{app}.sh` — the 4-stage deployment script (if using OBS download pattern)
+2. `deploying-{app}.tf` or `.tf.json` — the RFS template
+3. `{app}[-hk|-platform].zip` — project archive (naming per Decision 7)
 
 ---
 
@@ -575,14 +701,17 @@ Upload three files for each solution:
 Before deploying, verify:
 - [ ] `required_providers` is an object, not array
 - [ ] Only `huaweicloud` provider listed (no `random`, `tls`, etc.)
-- [ ] All resource names include `-${local.name_suffix}`
+- [ ] All resource names include `-${local.name_suffix}` (JSON format) or use `var.solution_name` (HCL format)
 - [ ] `DEBCONF_NONINTERACTIVE_SEEN=true` in Stage 1 and Stage 2
 - [ ] `--force-confdef --force-confold` on every apt-get command
 - [ ] `dpkg --configure -a` before first apt operation
-- [ ] Docker CE from `mirrors.huaweicloud.com` (not docker.com)
-- [ ] `docker-compose` (v1) commands, not `docker compose` (v2)
-- [ ] `registry-mirrors` configured in daemon.json
+- [ ] **Domestic (cn-\*):** Docker CE from `mirrors.huaweicloud.com`; **Overseas:** Docker CE from `download.docker.com`
+- [ ] **Domestic:** `docker login` to SWR + images pre-pushed; **Overseas:** Direct pull from source (Docker Hub / ghcr.io)
+- [ ] **Domestic:** `daemon.json` registry-mirrors configured; **Overseas:** No mirror config needed
+- [ ] `docker compose` (v2) commands (plugin-based, not standalone v1)
 - [ ] `chown -R UID:GID` on app data directory
 - [ ] `N8N_SECURE_COOKIE=false` (for n8n specifically)
-- [ ] user_data is minimal: download + execute only
-- [ ] Output section references correct log path `/var/log/n8n-deploy/`
+- [ ] **Inline user_data:** All config generated via heredoc, no OBS dependency
+- [ ] **OBS download:** user_data is minimal: download + execute only
+- [ ] **Domestic:** Descriptions in Chinese; **Overseas:** All descriptions in English
+- [ ] Output section references correct log path
