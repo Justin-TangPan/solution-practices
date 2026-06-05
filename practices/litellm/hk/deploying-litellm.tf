@@ -8,10 +8,7 @@ terraform {
 }
 
 provider "huaweicloud" {
-  region   = "ap-southeast-1"
-  auth_url = "https://iam.ap-southeast-1.myhuaweicloud.com/v3"
-  cloud    = "myhuaweicloud.com"
-  insecure = true
+  region = "ap-southeast-1"
 }
 
 variable "solution_name" {

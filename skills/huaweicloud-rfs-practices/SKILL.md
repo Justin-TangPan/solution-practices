@@ -23,11 +23,26 @@ Follow standards from `assets/demo/` reference projects plus accumulated field-t
 
 When asked to create or fix a Huawei Cloud RFS solution:
 
-1. **Understand the application**: What ports? What dependencies? Bare-metal or Docker? OpenAI/LLM key needed?
-2. **Write the tf.json**: Variables → data sources → VPC/subnet/secgroup → EIP → ECS with user_data
-3. **Write the install script**: 4-stage shell script (prepare → Docker → config → start)
-4. **Upload to OBS**: Both `.tf.json` and install script to the project's OBS bucket
-5. **Test with RFS**: Deploy, SSH in, check logs at `/var/log/n8n-deploy/`
+1. **Confirm decision points** (see Decision Points section below) — ask user for non-default choices
+2. **Write the .tf template**: Variables → locals (name_suffix) → data sources → VPC/subnet/secgroup → EIP → ECS with minimal user_data
+3. **Write the install script**: Independent `.sh` file with all deployment logic
+4. **Write README.md**: Follow the 9-section Hermes deployment guide format (Decision 6)
+5. **Upload to OBS**: Template + script + README, naming per Decision 7
+6. **Test with RFS**: Deploy, SSH in, verify services
+
+### Template-Script Separation Rule
+
+The `.tf` file's `user_data` must be **minimal** — only:
+1. Reset ECS password
+2. Download install script from OBS
+3. Execute the script
+4. Clean up
+
+```hcl
+user_data = "#!/bin/bash\necho 'root:${var.ecs_password}' | chpasswd\nwget -P /home/ https://{bucket}.obs.{region}.myhuaweicloud.com/{project}/install_{app}.sh\nbash /home/install_{app}.sh\nrm -rf /home/install_{app}.sh"
+```
+
+All deployment logic (package installation, configuration, service startup) belongs in the `.sh` script, NOT in the `.tf` file.
 
 ## tf.json Template Standards
 
@@ -48,42 +63,38 @@ Reference files: `assets/demo/` directory contains three reference projects.
 
 ### Provider Configuration
 
-**JSON format (domestic example):**
+**CRITICAL: Only specify `region`.** Do NOT add `auth_url`, `cloud`, or `insecure` — RFS auto-derives them. Explicit values cause IMS authentication errors.
+
+**JSON format:**
 ```json
 "terraform": {
     "required_providers": {
         "huaweicloud": {
             "source": "huawei.com/provider/huaweicloud",
-            "version": ">=1.70.1"
+            "version": ">= 1.20.0"
         }
     }
 },
 "provider": {
     "huaweicloud": {
-        "cloud": "myhuaweicloud.com",
-        "region": "cn-north-4",
-        "insecure": true,
-        "auth_url": "https://iam.cn-north-4.myhuaweicloud.com/v3"
+        "region": "cn-north-4"
     }
 }
 ```
 
-**HCL format (overseas example):**
+**HCL format:**
 ```hcl
 terraform {
   required_providers {
     huaweicloud = {
       source  = "huawei.com/provider/huaweicloud"
-      version = ">=1.70.1"
+      version = ">= 1.20.0"
     }
   }
 }
 
 provider "huaweicloud" {
-  region   = "ap-southeast-1"
-  auth_url = "https://iam.ap-southeast-1.myhuaweicloud.com/v3"
-  cloud    = "myhuaweicloud.com"
-  insecure = true
+  region = "ap-southeast-1"
 }
 ```
 
@@ -577,6 +588,82 @@ Is the app's PostgreSQL a vanilla postgres (no custom extensions/init scripts)?
 
 ---
 
+## Hard Rules (Always Apply)
+
+These rules are non-negotiable and apply to all solutions:
+
+### Rule 1: Provider Block — Region Only
+
+```hcl
+provider "huaweicloud" {
+  region = "cn-north-4"   # or "ap-southeast-1", etc.
+}
+```
+
+Never add `auth_url`, `cloud`, `insecure`. RFS auto-derives them. Explicit values cause `error retrieving IMS images: Authentication failed`.
+
+### Rule 2: Resource Names — Always Add Random Suffix
+
+```hcl
+locals {
+  name_suffix = substr(uuid(), 0, 8)
+}
+
+resource "huaweicloud_vpc" "vpc" {
+  name = "${var.solution_name}-${local.name_suffix}-vpc"
+  ...
+}
+```
+
+Apply `-${local.name_suffix}` to ALL resource names (VPC, subnet, secgroup, EIP, ECS, bandwidth). Prevents conflicts when multiple customers deploy the same solution.
+
+### Rule 3: Template-Script Separation
+
+- `.tf` file: minimal user_data (password + wget + execute + cleanup)
+- `.sh` file: all deployment logic (install, configure, start)
+- Never embed long scripts in user_data heredoc
+
+### Rule 4: pip Install — Always Use These Flags
+
+```bash
+pip3 install {package} --break-system-packages --ignore-installed
+```
+
+Ubuntu 24.04 PEP 668 blocks system-wide pip installs. `--ignore-installed` prevents conflicts with system packages (e.g., `rich`). No fallback commands — they get silently swallowed by `2>/dev/null`.
+
+### Rule 5: Dependencies — Install Completely in One Command
+
+```bash
+pip3 install headroom-ai fastapi uvicorn 'httpx[http2]' transformers \
+  -i https://pypi.tuna.tsinghua.edu.cn/simple \
+  --break-system-packages --ignore-installed
+```
+
+Never split across multiple commands. Missing one dependency causes runtime failures that are hard to diagnose.
+
+### Rule 6: Environment Variables — Export in .bashrc
+
+```bash
+cat >> /root/.bashrc << 'EOF'
+export ANTHROPIC_BASE_URL="http://localhost:8787"
+export ANTHROPIC_TARGET_API_URL="https://api.modelarts-maas.com/anthropic"
+export ANTHROPIC_MODEL="deepseek-v3.2"
+EOF
+source /root/.bashrc
+```
+
+Environment variables must be in the process environment (`.bashrc` export), not just in `settings.json`. CLI tools read from process env, not config files.
+
+### Rule 7: README Is the Documentation
+
+Do NOT create separate guide files (`xxx-guide.md`). The `README.md` is the single source of truth. Follow the 9-section Hermes format (Decision 6).
+
+### Rule 8: No Docker for Non-Docker Apps
+
+If the application is a CLI tool or Python package (not a containerized service), install directly via pip/npm. Don't wrap in Docker unnecessarily.
+
+---
+
 ## Decision Points (User-Confirmed Patterns)
 
 The following decisions are confirmed by the user and should be applied consistently across all future solutions. **Do not assume — ask the user to confirm before applying.**
@@ -660,16 +747,49 @@ OBS bucket path (project directory) and zip archive name follow a region-based s
 
 | Region | OBS Path / Project Dir | Zip Archive Name | Example |
 |--------|----------------------|------------------|---------|
-| Domestic (cn-north-4, etc.) | `{project}` | `{project}.zip` | `litellm/` → `litellm.zip` |
-| Hong Kong (ap-southeast-1) | `{project}-hk` | `{project}-hk.zip` | `litellm-hk/` → `litellm-hk.zip` |
+| Domestic (cn-north-4, etc.) | `{project}` | `{project}-platform.zip` | `litellm/` → `litellm-platform.zip` |
+| Hong Kong (ap-southeast-1) | `{project}-hk` | `{project}-hk-platform.zip` | `litellm-hk/` → `litellm-hk-platform.zip` |
 | International Site (other overseas) | `{project}-platform` | `{project}-platform.zip` | `litellm-platform/` → `litellm-platform.zip` |
 
 **Rules:**
-- OBS upload target: `obs://{bucket}/{project}[-hk|-platform].zip`
-- Local project directory name matches the OBS path: `practices/{project}[-hk|-platform]/`
-- Domestic (Beijing cn-north-4) has NO suffix — bare project name only
+- OBS upload target: `obs://{bucket}/{project}[-hk]/`
+- Local project directory: `practices/{project}[-hk]/`
+- Zip archive: `{project}[-hk]-platform.zip`
+- Domestic (Beijing cn-north-4) has NO suffix
 - Hong Kong gets `-hk` suffix
-- Other overseas regions (Singapore, Bangkok, etc.) get `-platform` suffix
+- Install script: `obs://{bucket}/{project}[-hk]/install_{app}.sh`
+
+### Decision 8: Docker vs Direct Install
+
+| Approach | When to Use |
+|----------|-------------|
+| **Docker Compose** | Multi-container apps (DB + app + monitoring), apps with official Docker images |
+| **Direct install (pip/npm)** | CLI tools, single-process apps, Python/Node packages |
+
+**Default:** Ask the user. Don't default to Docker if the app is a simple CLI tool.
+
+### Decision 9: Upstream API Configuration
+
+When a proxy tool (like Headroom) forwards to an upstream API, the upstream URL must be explicitly configured:
+
+```bash
+# Environment variable for proxy upstream
+export ANTHROPIC_TARGET_API_URL=https://api.modelarts-maas.com/anthropic
+```
+
+**Always verify** the proxy's routing table in startup logs to confirm upstream is correct:
+```
+/v1/messages → https://api.modelarts-maas.com/anthropic  ✅
+/v1/messages → https://api.anthropic.com                  ❌ (wrong upstream)
+```
+
+### Decision 10: Word Document Generation
+
+Every solution should include a `.docx` version of the README for offline viewing:
+- CN: `Headroom-ClaudeCode-部署指南.docx`
+- HK: `Headroom-ClaudeCode-Deployment-Guide.docx`
+- Generated from README.md using `python-docx`
+- Uploaded alongside README to OBS
 
 ---
 
@@ -699,19 +819,31 @@ Upload three files for each solution:
 ## Validation Checklist
 
 Before deploying, verify:
+
+**Template:**
 - [ ] `required_providers` is an object, not array
 - [ ] Only `huaweicloud` provider listed (no `random`, `tls`, etc.)
-- [ ] All resource names include `-${local.name_suffix}` (JSON format) or use `var.solution_name` (HCL format)
-- [ ] `DEBCONF_NONINTERACTIVE_SEEN=true` in Stage 1 and Stage 2
-- [ ] `--force-confdef --force-confold` on every apt-get command
-- [ ] `dpkg --configure -a` before first apt operation
+- [ ] Provider block has ONLY `region` — no `auth_url`, `cloud`, `insecure`
+- [ ] `locals { name_suffix = substr(uuid(), 0, 8) }` present
+- [ ] ALL resource names include `-${local.name_suffix}`
+- [ ] user_data is minimal: password + wget + execute + cleanup
+
+**Install Script:**
+- [ ] pip install uses `--break-system-packages --ignore-installed`
+- [ ] All dependencies in ONE pip install command
+- [ ] **Domestic:** PyPI mirror `-i https://pypi.tuna.tsinghua.edu.cn/simple`
 - [ ] **Domestic (cn-\*):** Docker CE from `mirrors.huaweicloud.com`; **Overseas:** Docker CE from `download.docker.com`
-- [ ] **Domestic:** `docker login` to SWR + images pre-pushed; **Overseas:** Direct pull from source (Docker Hub / ghcr.io)
-- [ ] **Domestic:** `daemon.json` registry-mirrors configured; **Overseas:** No mirror config needed
-- [ ] `docker compose` (v2) commands (plugin-based, not standalone v1)
-- [ ] `chown -R UID:GID` on app data directory
-- [ ] `N8N_SECURE_COOKIE=false` (for n8n specifically)
-- [ ] **Inline user_data:** All config generated via heredoc, no OBS dependency
-- [ ] **OBS download:** user_data is minimal: download + execute only
+- [ ] **Domestic:** `docker login` to SWR + images pre-pushed; **Overseas:** Direct pull from source
+- [ ] Environment variables exported in `.bashrc`, not just in settings.json
+- [ ] Proxy upstream URL explicitly set (e.g., `ANTHROPIC_TARGET_API_URL`)
+
+**Documentation:**
+- [ ] README.md follows 9-section Hermes format
+- [ ] Word document (.docx) generated from README
 - [ ] **Domestic:** Descriptions in Chinese; **Overseas:** All descriptions in English
 - [ ] Output section references correct log path
+
+**OBS Upload:**
+- [ ] Install script uploaded: `obs://{bucket}/{project}[-hk]/install_{app}.sh`
+- [ ] Platform zip uploaded: `obs://{bucket}/{project}[-hk]/{project}[-hk]-platform.zip`
+- [ ] Word doc uploaded alongside README
