@@ -1,0 +1,19 @@
+{
+  "template_url": "https://tp-00940108.obs.cn-south-1.myhuaweicloud.com/aitoearn/deploying-aitoearn.tf",
+  "group_order": ["network_config", "ecs_config", "charging_config"],
+  "parameters": {
+    "solution_name": { "group": "network_config", "order": 1 },
+    "bandwidth_size": { "group": "network_config", "order": 2 },
+    "ecs_flavor": { "group": "ecs_config", "order": 1 },
+    "ecs_password": { "group": "ecs_config", "order": 2 },
+    "system_disk_size": { "group": "ecs_config", "order": 3 },
+    "charging_mode": { "group": "charging_config", "order": 1 },
+    "charging_unit": { "group": "charging_config", "order": 2 },
+    "charging_period": { "group": "charging_config", "order": 3 }
+  },
+  "group_labels": {
+    "network_config": { "zh_cn": "网络配置", "en": "Network Configuration" },
+    "ecs_config": { "zh_cn": "弹性云服务器配置", "en": "ECS Configuration" },
+    "charging_config": { "zh_cn": "计费配置", "en": "Billing Configuration" }
+  }
+}

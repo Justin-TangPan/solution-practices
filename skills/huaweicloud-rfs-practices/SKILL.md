@@ -44,6 +44,189 @@ user_data = "#!/bin/bash\necho 'root:${var.ecs_password}' | chpasswd\nwget -P /h
 
 All deployment logic (package installation, configuration, service startup) belongs in the `.sh` script, NOT in the `.tf` file.
 
+## Development Workflow (SAC 标准流程)
+
+```
+洞察（用户）→ 技术评估（AI）→ 方案设计（AI）→ 用户拍板 → 开发（AI）→ 测试 OBS 上传 → 用户测试 → 生产打包 → 用户上传生产 OBS → RFS 上线
+```
+
+### 阶段详解
+
+| 阶段 | 负责人 | 产出 |
+|------|--------|------|
+| 1. 洞察 | 用户 | 明确要做的方案、目标用户、核心价值 |
+| 2. 技术评估 | AI | 可行性分析、技术栈评估、依赖清单 |
+| 3. 方案设计 | AI | 技术方案（单机/高可用/云服务接入）+ 业务方案（上线区域、语言） |
+| 4. 拍板敲定 | 用户 | 确认方案、决策点 |
+| 5. 开发 | AI | .tf 模板 + .sh 脚本 + README.md + .docx |
+| 6. 测试 OBS 上传 | AI | 上传到测试桶 `tp-00940108`，用户验证 |
+| 7. 用户测试 | 用户 | 在测试 OBS 上部署验证 |
+| 8. 生产打包 | AI | 整理最终归档包，预置生产 OBS 路径的模板 |
+| 9. 用户上传生产 | 用户 | 亲自上传到生产 OBS 桶，生成 RFS URL |
+
+### OBS 桶规范
+
+| 环境 | 桶 | 用途 | 操作人 |
+|------|-----|------|--------|
+| 测试 | `tp-00940108` | 开发阶段上传，用户测试验证 | AI |
+| 生产 | 用户指定 | 最终上线，RFS URL 指向此桶 | 用户亲自上传 |
+
+### 最终交付物
+
+每个方案最终交付：
+1. **RFS 页面 URL** — 预置好模板和参数，用户点击即可部署
+2. **归档包** — `{project}-platform.zip`，包含 cn/ + hk/ 全部文件
+3. **安装脚本** — `install_{app}.sh`，按区域分 cn/ 和 hk/
+
+### RFS URL 格式
+
+```
+https://console.huaweicloud.com/rf/?region={region}&locale=zh-cn#/console/stack/stackCreate?templateUrl=https://{production-bucket}.obs.{region}.myhuaweicloud.com/{path}/deploying-{app}.tf&stackName={project}&stackDescription={description}
+```
+
+示例：
+```
+https://console.huaweicloud.com/rf/?region=ap-southeast-1&locale=zh-cn#/console/stack/stackCreate?templateUrl=https://documentation-samples-5.obs.ap-southeast-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/headroom-claudecode/headroom-claude-code/hk/deploying-headroom.tf&stackName=headroom-claude-code&stackDescription=ClaudeCode+Headroom
+```
+
+**注意：** RFS URL 中的 `templateUrl` 指向生产 OBS 桶，不是测试桶。用户需亲自上传到生产桶。
+
+### 生产交付流程
+
+1. AI 在 `release/{project}/` 目录下预置最终模板（templateUrl 已指向生产 OBS 路径）
+2. AI 生成 `url.txt`，包含 TF 链接、SH 链接、RFS 页面链接
+3. 用户将 `release/{project}/` 目录下的文件上传到生产 OBS 桶
+4. 用户点击 RFS URL 验证部署
+
+## User Constraints (用户约束)
+
+以下约束必须遵守，不可违反：
+
+### 1. reference/ 目录只读
+
+`solution-implementations/reference/` 目录仅用户可修改。AI 不得主动修改此目录下的任何文件，除非用户明确授权。
+
+### 2. 不硬编码凭证
+
+安装脚本中不得硬编码 AK/SK、API Key 等凭证。SWR 镜像应设为公开访问，避免 `docker login`。如必须认证，通过环境变量或参数传入。
+
+### 3. 不修改第三方源码
+
+不得修改所部署开源项目的源代码。如需定制，通过配置文件、环境变量或 fork 后修改实现。
+
+### 4. README 即文档
+
+不要创建单独的指导文档文件（如 `xxx-guide.md`）。`README.md` 是唯一的文档。
+
+### 5. 先确认再动手
+
+开发前必须确认决策点（地域、语言、Docker vs 直装等），不得擅自假设。
+
+### 6. OBS 命名规范
+
+```
+obs://{bucket}/{project}/
+├── cn/
+│   └── install_{app}.sh
+├── hk/
+│   └── install_{app}.sh
+└── {project}-platform.zip
+```
+
+项目名不带后缀，cn/ 和 hk/ 子目录放脚本，归档包放根目录。
+
+### 7. 模板和脚本分离
+
+`.tf` 文件的 user_data 只做：改密码 → wget 下载脚本 → 执行 → 清理。所有部署逻辑在 `.sh` 脚本中。
+
+## Recent Pitfalls (近期踩坑记录)
+
+### Pitfall 19: Provider 块显式 auth_url 导致 IMS 认证失败
+
+**现象：** RFS 部署报错 `error retrieving IMS images: Authentication failed`
+
+**根因：** Provider 块显式指定了 `auth_url`、`cloud`、`insecure`，与 RFS 内部认证机制冲突。
+
+**修复：** Provider 块只写 `region`，其他全部删掉。
+```hcl
+provider "huaweicloud" {
+  region = "ap-southeast-1"
+}
+```
+
+### Pitfall 20: Ubuntu 24.04 pip 安装被 PEP 668 阻止
+
+**现象：** `pip3 install` 报错 `externally-managed-environment`
+
+**根因：** Ubuntu 24.04 启用了 PEP 668，禁止 pip 系统级安装。
+
+**修复：** 必须加 `--break-system-packages --ignore-installed`，不要用 fallback 命令（会被 `2>/dev/null` 吞掉错误）。
+```bash
+pip3 install headroom-ai fastapi uvicorn 'httpx[http2]' transformers \
+  -i https://pypi.tuna.tsinghua.edu.cn/simple \
+  --break-system-packages --ignore-installed
+```
+
+### Pitfall 21: 系统预装包导致 pip 安装失败
+
+**现象：** `Cannot uninstall rich 13.7.1, RECORD file not found. Hint: The package was installed by debian.`
+
+**根因：** Ubuntu 系统预装的 `rich` 包，pip 无法覆盖。
+
+**修复：** 加 `--ignore-installed` 跳过已安装包检查。
+
+### Pitfall 22: Terraform `%{...}` 被解析为模板指令
+
+**现象：** `.tf` 文件中 curl 的 `%{http_code}` 报语法错误
+
+**根因：** `%{...}` 是 Terraform 模板指令语法（`%{if}`, `%{for}`），在 heredoc 中也会被解析。
+
+**修复：** 转义为 `%%{http_code}`。
+
+### Pitfall 23: 环境变量未注入到进程
+
+**现象：** `settings.json` 配置正确，但 Claude Code 不走代理
+
+**根因：** CLI 工具从进程环境读取环境变量，`settings.json` 的 `env` 配置不一定被所有版本读取。
+
+**修复：** 环境变量必须通过 `.bashrc` 的 `export` 注入，并 `source /root/.bashrc` 生效。
+
+### Pitfall 24: docker-compose 挂载的配置文件缺失
+
+**现象：** 容器报 `Failed to find configuration file`
+
+**根因：** docker-compose.yml 通过 volume 挂载了配置文件（如 `./project/.../config.js`），但安装脚本只下载了 compose 文件，没下载配置。
+
+**修复：** 用 `git clone --depth 1` 克隆整个仓库，而不是单独下载文件。
+
+### Pitfall 25: Headroom 代理上游未指向 MaaS
+
+**现象：** 代理运行正常但 stats 显示 0 压缩，请求没到达 MaaS
+
+**根因：** Headroom 代理默认转发到 `api.anthropic.com`，需要 `ANTHROPIC_TARGET_API_URL` 指向 MaaS。
+
+**修复：**
+```bash
+export ANTHROPIC_TARGET_API_URL=https://api.modelarts-maas.com/anthropic
+headroom proxy --host 0.0.0.0 --port 8787
+```
+
+### Pitfall 26: Headroom 不压缩对话消息
+
+**现象：** stats 显示 `no_compressible_content`，tokens_saved 为 0
+
+**根因：** Headroom 硬编码保护 user/system/assistant 消息，只压缩 tool 输出。简单对话没有可压缩内容。
+
+**修复：** 这是设计限制，不是配置问题。Headroom 适合工具密集型会话（大量 bash 输出、文件读取），简单聊天效果有限。
+
+### Pitfall 27: SWR 镜像拉取需要认证
+
+**现象：** `error from registry: You may not login yet - there is no X-Auth-Token`
+
+**根因：** SWR 镜像未设为公开，需要 `docker login` 认证。
+
+**修复：** 在 SWR 控制台把镜像设为公开，避免在脚本中硬编码凭证。
+
 ## tf.json Template Standards
 
 Reference files: `assets/demo/` directory contains three reference projects.
@@ -743,21 +926,37 @@ Every solution practice **must** include a `README.md` deployment guide. The lan
 
 ### Decision 7: OBS Naming Convention — Project Directory & Archive Name
 
-OBS bucket path (project directory) and zip archive name follow a region-based suffix convention:
+**OBS 目录结构（统一规范）：**
 
-| Region | OBS Path / Project Dir | Zip Archive Name | Example |
-|--------|----------------------|------------------|---------|
-| Domestic (cn-north-4, etc.) | `{project}` | `{project}-platform.zip` | `litellm/` → `litellm-platform.zip` |
-| Hong Kong (ap-southeast-1) | `{project}-hk` | `{project}-hk-platform.zip` | `litellm-hk/` → `litellm-hk-platform.zip` |
-| International Site (other overseas) | `{project}-platform` | `{project}-platform.zip` | `litellm-platform/` → `litellm-platform.zip` |
+```
+obs://{bucket}/{project}/
+├── cn/
+│   └── install_{app}.sh          ← 国内版安装脚本
+├── hk/
+│   └── install_{app}.sh          ← 海外版安装脚本
+└── {project}-platform.zip        ← 完整归档包（含 cn/ + hk/）
+```
 
-**Rules:**
-- OBS upload target: `obs://{bucket}/{project}[-hk]/`
-- Local project directory: `practices/{project}[-hk]/`
-- Zip archive: `{project}[-hk]-platform.zip`
-- Domestic (Beijing cn-north-4) has NO suffix
-- Hong Kong gets `-hk` suffix
-- Install script: `obs://{bucket}/{project}[-hk]/install_{app}.sh`
+**规则：**
+- 项目名不带后缀：`aitoearn`、`litellm`、`headroom-claude-code`
+- `cn/` 和 `hk/` 子目录放各自的安装脚本
+- `{project}-platform.zip` 放在项目根目录，包含 cn/ + hk/ 全部文件
+- 模板里的 `user_data` 按区域指向对应子目录：`.../aitoearn/cn/install_aitoearn.sh`
+
+**本地目录结构：**
+```
+practices/{project}/
+├── cn/
+│   ├── deploying-{project}.tf
+│   ├── scripts/install_{app}.sh
+│   ├── .extension
+│   └── README.md
+└── hk/
+    ├── deploying-{project}.tf
+    ├── scripts/install_{app}.sh
+    ├── .extension
+    └── README.md
+```
 
 ### Decision 8: Docker vs Direct Install
 

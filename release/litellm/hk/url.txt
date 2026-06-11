@@ -1,0 +1,3 @@
+TF:https://documentation-samples-5.obs.ap-southeast-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-deploy/install_litellm.sh
+sh:https://documentation-samples-5.obs.ap-southeast-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-deploy/deploying-litellm.tf
+RFS:https://console.huaweicloud.com/rf/?region=ap-southeast-1&locale=zh-cn#/console/stack/stackCreate?templateUrl=https://documentation-samples-5.obs.ap-southeast-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-deploy/deploying-litellm.tf&stackName=litellm-llm-gateway&stackDescription=LiteLLM+The+Unified+LLM+Gateway
