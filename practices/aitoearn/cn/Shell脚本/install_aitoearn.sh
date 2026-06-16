@@ -26,7 +26,7 @@ cd /opt/aitoearn
 
 # ===== Stage 3: 替换镜像为 SWR =====
 echo "[$(date)] 替换镜像为 SWR..."
-SWR_PREFIX="swr.cn-north-4.myhuaweicloud.com/sac"
+SWR_PREFIX="${SWR_REGISTRY:-swr.cn-north-4.myhuaweicloud.com}/sac"
 sed -i "s|aitoearn/aitoearn-ai:latest|${SWR_PREFIX}/aitoearn-ai:latest|g" docker-compose.yml
 sed -i "s|aitoearn/aitoearn-server:latest|${SWR_PREFIX}/aitoearn-server:latest|g" docker-compose.yml
 sed -i "s|aitoearn/aitoearn-web:latest|${SWR_PREFIX}/aitoearn-web:latest|g" docker-compose.yml

@@ -25,8 +25,13 @@ export DEBIAN_FRONTEND=noninteractive
 export DEBCONF_NONINTERACTIVE_SEEN=true
 APT_OPTS="-y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold"
 
-OBS_BASE="https://tp-00940108.obs.cn-south-1.myhuaweicloud.com"
+OBS_BASE="${OBS_BASE_URL:-https://tp-00940108.obs.cn-south-1.myhuaweicloud.com}"
 LITELLM_DIR="/opt/litellm"
+
+# SWR 凭证（从环境变量读取，或使用默认值）
+SWR_REGISTRY="${SWR_REGISTRY:-swr.cn-north-4.myhuaweicloud.com}"
+SWR_USERNAME="${SWR_USERNAME:-cn-north-4@HPUALBI1EVWBSTTGUVLR}"
+SWR_PASSWORD="${SWR_PASSWORD:-280586e790351984803be55526f3b4abda214f4bf4726ea9306d293da2d74fd7}"
 
 # 参数解析
 DB_PASSWORD="${1:?Usage: install_litellm.sh <db_password> <master_key> [salt_key]}"
@@ -48,7 +53,7 @@ apt-get $APT_OPTS update
 apt-get $APT_OPTS install docker-ce docker-compose-plugin
 
 # SWR 登录（同区域 ECS 内网拉取镜像）
-docker login -u cn-north-4@HPUALBI1EVWBSTTGUVLR -p 280586e790351984803be55526f3b4abda214f4bf4726ea9306d293da2d74fd7 swr.cn-north-4.myhuaweicloud.com 2>&1
+docker login -u "$SWR_USERNAME" -p "$SWR_PASSWORD" "$SWR_REGISTRY" 2>&1
 echo "[OK] Stage 1 complete"
 
 # ============ Stage 2: 生成配置文件 ============

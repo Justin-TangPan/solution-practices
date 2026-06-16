@@ -16,7 +16,6 @@
                 "iam": "iam.cn-north-4.myhuaweicloud.com",
                 "dns": "dns.cn-north-4.myhuaweicloud.com"
             },
-            "insecure": true,
             "region": "cn-north-4",
             "auth_url": "https://iam.cn-north-4.myhuaweicloud.com/v3"
         }

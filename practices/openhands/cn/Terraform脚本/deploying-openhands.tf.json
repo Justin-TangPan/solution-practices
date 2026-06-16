@@ -11,7 +11,6 @@
     "huaweicloud": {
       "cloud": "myhuaweicloud.com",
       "region": "cn-north-4",
-      "insecure": true,
       "auth_url": "https://iam.cn-north-4.myhuaweicloud.com/v3"
     }
   },
@@ -59,10 +58,13 @@
     "charging_period": {
       "default": 1,
       "type": "number"
+    },
+    "obs_base_url": {
+      "default": "https://tp-00940108.obs.cn-south-1.myhuaweicloud.com",
+      "description": "OBS 脚本分发桶地址，用于下载部署脚本。",
+      "type": "string",
+      "nullable": false
     }
-  },
-  "locals": {
-    "name_suffix": "${substr(uuid(), 0, 8)}"
   },
   "data": {
     "huaweicloud_images_image": {
@@ -76,13 +78,13 @@
   "resource": {
     "huaweicloud_vpc": {
       "vpc": {
-        "name": "${var.vpc_name}-${local.name_suffix}",
+        "name": "${var.vpc_name}",
         "cidr": "172.16.0.0/16"
       }
     },
     "huaweicloud_vpc_subnet": {
       "subnet": {
-        "name": "${var.vpc_name}-${local.name_suffix}-subnet",
+        "name": "${var.vpc_name}-subnet",
         "cidr": "172.16.1.0/24",
         "gateway_ip": "172.16.1.1",
         "vpc_id": "${huaweicloud_vpc.vpc.id}"
@@ -90,7 +92,7 @@
     },
     "huaweicloud_networking_secgroup": {
       "secgroup": {
-        "name": "${var.ecs_name}-${local.name_suffix}"
+        "name": "${var.ecs_name}"
       }
     },
     "huaweicloud_networking_secgroup_rule": {
@@ -115,9 +117,9 @@
     },
     "huaweicloud_vpc_eip": {
       "vpc_eip": {
-        "name": "${var.vpc_name}-${local.name_suffix}-eip",
+        "name": "${var.vpc_name}-eip",
         "bandwidth": {
-          "name": "${var.vpc_name}-${local.name_suffix}-bw",
+          "name": "${var.vpc_name}-bw",
           "share_type": "PER",
           "size": "${var.bandwidth_size}",
           "charge_mode": "traffic"
@@ -128,7 +130,7 @@
     },
     "huaweicloud_compute_instance": {
       "compute_instance": {
-        "name": "${var.ecs_name}-${local.name_suffix}",
+        "name": "${var.ecs_name}",
         "image_id": "${data.huaweicloud_images_image.Ubuntu.id}",
         "flavor_id": "${var.ecs_flavor}",
         "security_group_ids": ["${huaweicloud_networking_secgroup.secgroup.id}"],
@@ -143,7 +145,7 @@
         "period_unit": "${var.charging_unit}",
         "period": "${var.charging_period}",
         "tags": { "app": "openhands" },
-        "user_data": "#!/bin/bash\necho 'root:${var.ecs_password}' | chpasswd\nLOG=\"/var/log/openhands-bootstrap.log\"\nexec > >(tee -a \"$LOG\") 2>&1\necho \"[$(date)] Bootstrap: start\"\ncurl -fsSL -o /tmp/install_openhands.sh \"https://tp-00940108.obs.cn-south-1.myhuaweicloud.com/install_openhands.sh\"\nchmod +x /tmp/install_openhands.sh\nbash /tmp/install_openhands.sh\nRC=$?\necho \"[$(date)] Bootstrap: finished (exit=$RC)\"\nexit $RC"
+        "user_data": "#!/bin/bash\necho 'root:${var.ecs_password}' | chpasswd\nLOG=\"/var/log/openhands-bootstrap.log\"\nexec > >(tee -a \"$LOG\") 2>&1\necho \"[$(date)] Bootstrap: start\"\ncurl -fsSL -o /tmp/install_openhands.sh \"${var.obs_base_url}/install_openhands.sh\"\nchmod +x /tmp/install_openhands.sh\nbash /tmp/install_openhands.sh\nRC=$?\necho \"[$(date)] Bootstrap: finished (exit=$RC)\"\nexit $RC"
       }
     }
   },

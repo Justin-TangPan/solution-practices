@@ -14,7 +14,6 @@
                 "iam": "iam.cn-north-4.myhuaweicloud.com",
                 "dns": "dns.cn-north-4.myhuaweicloud.com"
             },
-            "insecure": true,
             "region": "cn-north-4",
             "auth_url": "https://iam.cn-north-4.myhuaweicloud.com/v3"
         }
@@ -114,6 +113,12 @@
                 "condition": "${length(regexall(\"^[1-9]$\",var.charging_period))>0}",
                 "error_message": "Invalid input, please re-enter."
             }
+        },
+        "obs_base_url": {
+            "default": "https://tp-00940108.obs.cn-south-1.myhuaweicloud.com",
+            "description": "OBS 脚本分发桶地址，用于下载部署脚本。",
+            "type": "string",
+            "nullable": false
         }
     },
     "data": {
@@ -211,7 +216,7 @@
                 "tags": {
                     "app": "CodeWhale"
                 },
-                "user_data": "#!/bin/bash\necho 'root:${var.ecs_password}' | chpasswd\nwget -P /tmp/ https://tp-00940108.obs.cn-south-1.myhuaweicloud.com/install_codewhale.sh\nbash /tmp/install_codewhale.sh ${var.codewhale_version}\nrm -rf /tmp/install_codewhale.sh"
+                "user_data": "#!/bin/bash\necho 'root:${var.ecs_password}' | chpasswd\nwget -P /tmp/ ${var.obs_base_url}/install_codewhale.sh\nbash /tmp/install_codewhale.sh ${var.codewhale_version}\nrm -rf /tmp/install_codewhale.sh"
             }
         }
     },

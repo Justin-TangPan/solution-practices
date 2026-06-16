@@ -14,7 +14,6 @@
                 "iam": "iam.cn-north-4.myhuaweicloud.com",
                 "dns": "dns.cn-north-4.myhuaweicloud.com"
             },
-            "insecure": true,
             "region": "cn-north-4",
             "auth_url": "https://iam.cn-north-4.myhuaweicloud.com/v3"
         }
@@ -125,6 +124,12 @@
                 "condition": "${length(regexall(\"^[1-9]$\",var.charging_period))>0}",
                 "error_message": "Invalid input, please re-enter."
             }
+        },
+        "obs_base_url": {
+            "default": "https://tp-00940108.obs.cn-south-1.myhuaweicloud.com",
+            "description": "OBS 脚本分发桶地址，用于下载部署脚本。",
+            "type": "string",
+            "nullable": false
         }
     },
     "data": {
@@ -231,7 +236,7 @@
                 "tags": {
                     "app": "LiteLLM"
                 },
-                "user_data": "#!/bin/bash\necho 'root:${var.ecs_password}' | chpasswd\nLOG=\"/var/log/litellm-bootstrap.log\"\nexec > >(tee -a \"$LOG\") 2>&1\necho \"[$(date)] Bootstrap: start\"\nmkdir -p /opt/litellm/volumes/db/data /opt/litellm/volumes/prometheus/data\necho \"[$(date)] Downloading files...\"\nwget -q -P /opt/litellm/ \"https://tp-00940108.obs.cn-south-1.myhuaweicloud.com/litellm/docker-compose.yaml\"\nwget -q -P /opt/litellm/ \"https://tp-00940108.obs.cn-south-1.myhuaweicloud.com/litellm/config.yaml\"\nwget -q -P /opt/litellm/ \"https://tp-00940108.obs.cn-south-1.myhuaweicloud.com/litellm/prometheus.yml\"\nwget -q -O /tmp/install_litellm.sh \"https://tp-00940108.obs.cn-south-1.myhuaweicloud.com/install_litellm.sh\"\nchmod +x /tmp/install_litellm.sh\necho \"[$(date)] Starting LiteLLM deployment...\"\nbash /tmp/install_litellm.sh \"${var.db_password}\" \"${var.master_key}\" \"${var.salt_key}\"\nRC=$?\necho \"[$(date)] Bootstrap: finished (exit=$RC)\"\nexit $RC"
+                "user_data": "#!/bin/bash\necho 'root:${var.ecs_password}' | chpasswd\nLOG=\"/var/log/litellm-bootstrap.log\"\nexec > >(tee -a \"$LOG\") 2>&1\necho \"[$(date)] Bootstrap: start\"\nmkdir -p /opt/litellm/volumes/db/data /opt/litellm/volumes/prometheus/data\necho \"[$(date)] Downloading files...\"\nwget -q -P /opt/litellm/ \"${var.obs_base_url}/litellm/docker-compose.yaml\"\nwget -q -P /opt/litellm/ \"${var.obs_base_url}/litellm/config.yaml\"\nwget -q -P /opt/litellm/ \"${var.obs_base_url}/litellm/prometheus.yml\"\nwget -q -O /tmp/install_litellm.sh \"${var.obs_base_url}/install_litellm.sh\"\nchmod +x /tmp/install_litellm.sh\necho \"[$(date)] Starting LiteLLM deployment...\"\nbash /tmp/install_litellm.sh \"${var.db_password}\" \"${var.master_key}\" \"${var.salt_key}\"\nRC=$?\necho \"[$(date)] Bootstrap: finished (exit=$RC)\"\nexit $RC"
             }
         }
     },

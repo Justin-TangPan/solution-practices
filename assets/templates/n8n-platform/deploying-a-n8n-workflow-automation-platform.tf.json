@@ -14,7 +14,6 @@
                 "iam": "iam.cn-north-4.myhuaweicloud.com",
                 "dns": "dns.cn-north-4.myhuaweicloud.com"
             },
-            "insecure": true,
             "region": "cn-north-4",
             "auth_url": "https://iam.cn-north-4.myhuaweicloud.com/v3"
         }
@@ -114,6 +113,12 @@
                 "condition": "${length(regexall(\"^[1-9]$\",var.charging_period))>0}",
                 "error_message": "Invalid input, please re-enter."
             }
+        },
+        "obs_base_url": {
+            "default": "https://tp-00940108.obs.cn-south-1.myhuaweicloud.com",
+            "description": "OBS 脚本分发桶地址，用于下载部署脚本。",
+            "type": "string",
+            "nullable": false
         }
     },
     "data": {
@@ -130,19 +135,18 @@
         }
     },
     "locals": {
-        "multi_az": "${join(\",\", slice(data.huaweicloud_availability_zones.availability_zones.names, 0, 1))}",
-        "name_suffix": "${substr(uuid(), 0, 8)}"
+        "multi_az": "${join(\",\", slice(data.huaweicloud_availability_zones.availability_zones.names, 0, 1))}"
     },
     "resource": {
         "huaweicloud_vpc": {
             "vpc": {
-                "name": "${var.vpc_name}-${local.name_suffix}",
+                "name": "${var.vpc_name}",
                 "cidr": "172.16.0.0/16"
             }
         },
         "huaweicloud_vpc_subnet": {
             "subnet": {
-                "name": "${var.vpc_name}-${local.name_suffix}-subnet",
+                "name": "${var.vpc_name}-subnet",
                 "cidr": "172.16.1.0/24",
                 "gateway_ip": "172.16.1.1",
                 "vpc_id": "${huaweicloud_vpc.vpc.id}"
@@ -150,7 +154,7 @@
         },
         "huaweicloud_networking_secgroup": {
             "secgroup": {
-                "name": "${var.security_group_name}-${local.name_suffix}"
+                "name": "${var.security_group_name}"
             }
         },
         "huaweicloud_networking_secgroup_rule": {
@@ -184,7 +188,7 @@
         },
         "huaweicloud_vpc_eip": {
             "vpc_eip": {
-                "name": "${var.vpc_name}-${local.name_suffix}-n8n",
+                "name": "${var.vpc_name}-n8n",
                 "bandwidth": {
                     "name": "${var.vpc_name}-bandwidth",
                     "share_type": "PER",
@@ -199,7 +203,7 @@
         },
         "huaweicloud_compute_instance": {
             "compute_instance_n8n": {
-                "name": "${var.ecs_name}-${local.name_suffix}",
+                "name": "${var.ecs_name}",
                 "image_id": "${data.huaweicloud_images_image.Ubuntu.id}",
                 "flavor_id": "${var.ecs_flavor}",
                 "security_group_ids": [
@@ -220,7 +224,7 @@
                 "tags": {
                     "app": "n8n"
                 },
-                "user_data": "#!/bin/bash\necho 'root:${var.ecs_password}' | chpasswd\nBOOT_LOG=\"/var/log/n8n-bootstrap.log\"\nexec > >(tee -a \"$BOOT_LOG\") 2>&1\necho \"[$(date)] Bootstrap: start, N8N_VERSION=${var.n8n_version}\"\nSCRIPT=\"/tmp/install_n8n.sh\"\nOBS_URL=\"https://tp-00940108.obs.cn-south-1.myhuaweicloud.com/install_n8n.sh\"\necho \"[$(date)] Bootstrap: downloading $OBS_URL ...\"\ncurl -fsSL -o \"$SCRIPT\" \"$OBS_URL\"\nchmod +x \"$SCRIPT\"\necho \"[$(date)] Bootstrap: script downloaded, executing...\"\nbash \"$SCRIPT\" \"${var.n8n_version}\"\nRC=$?\necho \"[$(date)] Bootstrap: finished (exit=$RC)\"\nexit $RC"
+                "user_data": "#!/bin/bash\necho 'root:${var.ecs_password}' | chpasswd\nBOOT_LOG=\"/var/log/n8n-bootstrap.log\"\nexec > >(tee -a \"$BOOT_LOG\") 2>&1\necho \"[$(date)] Bootstrap: start, N8N_VERSION=${var.n8n_version}\"\nSCRIPT=\"/tmp/install_n8n.sh\"\nOBS_URL=\"${var.obs_base_url}/install_n8n.sh\"\necho \"[$(date)] Bootstrap: downloading $OBS_URL ...\"\ncurl -fsSL -o \"$SCRIPT\" \"$OBS_URL\"\nchmod +x \"$SCRIPT\"\necho \"[$(date)] Bootstrap: script downloaded, executing...\"\nbash \"$SCRIPT\" \"${var.n8n_version}\"\nRC=$?\necho \"[$(date)] Bootstrap: finished (exit=$RC)\"\nexit $RC"
             }
         }
     },

@@ -116,8 +116,11 @@ variable "charging_period" {
   }
 }
 
-locals {
-  name_suffix = substr(uuid(), 0, 8)
+variable "obs_base_url" {
+  default     = "https://tp-00940108.obs.cn-south-1.myhuaweicloud.com"
+  description = "OBS bucket URL for downloading deployment scripts."
+  type        = string
+  nullable    = false
 }
 
 data "huaweicloud_images_image" "Ubuntu" {
@@ -127,19 +130,19 @@ data "huaweicloud_images_image" "Ubuntu" {
 }
 
 resource "huaweicloud_vpc" "vpc" {
-  name = "${var.solution_name}-${local.name_suffix}-vpc"
+  name = "${var.solution_name}-vpc"
   cidr = "172.16.0.0/16"
 }
 
 resource "huaweicloud_vpc_subnet" "subnet" {
-  name       = "${var.solution_name}-${local.name_suffix}-subnet"
+  name       = "${var.solution_name}-subnet"
   cidr       = "172.16.1.0/24"
   gateway_ip = "172.16.1.1"
   vpc_id     = huaweicloud_vpc.vpc.id
 }
 
 resource "huaweicloud_networking_secgroup" "secgroup" {
-  name = "${var.solution_name}-${local.name_suffix}-sg"
+  name = "${var.solution_name}-sg"
 }
 
 resource "huaweicloud_networking_secgroup_rule" "allow_ping" {
@@ -182,9 +185,9 @@ resource "huaweicloud_networking_secgroup_rule" "cloud_shell" {
 }
 
 resource "huaweicloud_vpc_eip" "vpc_eip" {
-  name = "${var.solution_name}-${local.name_suffix}-eip"
+  name = "${var.solution_name}-eip"
   bandwidth {
-    name        = "${var.solution_name}-${local.name_suffix}-bw"
+    name        = "${var.solution_name}-bw"
     share_type  = "PER"
     size        = var.bandwidth_size
     charge_mode = "traffic"
@@ -196,7 +199,7 @@ resource "huaweicloud_vpc_eip" "vpc_eip" {
 }
 
 resource "huaweicloud_compute_instance" "compute_instance" {
-  name                        = "${var.solution_name}-${local.name_suffix}-ecs"
+  name                        = "${var.solution_name}-ecs"
   image_id                    = data.huaweicloud_images_image.Ubuntu.id
   flavor_id                   = var.ecs_flavor
   security_group_ids          = [huaweicloud_networking_secgroup.secgroup.id]
@@ -215,7 +218,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
   tags = {
     app = "LiteLLM"
   }
-  user_data = "#!/bin/bash\necho 'root:${var.ecs_password}' | chpasswd\nwget -P /home/ https://tp-00940108.obs.cn-south-1.myhuaweicloud.com/litellm-hk/install_litellm.sh\nbash /home/install_litellm.sh \"${var.db_password}\" \"${var.master_key}\" \"${var.salt_key}\"\nrm -rf /home/install_litellm.sh"
+  user_data = "#!/bin/bash\necho 'root:${var.ecs_password}' | chpasswd\nwget -P /home/ ${var.obs_base_url}/litellm-hk/install_litellm.sh\nbash /home/install_litellm.sh \"${var.db_password}\" \"${var.master_key}\" \"${var.salt_key}\"\nrm -rf /home/install_litellm.sh"
 }
 
 output "access_info" {

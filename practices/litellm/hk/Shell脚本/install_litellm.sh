@@ -25,7 +25,7 @@ export DEBIAN_FRONTEND=noninteractive
 export DEBCONF_NONINTERACTIVE_SEEN=true
 APT_OPTS="-y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold"
 
-OBS_BASE="https://tp-00940108.obs.cn-south-1.myhuaweicloud.com"
+OBS_BASE="${OBS_BASE_URL:-https://tp-00940108.obs.cn-south-1.myhuaweicloud.com}"
 LITELLM_DIR="/opt/litellm"
 
 # 参数解析

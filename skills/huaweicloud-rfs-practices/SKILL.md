@@ -308,25 +308,20 @@ provider "huaweicloud" {
 | `charging_unit` | string | `"month"` | `["month","year"]` |
 | `charging_period` | number | `1` | 1-9 (month) or 1-3 (year) |
 
-### Unique Naming (Anti-conflict)
+### Resource Naming
 
-Append a random suffix to ALL resource names for multi-deployment safety:
+Use `var.solution_name` directly as the resource name prefix. Each RFS deployment creates an independent resource stack with its own state, so unique suffixes are not needed:
 
 ```json
-"locals": {
-    "name_suffix": "${substr(uuid(), 0, 8)}"
-}
+"name": "${var.solution_name}-vpc"
+"name": "${var.solution_name}-subnet"
+"name": "${var.solution_name}-sg"
+"name": "${var.solution_name}-ecs"
 ```
 
-Then use in all resource names:
-```json
-"name": "${var.vpc_name}-${local.name_suffix}"
-"name": "${var.vpc_name}-${local.name_suffix}-subnet"
-"name": "${var.security_group_name}-${local.name_suffix}"
-"name": "${var.ecs_name}-${local.name_suffix}"
-```
+**WARNING:** Do NOT use `substr(uuid(), 0, 8)` in locals. The `uuid()` function generates a new value on every `plan`/`apply`, causing ALL resources with that suffix to be **destroyed and recreated** on every deployment. This breaks idempotency and causes data loss.
 
-Do NOT use `random_id` resource — the `random` provider is not available in Huawei Cloud RFS. Use `substr(uuid(), 0, 8)` in locals instead.
+Also avoid `random_id` resource — the `random` provider is not available in Huawei Cloud RFS.
 
 ### Data Sources
 
@@ -587,7 +582,7 @@ environment:
 
 **Root cause:** Huawei Cloud RFS only supports the `huaweicloud` provider. HashiCorp providers are not in Huawei's registry.
 
-**Fix:** Use `substr(uuid(), 0, 8)` in `locals` instead of `random_id` resource.
+**Fix:** Use `var.solution_name` directly as the name prefix. Each RFS deployment is an independent stack, so unique suffixes are not needed. Do NOT use `uuid()` — it breaks idempotency.
 
 ### Pitfall 9: VPC/ECS Name Conflicts  
 
@@ -785,18 +780,16 @@ provider "huaweicloud" {
 
 Never add `auth_url`, `cloud`, `insecure`. RFS auto-derives them. Explicit values cause `error retrieving IMS images: Authentication failed`.
 
-### Rule 2: Resource Names — Always Add Random Suffix
+### Rule 2: Resource Names — Use Solution Name Directly
 
 ```hcl
-locals {
-  name_suffix = substr(uuid(), 0, 8)
-}
-
 resource "huaweicloud_vpc" "vpc" {
-  name = "${var.solution_name}-${local.name_suffix}-vpc"
+  name = "${var.solution_name}-vpc"
   ...
 }
 ```
+
+Each RFS deployment is an independent resource stack. Use `var.solution_name` as prefix — no random suffix needed.
 
 Apply `-${local.name_suffix}` to ALL resource names (VPC, subnet, secgroup, EIP, ECS, bandwidth). Prevents conflicts when multiple customers deploy the same solution.
 
@@ -1023,8 +1016,7 @@ Before deploying, verify:
 - [ ] `required_providers` is an object, not array
 - [ ] Only `huaweicloud` provider listed (no `random`, `tls`, etc.)
 - [ ] Provider block has ONLY `region` — no `auth_url`, `cloud`, `insecure`
-- [ ] `locals { name_suffix = substr(uuid(), 0, 8) }` present
-- [ ] ALL resource names include `-${local.name_suffix}`
+- [ ] Resource names use `${var.solution_name}-` prefix (no uuid/random suffix)
 - [ ] user_data is minimal: password + wget + execute + cleanup
 
 **Install Script:**

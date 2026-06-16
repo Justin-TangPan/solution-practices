@@ -21,7 +21,7 @@ echo "[$(date)] 下载 Supabase 配置..."
 mkdir -p /opt/supabase/volumes/api /opt/supabase/volumes/db
 cd /opt/supabase
 
-OBS_BASE="https://tp-00940108.obs.cn-south-1.myhuaweicloud.com/supabase"
+OBS_BASE="${OBS_BASE_URL:-https://tp-00940108.obs.cn-south-1.myhuaweicloud.com}/supabase"
 wget -q "$OBS_BASE/docker-compose.yaml" -O docker-compose.yaml
 wget -q "$OBS_BASE/kong.yml" -O volumes/api/kong.yml
 

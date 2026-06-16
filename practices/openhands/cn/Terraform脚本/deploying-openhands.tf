@@ -68,6 +68,13 @@ variable "charging_period" {
   nullable    = false
 }
 
+variable "obs_base_url" {
+  default     = "https://tp-00940108.obs.cn-south-1.myhuaweicloud.com"
+  description = "OBS 脚本分发桶地址，用于下载部署脚本。"
+  type        = string
+  nullable    = false
+}
+
 data "huaweicloud_images_image" "Ubuntu" {
   most_recent = true
   name        = "Ubuntu 22.04 server 64bit"
@@ -153,7 +160,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
   tags = {
     app = "_sac_openhands"
   }
-  user_data = "#!/bin/bash\necho 'root:${var.ecs_password}' | chpasswd\nLOG=\"/var/log/openhands-bootstrap.log\"\nexec > >(tee -a \"$LOG\") 2>&1\necho \"[$(date)] Bootstrap: start\"\ncurl -fsSL -o /tmp/install_openhands.sh \"https://tp-00940108.obs.cn-south-1.myhuaweicloud.com/install_openhands.sh\"\nchmod +x /tmp/install_openhands.sh\nbash /tmp/install_openhands.sh\nRC=$?\necho \"[$(date)] Bootstrap: finished (exit=$RC)\"\nexit $RC"
+  user_data = "#!/bin/bash\necho 'root:${var.ecs_password}' | chpasswd\nLOG=\"/var/log/openhands-bootstrap.log\"\nexec > >(tee -a \"$LOG\") 2>&1\necho \"[$(date)] Bootstrap: start\"\ncurl -fsSL -o /tmp/install_openhands.sh \"${var.obs_base_url}/install_openhands.sh\"\nchmod +x /tmp/install_openhands.sh\nbash /tmp/install_openhands.sh\nRC=$?\necho \"[$(date)] Bootstrap: finished (exit=$RC)\"\nexit $RC"
 }
 
 output "access_instructions" {
