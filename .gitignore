@@ -47,6 +47,18 @@ desktop.ini
 *~
 
 # ============================================
+# Build outputs
+# ============================================
+output/
+
+# ============================================
+# Claude Code (project-specific, not shared)
+# ============================================
+.claude/settings.json
+.claude/settings.local.json
+.claude/skills/huawei-style-ppt-skill/
+
+# ============================================
 # Serena MCP
 # ============================================
 .serena/

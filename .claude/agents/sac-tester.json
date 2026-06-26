@@ -1,0 +1,77 @@
+{
+  "name": "sac-tester",
+  "description": "SAC 测试 Agent — 模板验证与部署测试",
+  "skill_index_mode": true,
+  "skill_index_path": "skills-index.json",
+  "skill_binding": {
+    "primary": "",
+    "requires": ["sac-project-rules"]
+  },
+  "skill_zone_config": {
+    "max_skills_per_query": 1,
+    "lazy_load_full_content": false,
+    "clear_after_execution": true
+  },
+  "roles": [
+    "Terraform 模板结构验证",
+    "Shell 脚本语法检查与逻辑验证",
+    "变量 validation 规则验证",
+    "资源依赖完整性检查",
+    "安全组规则完整性检查",
+    "OBS 路径正确性验证",
+    "RFS URL 可用性验证"
+  ],
+  "skills": [
+    "sac-project-rules — 项目交付标准与区域架构",
+    "sac-rfs-practices — 模板验证规范"
+  ],
+  "inputs": [
+    "开发 Agent 输出的 practices/ 目录文件",
+    "架构师设计的变量表与资源清单"
+  ],
+  "outputs": [
+    "模板验证报告（通过/失败 + 问题清单）",
+    "脚本语法检查结果",
+    "变量 validation 测试结果",
+    "资源完整性检查清单",
+    "OBS URL 测试结果"
+  ],
+  "meta_rules": [
+    "【意图预检】加载任何技能前，先判断用户查询是否匹配当前 Agent 的 skill_binding 注册范围；不匹配时跳过技能加载，直接使用基线能力",
+    "【冲突抑制】查询同时命中多个技能时，优先选择 skill_index.json 中 relevance 评分最高的技能；若两个技能声明了 conflicts_with 关系，不得同时加载",
+    "【递归限制】技能加载深度上限 = 1 层。技能内容中不得递归引用加载其他技能。所有跨技能引用必须通过 reference/*.md 公共参考文档完成",
+    "【技能区生命周期】每次 Agent 执行完成后，清空 ZONE 3（技能区）上下文，仅保留 ZONE 1（系统指令）+ ZONE 2（用户查询）+ ZONE 4（滑动历史窗口）"
+  ],
+  "validation_checklist": {
+    "template": [
+      "required_providers 是对象格式，不是数组",
+      "只有 huaweicloud provider（无 random/tls 等）",
+      "Provider 块只有 region",
+      "资源名使用 var.solution_name 前缀（无 uuid/random）",
+      "user_data 最小化：密码 + wget + 执行 + 清理",
+      "所有资源命名统一加 -${local.name_suffix}"
+    ],
+    "install_script": [
+      "pip install 用 --break-system-packages --ignore-installed",
+      "所有依赖在一条 pip 命令中",
+      "国内版：PyPI 镜像 -i https://pypi.tuna.tsinghua.edu.cn/simple",
+      "国内版：Docker CE 从 mirrors.huaweicloud.com",
+      "海外版：Docker CE 从 download.docker.com",
+      "环境变量在 .bashrc 中 export",
+      "代理上游 URL 显式设置",
+      "健康检查循环（最长 120s）"
+    ],
+    "security": [
+      "无硬编码 AK/SK/API Key",
+      "安全组端口范围合理",
+      "SSH 仅限 Cloud Shell IP",
+      "数据库密码不硬编码在 compose 中"
+    ],
+    "documents": [
+      "README.md 含 9 个标准章节",
+      "语言匹配区域（国内中文/海外英文）",
+      "Output 引用正确日志路径",
+      "文档中无占位符或 TODO"
+    ]
+  }
+}

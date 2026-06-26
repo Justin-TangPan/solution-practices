@@ -1,0 +1,5 @@
+﻿# --- af-south-1 (Johannesburg) ---
+TF:https://documentation-samples-11.obs.af-south-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/deploying-litellm-af-south-1.tf
+sh:https://documentation-samples-11.obs.af-south-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/install_litellm.sh
+RFS_intl:https://console-intl.huaweicloud.com/rf/?region=af-south-1&locale=en-us#/console/stack/stackCreate?templateUrl=https://documentation-samples-11.obs.af-south-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/deploying-litellm-af-south-1.tf&stackName=litellm-standard&stackDescription=LiteLLM+Standard+Unified+AI+Management+Gateway
+

@@ -1,0 +1,5 @@
+﻿# --- ap-southeast-1 (Hong Kong) ---
+TF:https://documentation-samples-5.obs.ap-southeast-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/deploying-litellm-ap-southeast-1.tf
+sh:https://documentation-samples-5.obs.ap-southeast-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/install_litellm.sh
+RFS_intl:https://console-intl.huaweicloud.com/rf/?region=ap-southeast-1&locale=en-us#/console/stack/stackCreate?templateUrl=https://documentation-samples-5.obs.ap-southeast-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/deploying-litellm-ap-southeast-1.tf&stackName=litellm-standard&stackDescription=LiteLLM+Standard+Unified+AI+Management+Gateway
+

@@ -1,0 +1,5 @@
+﻿# --- sa-brazil-1 (Sao Paulo) ---
+TF:https://documentation-samples-5.obs.sa-brazil-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/deploying-litellm-sa-brazil-1.tf
+sh:https://documentation-samples-5.obs.sa-brazil-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/install_litellm.sh
+RFS_intl:https://console-intl.huaweicloud.com/rf/?region=sa-brazil-1&locale=en-us#/console/stack/stackCreate?templateUrl=https://documentation-samples-5.obs.sa-brazil-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/deploying-litellm-sa-brazil-1.tf&stackName=litellm-standard&stackDescription=LiteLLM+Standard+Unified+AI+Management+Gateway
+

@@ -1,3 +1,0 @@
-TF:https://tp-00940108.obs.ap-southeast-1.myhuaweicloud.com/headroom-opencode-hk/deploying-headroom.tf
-sh:https://tp-00940108.obs.ap-southeast-1.myhuaweicloud.com/headroom-opencode-hk/install_headroom.sh
-RFS:https://console.huaweicloud.com/rf/?region=ap-southeast-1&locale=zh-cn#/console/stack/stackCreate?templateUrl=https://tp-00940108.obs.ap-southeast-1.myhuaweicloud.com/headroom-opencode-hk/deploying-headroom.tf&stackName=headroom-opencode&stackDescription=Headroom+OpenCode

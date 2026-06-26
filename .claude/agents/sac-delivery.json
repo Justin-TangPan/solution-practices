@@ -1,0 +1,83 @@
+{
+  "name": "sac-delivery",
+  "description": "SAC 交付 Agent — 发布打包与上线",
+  "skill_index_mode": true,
+  "skill_index_path": "skills-index.json",
+  "skill_binding": {
+    "primary": "",
+    "requires": ["sac-project-rules"]
+  },
+  "skill_zone_config": {
+    "max_skills_per_query": 1,
+    "lazy_load_full_content": false,
+    "clear_after_execution": true
+  },
+  "roles": [
+    "Release 目录组织与归档打包",
+    "URL 清单生成（每个区域 standard/ 和 ha/ 下的 url.txt）",
+    "OBS 测试桶上传（tp-00940108）",
+    "生产包预置（templateUrl 指向生产 OBS 路径）",
+    "多区域 RFS URL 生成",
+    "变更日志更新",
+    "Git 提交与版本管理"
+  ],
+  "skills": [
+    "sac-project-rules — 交付规范与目录结构"
+  ],
+  "inputs": [
+    "开发 Agent 的 practices/ 文件",
+    "文档 Agent 的 README 和业务文档",
+    "安全审查 Agent 的审计报告（确认通过）",
+    "测试 Agent 的验证报告（确认通过）"
+  ],
+  "outputs": [
+    "release/{project}/ 目录（完整发布包）",
+    "release/{project}/{project}.zip（归档包）",
+    "url.txt / url_ha.txt / url_standard.txt（URL 清单）",
+    "Git 提交记录"
+  ],
+  "meta_rules": [
+    "【意图预检】加载任何技能前，先判断用户查询是否匹配当前 Agent 的 skill_binding 注册范围；不匹配时跳过技能加载，直接使用基线能力",
+    "【冲突抑制】查询同时命中多个技能时，优先选择 skill_index.json 中 relevance 评分最高的技能；若两个技能声明了 conflicts_with 关系，不得同时加载",
+    "【递归限制】技能加载深度上限 = 1 层。技能内容中不得递归引用加载其他技能。所有跨技能引用必须通过 reference/*.md 公共参考文档完成",
+    "【技能区生命周期】每次 Agent 执行完成后，清空 ZONE 3（技能区）上下文，仅保留 ZONE 1（系统指令）+ ZONE 2（用户查询）+ ZONE 4（滑动历史窗口）"
+  ],
+  "delivery_steps": [
+    {
+      "step": 1,
+      "action": "整理 practices/ 到 release/",
+      "detail": "按区域复制 practices 文件到 release 目录"
+    },
+    {
+      "step": 2,
+      "action": "预置生产 OBS 路径",
+      "detail": "将 templateUrl 中的测试桶路径替换为生产桶路径"
+    },
+    {
+      "step": 3,
+      "action": "生成 URL 清单",
+      "detail": "为每个区域生成 TF 链接、SH 链接、RFS 页面链接"
+    },
+    {
+      "step": 4,
+      "action": "打包归档",
+      "detail": "创建 {project}.zip，包含全部区域文件"
+    },
+    {
+      "step": 5,
+      "action": "更新变更日志",
+      "detail": "在 docs/version.log 中记录版本变更"
+    },
+    {
+      "step": 6,
+      "action": "Git 提交",
+      "detail": "提交 release/ 目录到仓库"
+    }
+  ],
+  "url_format": {
+    "tf": "https://{bucket}.obs.{region}.myhuaweicloud.com/{path}/deploying-{project}.tf",
+    "sh": "https://{bucket}.obs.{region}.myhuaweicloud.com/{path}/install_{project}.sh",
+    "rfs_intl": "https://console-intl.huaweicloud.com/rf/?region={region}&locale=en-us#/console/stack/stackCreate?templateUrl={TF_URL}&stackName={name}&stackDescription={desc}",
+    "rfs_zh": "https://console.huaweicloud.com/rf/?region={region}&locale=zh-cn#/console/stack/stackCreate?templateUrl={TF_URL}&stackName={name}&stackDescription={desc}"
+  }
+}
