@@ -1,4 +1,4 @@
----
+﻿---
 name: sac-project-rules
 description: |
   SAC（Solution as Code — 解决方案实践）交付包项目的完整规则定义。
@@ -225,19 +225,22 @@ release/{project}/intl/af-south-1/
     └── url.txt
 ```
 
-文档统一放在项目级 `doc/` 目录，不按区域重复：
+文档按站点归类，不按区域重复：
 
 ```
 release/{project}/
 ├── cn/cn-north-4/...
-├── intl/ap-southeast-1/...
-└── doc/
-    ├── {ProjectName}-Deployment-Guide.doc
-    ├── {ProjectName}-Solution-Details.doc
-    ├── {ProjectName}-Deployment-Guide-intl-zh.doc
-    ├── {ProjectName}-Solution-Details-intl-zh.doc
-    ├── {ProjectName}-Deployment-Guide-en.doc
-    └── {ProjectName}-Solution-Details-en.doc
+├── intl/ap-southeast-3/...
+├── cn/docs/
+│   ├── {Name}-部署指南.md
+│   └── {Name}-Solution-Details.md
+└── intl/docs/
+    ├── zh-cn/
+    │   ├── {Name}-部署指南.md
+    │   └── {Name}-Solution-Details.md
+    └── en-us/
+        ├── {Name}-Deployment-Guide.md
+        └── {Name}-Solution-Details.md
 ```
 
 ### 4.1 URL 文件格式
@@ -342,7 +345,7 @@ VPC → Subnet → Security Group → EIP → ECS
 | 2. 技术评估 | AI | 可行性分析、技术栈评估 |
 | 3. 方案设计 | AI | 架构设计 + 决策点确认 |
 | 4. 拍板 | 用户 | 确认决策点 |
-| 5. 开发 | AI | `.tf` + `.sh` + Word 文档（部署指南+业务文档） |
+| 5. 开发 | AI | `.tf` + `.sh` + Markdown 文档（部署指南+业务文档） |
 | 6. 测试上传 | AI | 上传测试桶验证 |
 | 7. 用户测试 | 用户 | 部署验证 |
 | 8. 生产打包 | AI | 预置生产路径到 `release/` |

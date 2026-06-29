@@ -22,7 +22,7 @@
   ],
   "skills": [
     "sac-project-rules — 交付规范与文档标准",
-    "sac-page-enhance — 文案增强与商品化（替代原 sac-solution-extractor）"
+    "sac-page-enhance — 文案增强与商品化"
   ],
   "inputs": [
     "架构师的设计文档",
@@ -46,12 +46,29 @@
   ],
   "doc_sections": {
     "deployment_guide": [
-      "1. 解决方案概述 / Solution Overview（含标准版+HA 架构对比）",
-      "2. 资源与成本规划 / Resources & Cost Planning（分别列出两版费用）",
-      "3. 部署实施 / Deployment Implementation",
-      "  3.1 单机版部署 / Standard Deployment",
-      "  3.2 高可用部署 / HA Deployment",
-      "4. 附录 / Appendix"
+      "参考模板：reference/docs/部署指南模板-华为云标准.md（基于 LiteLLM 部署指南提取）",
+      "",
+      "1. 方案概述 / Solution Overview",
+      "  1.1 应用场景 / Use Cases（3 个场景）",
+      "  1.2 方案架构 / Architecture（单机版 + 高可用版架构图 + 资源清单）",
+      "  1.3 方案优势 / Key Advantages（3-4 个核心优势）",
+      "  1.4 约束与限制 / Constraints（3-5 条注意事项）",
+      "",
+      "2. 资源与成本规划 / Resources & Cost Planning",
+      "  2.1 单机版部署（按需计费表 + 包月计费表）",
+      "  2.2 高可用版部署（包月计费表，可选）",
+      "",
+      "3. 实施步骤 / Deployment Steps",
+      "  3.1 准备工作 / Preparation（账号检查、委托创建、API Key 获取）",
+      "  3.2 快速部署 / Quick Deploy（RFS 参数配置 + 部署操作）",
+      "  3.3 开始使用 / Getting Started（配置引导 + 功能验证）",
+      "  3.4 快速卸载 / Uninstall（RFS 资源栈删除）",
+      "",
+      "4. 附录 / Appendix",
+      "  4.1 名词解释 / Glossary",
+      "  4.2 参考文档 / References",
+      "",
+      "5. 修订记录 / Revision History"
     ],
     "solution_details": [
       "1. 解决方案概述 / Solution Overview",
