@@ -1,5 +1,34 @@
 # Changelog
 
+## v0.4.0 (2026-06-29) — 新增业务评估 Skill + Agent-Native AI 应用工厂实践
+
+### 新增 Skill
+- **sac-business-evaluator** — 解决方案实践业务评估
+  - 四维评估模型：服务端属性(D1) / 营销价值(D2) / 场景价值(D3) / 云上部署价值(D4)
+  - 每维 0-10 分，加权 25%，总分决定推荐等级（🟢🟡🟠🔴）
+  - 含伪需求信号检测、云上增量价值清单、典型项目评估参考表
+  - 在 sac-full-pipeline 工作流中作为架构师前置预筛
+
+### 新增实践
+
+### 新增实践
+- **cli-anything-dify** — Agent-Native AI 应用工厂（CLI-Anything + Dify）
+  - Dify（AI 应用开发平台）+ CLI-Anything（Agent-Native CLI 工厂）深度融合
+  - 精选 6 个云原生 harness：Ollama、n8n、ComfyUI、Dify Workflow、ChromaDB、WireMock
+  - Terraform 模板：基于华为云官方 Dify 模板扩展，增加 CLI-Anything 安装 + harness 部署
+  - 安装脚本：4 阶段自动化（Dify → CLI-Anything → 集成配置 → 健康检查）
+  - MVP 最佳实践：5 个实操场景（Ollama 本地推理、n8n 工作流操控、ComfyUI 图像生成、全自动化流水线、结构化输出集成）
+  - 文档：方案详情 + 部署指南（中英双语结构）
+
+### 关键文件
+- `practices/cli-anything-dify/cn/cn-north-4/standard/terraform/deploying-cli-anything-dify.tf`
+- `practices/cli-anything-dify/cn/cn-north-4/standard/scripts/install_cli-anything-dify.sh`
+- `practices/cli-anything-dify/cn/cn-north-4/standard/.extension`
+- `practices/cli-anything-dify/cn/docs/Solution-Details.md`
+- `practices/cli-anything-dify/cn/docs/Agent-Native-AIFactory-部署指南.md`
+
+---
+
 ## v0.3.1 (2026-06-29) — Practice 迁移完成 & 技术债务清理
 
 ### 实践迁移
