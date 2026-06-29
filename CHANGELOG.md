@@ -1,27 +1,20 @@
 # Changelog
 
-## v0.3.2 (2026-06-26) — README 用户用例重写 & 仓库配置清理
+## v0.3.1 (2026-06-29) — Practice 迁移完成 & 技术债务清理
 
-### 文档重构
+### 实践迁移
+- 完成 v0.3.0 中 6 个 practice 的 `standard/` 子目录结构迁移（aitoearn、codewhale、headroom-claude-code、headroom-opencode、openhands、supabase）
+- .docx → .md 文档格式迁移（部署指南）
+- 删除遗留的 .extension 旧文件和空目录
 
-- **README 全面重写**：从用户使用视角出发，以 6 个真实对话场景为主线组织内容
-  - 场景 1：全新方案交付（全流程）
-  - 场景 2：快速原型（架构+开发）
-  - 场景 3：审计已有方案
-  - 场景 4：文案增强与商品化
-  - 场景 5：仅打包交付
-  - 场景 6：深度调研
-- 新增核心工作流图示（用户意图 → Agent 链路 → 交付产物）
-- 新增快速开始指引（claude 对话模式 + workflow 命令）
-
-### 配置清理
-
-- `.gitignore`：新增 Claude Code 本地配置排除（settings.json、settings.local.json、ppt-skill）
-- 新增 `output/` 目录（生成物，无需版本管理）
+### 清理
+- 移除 `skills/sac-project-rules/SKILL.md` 中 sac-solution-extractor 残留引用（已合并到 sac-page-enhance）
+- sac-documenter.json 描述文本精简
+- `skills-vector-index.py` 增强：无依赖关键词兜底匹配 + embedding_hash 校验
 
 ---
 
-## v0.3.0 (2026-06-26) — Skills 四层调度架构
+## v0.3.0 (2026-06-26) — Skills 四层调度架构 & README 重构
 
 ### 核心架构变更
 
