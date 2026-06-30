@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 SAC 测试运行器
 ==============
@@ -11,12 +11,12 @@ SAC 测试运行器
     python -m scripts.tests.runner --json                   # JSON 输出
 
 检查维度:
-    1. tf_syntax    — Terraform 语法与安全
-    2. scripts      — Shell 脚本静态分析
-    3. network      — 外部网络依赖可达性扫描
-    4. docker       — Docker 镜像验证
-    5. consistency  — 跨方案结构一致性
-    6. docs         — 文档完整性
+    1. tf_syntax    ? Terraform 语法与安全
+    2. scripts      ? Shell 脚本静态分析
+    3. network      ? 外部网络依赖可达性扫描
+    4. docker       ? Docker 镜像验证
+    5. consistency  ? 跨方案结构一致性
+    6. docs         ? 文档完整性
 """
 
 import argparse
@@ -33,7 +33,7 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 PRACTICES_DIR = ROOT / "practices"
 
 
-# ── 结果模型 ────────────────────────────────────────────────────────────────
+# ?? 结果模型 ????????????????????????????????????????????????????????????????
 
 @dataclass
 class CheckResult:
@@ -69,21 +69,33 @@ class PracticeReport:
         self.checks.append(result)
 
 
-# ── 核心逻辑 ────────────────────────────────────────────────────────────────
+# ?? 核心逻辑 ????????????????????????????????????????????????????????????????
+
+SKIP_DIRS = {"docs", "__pycache__", ".git"}
+
 
 def discover_practices():
-    """发现所有 practice 目录（含 region + deployment type）。"""
+    """发现所有 practice 目录（含 region + deployment type）。
+
+    目录结构预期: practices/{name}/{region}/{deploy-type}/
+    deploy-type 必须包含 terraform/ 或 scripts/ 子目录才视为有效实例。
+    docs/ 等非 region 目录被跳过。
+    """
     entries = []
-    # 模式: practices/{name}/{region}/{deploy-type}/
     for practice_dir in sorted(PRACTICES_DIR.iterdir()):
-        if not practice_dir.is_dir():
+        if not practice_dir.is_dir() or practice_dir.name in SKIP_DIRS:
             continue
         practice_name = practice_dir.name
         for region_dir in sorted(practice_dir.iterdir()):
-            if not region_dir.is_dir():
+            if not region_dir.is_dir() or region_dir.name in SKIP_DIRS:
                 continue
             for deploy_dir in sorted(region_dir.iterdir()):
-                if not deploy_dir.is_dir():
+                if not deploy_dir.is_dir() or deploy_dir.name in SKIP_DIRS:
+                    continue
+                # 仅当包含 terraform/ 或 scripts/ 时才视为有效部署实例
+                has_tf = (deploy_dir / "terraform").is_dir()
+                has_sh = (deploy_dir / "scripts").is_dir()
+                if not has_tf and not has_sh:
                     continue
                 entries.append({
                     "name": practice_name,
@@ -168,18 +180,18 @@ def print_report(reports, json_output=False):
             continue
         print(f"\n  [{r.practice}] ({r.duration}s)")
         for c in r.errors:
-            print(f"    ✗ [{c.check_name}] {c.message}")
+            print(f"    ERR [{c.check_name}] {c.message}")
             if c.detail:
                 for line in c.detail.split("\n"):
                     print(f"      {line}")
         for c in r.warnings:
-            print(f"    ⚠ [{c.check_name}] {c.message}")
+            print(f"    WARN [{c.check_name}] {c.message}")
 
     print("\n" + "=" * 70)
     if total_errors == 0:
-        print("  结果: ✅ 全部通过")
+        print("  结果: OK 全部通过")
     else:
-        print(f"  结果: ❌ {total_errors} 个错误需要修复")
+        print(f"  结果: FAIL {total_errors} 个错误需要修复")
     print("=" * 70)
 
 

@@ -1,5 +1,31 @@
 # Changelog
 
+## v0.5.0 (2026-06-30) — 新增 SAC Web 管理平台
+
+### 新增 Web UI
+- **SAC Web** — 解决方案实践管理平台（Next.js 16 + Tailwind CSS 4 + FastAPI）
+  - 复用 InsightPro 设计体系（Mona Sans + Cormorant 字体、暖色编辑风格）
+  - 总览仪表盘：方案统计、快速操作、方案卡片
+  - 方案目录 `/practices`：搜索/筛选/排序，按类别和评分组织
+  - 方案详情 `/practices/[name]`：架构、优势、场景、区域、技术栈
+  - 业务评估 `/evaluate`：四维模型可视化（D1~D4 评分条 + 详情展开）
+  - 部署向导 `/deploy`：4 步向导（选方案→选区域→配置参数→确认部署）
+  - 华为云品牌色（#c7000b）替代 InsightPro 蓝色
+  - FastAPI 后端：practices 目录扫描、区域列表、评估 API、Terraform 读取
+
+### 关键文件
+- `web/package.json` — Next.js 16.2.6 前端
+- `web/src/app/layout.tsx` — 全局布局（Sidebar + Header）
+- `web/src/app/page.tsx` — 总览仪表盘
+- `web/src/app/practices/page.tsx` — 方案目录
+- `web/src/app/practices/[name]/page.tsx` — 方案详情
+- `web/src/app/evaluate/page.tsx` — 业务评估
+- `web/src/app/deploy/page.tsx` — 部署向导
+- `web/src/components/sidebar.tsx` — 导航侧边栏
+- `web/backend/main.py` — FastAPI 后端
+
+---
+
 ## v0.4.0 (2026-06-29) — 新增业务评估 Skill + Agent-Native AI 应用工厂实践
 
 ### 新增 Skill
