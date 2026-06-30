@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 SAC 测试运行器
 ==============
@@ -7,33 +7,24 @@ SAC 测试运行器
 用法:
     python -m scripts.tests.runner                          # 运行所有 checks
     python -m scripts.tests.runner --practice litellm       # 仅检查 litellm
-    python -m scripts.tests.runner --check network          # 仅网络检查
+    python -m scripts.tests.runner --check tf_syntax        # 仅 TF 语法检查
     python -m scripts.tests.runner --json                   # JSON 输出
-
-检查维度:
-    1. tf_syntax    ? Terraform 语法与安全
-    2. scripts      ? Shell 脚本静态分析
-    3. network      ? 外部网络依赖可达性扫描
-    4. docker       ? Docker 镜像验证
-    5. consistency  ? 跨方案结构一致性
-    6. docs         ? 文档完整性
 """
 
 import argparse
-import glob
 import json
 import os
 import sys
 import time
 from pathlib import Path
 from dataclasses import dataclass, field, asdict
-from typing import Optional
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 PRACTICES_DIR = ROOT / "practices"
+SKIP_DIRS = {"docs", "__pycache__", ".git", ".github"}
 
 
-# ?? 结果模型 ????????????????????????????????????????????????????????????????
+# ── 结果模型 ────────────────────────────────────────────────────────────────
 
 @dataclass
 class CheckResult:
@@ -69,89 +60,75 @@ class PracticeReport:
         self.checks.append(result)
 
 
-# ?? 核心逻辑 ????????????????????????????????????????????????????????????????
-
-SKIP_DIRS = {"docs", "__pycache__", ".git"}
-
-
 def discover_practices():
-    """发现所有 practice 目录（含 region + deployment type）。
-
-    目录结构预期: practices/{name}/{region}/{deploy-type}/
-    deploy-type 必须包含 terraform/ 或 scripts/ 子目录才视为有效实例。
-    docs/ 等非 region 目录被跳过。
-    """
     entries = []
     for practice_dir in sorted(PRACTICES_DIR.iterdir()):
         if not practice_dir.is_dir() or practice_dir.name in SKIP_DIRS:
             continue
-        practice_name = practice_dir.name
+        pname = practice_dir.name
         for region_dir in sorted(practice_dir.iterdir()):
             if not region_dir.is_dir() or region_dir.name in SKIP_DIRS:
                 continue
             for deploy_dir in sorted(region_dir.iterdir()):
                 if not deploy_dir.is_dir() or deploy_dir.name in SKIP_DIRS:
                     continue
-                # 仅当包含 terraform/ 或 scripts/ 时才视为有效部署实例
-                has_tf = (deploy_dir / "terraform").is_dir()
-                has_sh = (deploy_dir / "scripts").is_dir()
-                if not has_tf and not has_sh:
-                    continue
-                entries.append({
-                    "name": practice_name,
-                    "region": region_dir.name,
-                    "deploy_type": deploy_dir.name,
-                    "path": deploy_dir,
-                })
+
+                def _has_tf_or_sh(d):
+                    return (d / "terraform").is_dir() or (d / "scripts").is_dir()
+
+                if _has_tf_or_sh(deploy_dir):
+                    entries.append({
+                        "name": pname,
+                        "region": region_dir.name,
+                        "deploy_type": deploy_dir.name,
+                        "path": deploy_dir,
+                    })
+                else:
+                    for sub in sorted(deploy_dir.iterdir()):
+                        if sub.is_dir() and sub.name not in SKIP_DIRS and _has_tf_or_sh(sub):
+                            entries.append({
+                                "name": pname,
+                                "region": region_dir.name,
+                                "deploy_type": f"{deploy_dir.name}/{sub.name}",
+                                "path": sub,
+                            })
     return entries
 
 
 def run_checks(entries, check_filter=None):
-    """运行所有注册的检查项。"""
-    # 导入 check 模块
-    from .checks import tf_syntax, scripts_audit, consistency, network_audit, documentation
+    from scripts.tests.checks import tf_syntax, scripts_audit, network_audit, consistency, documentation
 
     all_reports = []
-
     for entry in entries:
         report = PracticeReport(practice=f"{entry['name']}/{entry['region']}/{entry['deploy_type']}")
         report.start_time = time.time()
-        practice_path = entry["path"]
+        pp = entry["path"]
 
-        checks_to_run = [
-            ("tf_syntax", tf_syntax.run, tf_syntax),
-            ("scripts", scripts_audit.run, scripts_audit),
-            ("network", network_audit.run, network_audit),
-            ("consistency", consistency.run, consistency),
-            ("docs", documentation.run, documentation),
+        specs = [
+            ("tf_syntax",   tf_syntax.run),
+            ("scripts",     scripts_audit.run),
+            ("network",     network_audit.run),
+            ("consistency", consistency.run),
+            ("docs",        documentation.run),
         ]
-
-        for name, run_fn, module in checks_to_run:
-            if check_filter and name not in check_filter:
+        for cname, fn in specs:
+            if check_filter and cname not in check_filter:
                 continue
             try:
-                results = run_fn(practice_path, entry)
+                results = fn(pp, entry)
                 if isinstance(results, list):
                     for r in results:
                         r.practice = report.practice
                         report.add(r)
             except Exception as e:
-                report.add(CheckResult(
-                    check_name=name,
-                    passed=False,
-                    severity="ERROR",
-                    message=f"检查模块异常: {e}",
-                    practice=report.practice,
-                ))
+                report.add(CheckResult(cname, False, "ERROR", f"模块异常: {e}", practice=report.practice))
 
         report.end_time = time.time()
         all_reports.append(report)
-
     return all_reports
 
 
 def print_report(reports, json_output=False):
-    """输出测试报告。"""
     if json_output:
         output = []
         for r in reports:
@@ -160,68 +137,64 @@ def print_report(reports, json_output=False):
         print(json.dumps(output, ensure_ascii=False, indent=2))
         return
 
-    # 摘要
-    total_errors = sum(len(r.errors) for r in reports)
-    total_warnings = sum(len(r.warnings) for r in reports)
-    total_checks = sum(len(r.checks) for r in reports)
+    total_err = sum(len(r.errors) for r in reports)
+    total_warn = sum(len(r.warnings) for r in reports)
+    total_check = sum(len(r.checks) for r in reports)
 
     print("=" * 70)
-    print("  SAC 解决方案测试报告")
+    print("  SAC Solution Test Report")
     print("=" * 70)
-    print(f"  检查 practices: {len(reports)}")
-    print(f"  总检查项:      {total_checks}")
-    print(f"  错误 (ERROR):   {total_errors}")
-    print(f"  警告 (WARN):    {total_warnings}")
+    print(f"  Practices: {len(reports)}")
+    print(f"  Checks:    {total_check}")
+    print(f"  ERRORS:    {total_err}")
+    print(f"  WARNINGS:  {total_warn}")
     print("=" * 70)
 
-    # 逐 practice 详情
     for r in reports:
         if not r.errors and not r.warnings:
             continue
-        print(f"\n  [{r.practice}] ({r.duration}s)")
-        for c in r.errors:
-            print(f"    ERR [{c.check_name}] {c.message}")
-            if c.detail:
-                for line in c.detail.split("\n"):
-                    print(f"      {line}")
-        for c in r.warnings:
-            print(f"    WARN [{c.check_name}] {c.message}")
+        print(f"\n[{r.practice}] ({r.duration}s)")
+        for e in r.errors:
+            msg = e.message[:100]
+            print(f"  ERR [{e.check_name:12s}] {msg}")
+            if e.detail:
+                for line in e.detail.split("\n")[:3]:
+                    print(f"       {line[:100]}")
+        for w in r.warnings[:5]:
+            print(f"  WRN [{w.check_name:12s}] {w.message[:100]}")
 
     print("\n" + "=" * 70)
-    if total_errors == 0:
-        print("  结果: OK 全部通过")
+    if total_err == 0:
+        print("  Result: ALL PASSED")
     else:
-        print(f"  结果: FAIL {total_errors} 个错误需要修复")
+        print(f"  Result: {total_err} ERRORS, {total_warn} WARNINGS")
     print("=" * 70)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="SAC 解决方案测试运行器")
-    parser.add_argument("--practice", help="仅检查指定 practice (如 litellm)")
-    parser.add_argument("--region", help="仅检查指定区域 (如 cn-north-4)")
-    parser.add_argument("--check", nargs="*", help="仅运行指定检查 (tf_syntax scripts network ...)")
-    parser.add_argument("--json", action="store_true", help="JSON 格式输出")
+    parser = argparse.ArgumentParser(description="SAC Solution Test Runner")
+    parser.add_argument("--practice", help="Filter by practice name")
+    parser.add_argument("--region", help="Filter by region code")
+    parser.add_argument("--check", nargs="*", help="Check types to run")
+    parser.add_argument("--json", action="store_true", help="JSON output")
     args = parser.parse_args()
 
     entries = discover_practices()
-
-    # 过滤
     if args.practice:
         entries = [e for e in entries if e["name"] == args.practice]
     if args.region:
         entries = [e for e in entries if e["region"] == args.region]
 
     if not entries:
-        print(f"错误: 未找到匹配的 practice 目录 ({PRACTICES_DIR})")
+        print(f"Error: no matching practices in {PRACTICES_DIR}")
         sys.exit(1)
 
-    print(f"发现 {len(entries)} 个 practice 实例\n")
-
+    print(f"Found {len(entries)} practice instances\n")
     reports = run_checks(entries, args.check)
     print_report(reports, json_output=args.json)
 
-    total_errors = sum(len(r.errors) for r in reports)
-    sys.exit(1 if total_errors > 0 else 0)
+    total_err = sum(len(r.errors) for r in reports)
+    sys.exit(1 if total_err > 0 else 0)
 
 
 if __name__ == "__main__":

@@ -223,4 +223,6 @@ claude workflow sac-audit
 
 ## 许可证
 
-本仓库中的方案仅供学习和参考使用。
+MIT License — 详见 [LICENSE](LICENSE)
+
+Copyright (c) 2026 Solution Architect Community (SAC)
