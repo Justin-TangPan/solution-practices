@@ -1,5 +1,6 @@
 import Link from "next/link"
-import { practices, evaluations, regions } from "@/lib/catalog"
+import { practices, evaluations } from "@/lib/catalog"
+import { regions } from "@/lib/regions"
 import { ScoreBarChart, EvalRadarChart } from "@/components/charts"
 import { ArrowRight } from "lucide-react"
 

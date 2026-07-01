@@ -1,4 +1,5 @@
-import { practices, regions } from "@/lib/catalog"
+import { practices } from "@/lib/catalog"
+import { regions } from "@/lib/regions"
 import { HBarChart, ScoreBarChart } from "@/components/charts"
 
 export default function ReportsPage() {

@@ -3,7 +3,7 @@
 // 合并键 = slug。FS 提供真实 regions/hasHA，编辑字段由 data.ts 维护。
 
 import practicesIndex from "./practices-index.json" with { type: "json" };
-import { practices as editorial, evaluations, regions } from "./data";
+import { practices as editorial, evaluations } from "./data";
 
 type Editorial = (typeof editorial)[number];
 
@@ -30,7 +30,7 @@ export function getPracticeSlugs(): string[] {
   return practices.map(p => p.slug);
 }
 
-export { evaluations, regions };
+export { evaluations };
 
 // FS 中存在但 data.ts 未收录的 slug（需补编辑元数据才会出现在目录）
 export const uncatalogued: string[] = practicesIndex.practices

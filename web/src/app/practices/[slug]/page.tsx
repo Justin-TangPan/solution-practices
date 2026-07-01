@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { practices, regions } from "@/lib/catalog"
+import { practices } from "@/lib/catalog"
+import { regions } from "@/lib/regions"
 import { getDeployGuide } from "@/lib/deploy-guide"
 import { DeployGuidePreview } from "@/components/deploy-guide-preview"
 import { ArrowLeft, ArrowRight, Star, MapPin, ShieldCheck, Server, DollarSign, FileText } from "lucide-react"
