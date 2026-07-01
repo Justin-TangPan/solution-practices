@@ -1,5 +1,33 @@
 # Changelog
 
+## v0.6.0 (2026-07-01) — SAC Web 可视化重构（静态导出 + 瑞士/Claude 设计）
+
+### 重构 Web UI
+- **静态导出架构** — Next.js 16.2.9 + Tailwind v4 + recharts，`output: 'export'` 产 `out/` 纯静态站点，可托管到 OBS（无 FastAPI 后端，所有数据 build 时烘焙）
+- **瑞士杂志 / Claude 设计语言** — 暖纸底 (#f5f4ee) + 墨黑 + 单一陶土 accent (#c96442)，衬线大标题 + Geist 正文，圆角卡片 + 柔阴影，暗色跟随系统，移动端抽屉
+- **数据生成器** — `scripts/gen-practices-index.mjs` 扫描 `practices/` 真实目录树 → `web/src/lib/practices-index.json`；`catalog.ts` 按 slug 合并 FS 结构（regions/hasHA）与 `data.ts` 编辑字段（score/tier/overview）
+- **部署指南 Word 预览** — 方案详情页右半分栏，build 时读取 `practices/<slug>/cn/docs/*-部署指南.md`，react-markdown 渲染成文档纸面（顶栏 + 粘性滚动 + 表格/引用/代码）
+
+### 全路由
+- `/` 总览仪表盘（统计卡 + 推荐方案 + 评分分布柱图 + 评估雷达）
+- `/practices` 方案目录（4 列响应式，2K 铺满 / 1K 自适应）
+- `/practices/[slug]` 方案详情（左元信息 + 右部署指南预览）
+- `/evaluate` 业务评估（四维雷达 + 维度评语 + 结论）
+- `/deploy` 部署向导（六步流程 + RFS 模板）
+- `/manage/{releases,obs,audit}` 发布 / OBS / 审计
+- `/reports` 报告（分类/区域/评分分布图）
+
+### 数据一致性
+- 收录 `cli-anything-dify`（Agent-Native 工厂，CLI-Anything + Dify 融合）到 `data.ts`
+- `dify` 详情页部署指南空状态友好提示（FS 目录待补充）
+
+### 关键文件
+- `web/src/app/{page,practices,evaluate,deploy,manage,reports}/` — 全部页面
+- `web/src/components/{sidebar,charts,deploy-guide-preview}.tsx`
+- `web/src/lib/{data,catalog,deploy-guide,utils}.ts` + `practices-index.json`
+- `scripts/gen-practices-index.mjs` — 数据生成器
+- `skills/sac-technical-evaluator/SKILL.md` — 从全局镜像到项目仓库
+
 ## v0.5.0 (2026-06-30) — 新增 SAC Web 管理平台
 
 ### 新增 Web UI
