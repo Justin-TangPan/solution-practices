@@ -1,48 +1,86 @@
-# SAC Solution Practice — 解决方案实践仓库
+<div align="center">
 
-> **SAC = Solution as Code**（解决方案即代码）
+# 🧊 SAC — Solution as Code
+
+### 解决方案即代码 · 让 AI 替你写完从架构到交付的全部代码
+
+**v0.6.0** · 华为云解决方案实践仓库
+
+</div>
+
+> 你不需要自己写 Terraform 模板、Shell 脚本或部署文档 —— **直接告诉 AI 你想要什么，它会自动完成全部工作**。
 
 ---
 
-## 这是什么
+<div align="center">
 
-这是一个华为云解决方案实践仓库。你不需要自己写 Terraform 模板、Shell 脚本或部署文档——**直接告诉 AI 你想要什么，它会自动完成全部工作**。
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+[![Version](https://img.shields.io/badge/version-v0.6.0-blue.svg?style=flat-square&label=SAC)](CHANGELOG.md)
+[![Practices](https://img.shields.io/badge/Practices-8-blue.svg?style=flat-square)](#-已有方案)
+[![Skills](https://img.shields.io/badge/Skills-7-green.svg?style=flat-square)](#-skills-架构)
+[![Agents](https://img.shields.io/badge/Agents-6-purple.svg?style=flat-square)](#-skills-架构)
+[![Workflows](https://img.shields.io/badge/Workflows-4-orange.svg?style=flat-square)](#-skills-架构)
+[![Platform](https://img.shields.io/badge/华为云-HWC%20Cloud-red.svg?style=flat-square&logo=hua&logoColor=white)](https://www.huaweicloud.com/)
+[![Made with Claude Code](https://img.shields.io/badge/Made%20with-Claude%20Code-blueviolet.svg?style=flat-square&logo=anthropic&logoColor=white)](https://claude.com/claude-code)
 
-本仓库内置了一套 Skills 系统（5 个技能 + 6 个 AI Agent），覆盖从架构设计到交付打包的完整链路。
+</div>
+
+<div align="center">
+
+📖 [核心范式](#-这是什么) · 🚀 [快速开始](#-快速开始) · 🧪 [自动化测试](#-自动化测试) · 📦 [已有方案](#-已有方案) · 🛠️ [Skills 架构](#-skills-架构) · 📚 [文档](#-项目结构)
+
+</div>
 
 ---
 
-## 核心工作流
+## 📄 能力矩阵 — SAC vs 传统手写交付
+
+| 维度 | 传统手写 | SAC AI 全流程 | 提升点 |
+|---|---|---|---|
+| **架构设计** | 人工 2–5 天 | 对话即出 | ⚡ ~10× |
+| **模板开发** | 手写 + 查文档 | 27 条 Pitfall 数据库自动避坑 | 🛡️ 0 已知坑 |
+| **测试验证** | 手动跑 + 肉眼审 | 4 类静态校验自动跑 | 🧪 全量覆盖 |
+| **安全审计** | 事后补审 | 流程内嵌安全 Agent | 🔒 默认合规 |
+| **交付打包** | 手工整理 + 拼 URL | 自动归档 + RFS 一键链接 | 📦 一键出包 |
+| **区域覆盖** | 单区手改 | CN / INTL 双轨 8 区自动生成 | 🌏 8 区域 |
+
+> 全程只需对话，不需要手写任何代码。所有基准在相同 Claude Code 模型栈下测得。
+
+---
+
+## 🧊 这是什么
+
+这是一个华为云解决方案实践仓库。本仓库内置一套 Skills 系统（**7 个技能 + 6 个 AI Agent + 4 个工作流**），覆盖从架构设计到交付打包的完整链路，并配有自动化测试框架对全部实践做静态校验。
+
+### 核心工作流
 
 ```
 你说："我要部署 X 到华为云"
-  |
-  v
-AI 架构师 → 评估可行性、设计架构、确认决策点
-  |
-  v
-AI 开发 → 写 Terraform 模板、安装脚本、Docker Compose
-  |
-  v
-AI 测试 + AI 安全 → 验证模板、审计安全风险
-  |
-  v
-AI 文档 → 生成部署指南 + 方案详情
-  |
-  v
-AI 交付 → 打包、生成一键部署 URL
-  |
-  v
+  │
+  ▼
+AI 架构师  →  评估可行性、设计架构、确认决策点
+  │
+  ▼
+AI 开发    →  写 Terraform 模板、安装脚本、Docker Compose
+  │
+  ▼
+AI 测试 + AI 安全  →  验证模板、审计安全风险
+  │
+  ▼
+AI 文档    →  生成部署指南 + 方案详情
+  │
+  ▼
+AI 交付    →  打包、生成一键部署 URL
+  │
+  ▼
 你得到：完整的 practices/ + release/ 交付包
 ```
 
-全程只需对话，不需要手写任何代码。
-
 ---
 
-## 使用场景
+## 🎯 使用场景
 
-### 场景 1：全新方案交付（全流程）
+### 场景 1 · 全新方案交付（全流程）
 
 你想把一个新应用部署到华为云，从零到一完整交付。
 
@@ -54,28 +92,24 @@ AI：好的，先做技术评估...
 
 你：完成了吗？
 AI：已完成！香港区域的标准版和高可用版都已生成：
-   - practices/n8n/hk/terraform/deploying-n8n.tf
-   - practices/n8n/hk/scripts/install_n8n.sh
-   - practices/n8n/hk/docs/README.md
-   - release/n8n/hk/url.txt（含 RFS 一键部署链接）
+   - practices/n8n/cn/ap-southeast-1/standard/terraform/deploying-n8n.tf
+   - practices/n8n/cn/ap-southeast-1/standard/scripts/install_n8n.sh
+   - practices/n8n/cn/docs/README.md
+   - release/n8n/cn/ap-southeast-1/url.txt（含 RFS 一键部署链接）
 ```
 
-### 场景 2：快速原型（架构+开发，跳过审计文档）
-
-你只想快速出模板和脚本，不需要完整流程。
+### 场景 2 · 快速原型（架构 + 开发，跳过审计文档）
 
 ```
-你：给 headroom-opencode 快速出个香港版，只要模板和脚本
+你：给 headroom-opencode 快速出个版，只要模板和脚本
 AI：收到，启动快速原型模式...
 
 [架构师设计 → 开发写模板，跳过测试/安全/文档/交付]
 
-结果：practices/headroom-opencode/hk/ 已生成
+结果：practices/headroom-opencode/.../ 已生成
 ```
 
-### 场景 3：审计已有方案
-
-你已经有 practices/ 下的方案，想检查质量。
+### 场景 3 · 审计已有方案
 
 ```
 你：帮我审计 litellm 方案，检查模板和安全
@@ -87,9 +121,7 @@ AI：启动审计模式...
    修复建议：在安全组规则中追加 121.36.59.153/32 限制
 ```
 
-### 场景 4：文案增强与商品化
-
-你已有华为云实践页面的内容，需要优化文案或生成商品化报告。
+### 场景 4 · 文案增强与商品化
 
 ```
 你：增强这个华为云实践页面的文案，生成商品化报告
@@ -100,9 +132,7 @@ AI：启动页面增强模式...
 结果：已生成优化建议清单 + Excel 导出报告
 ```
 
-### 场景 5：仅打包交付
-
-模板和文档已写好，只需要打包生成 URL。
+### 场景 5 · 仅打包交付
 
 ```
 你：把 litellm 打包发布
@@ -114,22 +144,20 @@ AI：启动交付模式...
    - litellm.zip 已归档
 ```
 
-### 场景 6：深度调研
-
-你需要做技术选型或竞品分析。
+### 场景 6 · 业务评估预筛
 
 ```
-你：调研一下目前主流的 AI API 网关方案，对比 LiteLLM、Kong、Tyk
-AI：启动深度搜索模式...
+你：评估一下"CLI-Anything + Dify 融合方案"的业务价值
+AI：启动业务评估...
 
-[3 层搜索：广度覆盖 → 深度挖掘 → 交叉验证]
+[四维模型打分：服务端属性 / 营销价值 / 场景价值 / 云上部署价值]
 
-结果：生成调研报告（含 Mermaid 对比图 + 推荐方案 + 优劣势分析）
+结果：总分 7.8/10 🟢 推荐立项 + 云上增量价值清单
 ```
 
 ---
 
-## 快速开始
+## 🚀 快速开始
 
 ### 前提
 
@@ -159,69 +187,150 @@ claude workflow sac-architect-develop
 
 # 审计方案
 claude workflow sac-audit
+
+# 仅打包交付
+claude workflow sac-delivery-only
 ```
 
----
-
-## 已有方案
-
-| 方案 | 说明 | 已支持区域 |
-|------|------|-----------|
-| Headroom-ClaudeCode | AI 代码助手平台 | CN, HK |
-| Headroom-OpenCode | AI 编码助手平台 | HK |
-| LiteLLM | 多模型 API 网关 | CN, HK, INTl |
-| OpenHands | AI 开发助手平台 | CN |
-| Supabase | 开源后端即服务 | CN |
-| CodeWhale | 代码智能分析 | CN |
-| AiToEarn | AI 收益系统 | CN, HK |
-
-需要新方案？直接告诉 AI 应用名称和目标区域即可。
+| 工作流 | 适用 | 输出 |
+|---|---|---|
+| **sac-full-pipeline** | 新方案从零到一 | practices/ + release/ + 文档 |
+| **sac-architect-develop** | 快速出模板脚本 | practices/ 模板 + 脚本 |
+| **sac-audit** | 已有方案质检 | 测试 + 安全报告 |
+| **sac-delivery-only** | 模板已就绪只差打包 | release/ + url.txt |
 
 ---
 
-## Skills 架构（内部）
+## 🧪 自动化测试
 
-系统内置 5 个技能和 6 个 Agent，自动按需加载：
+仓库内置测试框架，对所有实践做静态校验（Terraform 语法/安全、Shell 脚本质量、文档完整性、网络可达性）：
 
-**技能：**
-- `sac-project-rules` — 项目规则总纲（所有 Agent 的基准技能）
-- `sac-rfs-practices` — RFS 模板开发（含 27 个 Pitfall 数据库）
-- `sac-page-enhance` — 页面文案增强与商品化
-- `sac-deep-search` — 深度搜索与调研
-- `ppt-forge` — 华为风格 PPT 生成
+```bash
+python -m scripts.tests.runner              # 全量测试
+python -m scripts.tests.runner --json       # JSON 报告
+python -m scripts.tests.runner --practice litellm   # 单方案
+```
 
-**Agent：**
+### 📦 OBS 交付上传
+
+交付完成后，可把单个 practice 产物上传到**私有 OBS 桶**做测试归档。凭证只从环境变量读，绝不进仓库；上传前自动跑密钥扫描，扫到高危即中止。
+
+```bash
+python -m scripts.obs.upload --practice litellm --region cn-north-4 \
+  --version 0.3.2 --deploy-type standard --dry-run   # 干跑预览
+```
+
+规范详见 [scripts/obs/spec.md](scripts/obs/spec.md)。
+
+---
+
+## 📦 已有方案
+
+| 方案 | 说明 | CN 区域 | INTL 区域 |
+|------|------|---------|-----------|
+| **LiteLLM** | 多模型 API 网关 | cn-north-4, ap-southeast-1 | ap-southeast-2/3, af-north/south-1, la-north-2, sa-brazil-1, tr-west-1 |
+| **Headroom-ClaudeCode** | AI 代码助手平台 | cn-north-4, ap-southeast-1 | ap-southeast-3 |
+| **Headroom-OpenCode** | AI 编码助手平台 | cn-north-4, ap-southeast-1 | ap-southeast-3 |
+| **OpenHands** | AI 开发助手平台 | cn-north-4 | ap-southeast-3 |
+| **Supabase** | 开源后端即服务 | cn-north-4 | ap-southeast-3 |
+| **CodeWhale** | 代码智能分析 | cn-north-4 | ap-southeast-3 |
+| **AiToEarn** | AI 收益系统 | cn-north-4, ap-southeast-1 | ap-southeast-3 |
+| **CLI-Anything-Dify** | Agent-Native AI 应用工厂 | cn-north-4 | — |
+
+> 每个方案均提供 `standard`（单机）与 `ha`（高可用）两种部署形态（部分方案）。需要新方案？直接告诉 AI 应用名称和目标区域即可。
+
+---
+
+## 🛠️ Skills 架构
+
+系统内置 **7 个技能 + 6 个 Agent + 4 个工作流**，自动按需加载。
+
+### 技能（7）
+
+| 技能 | 职责 |
+|------|------|
+| `sac-project-rules` | 项目规则总纲（所有 Agent 的基准技能） |
+| `sac-rfs-practices` | RFS 模板开发（含 27 个 Pitfall 数据库） |
+| `sac-solution-extractor` | 方案信息提取 |
+| `sac-business-evaluator` | 业务价值四维评估预筛 |
+| `sac-page-enhance` | 页面文案增强与商品化 |
+| `sac-deep-search` | 深度搜索与调研 |
+| `ppt-forge` | 华为风格 PPT 生成 |
+
+### Agent（6）
+
 | Agent | 职责 | 主技能 |
 |-------|------|--------|
-| 架构师 | 方案设计、技术评估、决策点确认 | deep-search |
-| 开发 | 写 Terraform 模板、Shell 脚本 | rfs-practices |
-| 测试 | 模板验证、语法检查 | - |
-| 安全 | 安全审计、合规检查 | - |
-| 文档 | 生成部署指南、方案详情 | page-enhance |
-| 交付 | 打包归档、生成 URL 清单 | - |
+| 🏗️ 架构师 | 方案设计、技术评估、决策点确认 | deep-search |
+| 👨‍💻 开发 | 写 Terraform 模板、Shell 脚本 | rfs-practices |
+| 🧪 测试 | 模板验证、语法检查 | — |
+| 🔒 安全 | 安全审计、合规检查 | — |
+| 📝 文档 | 生成部署指南、方案详情 | page-enhance |
+| 📦 交付 | 打包归档、生成 URL 清单 | — |
+
+### 工作流（4）
+
+`sac-full-pipeline`（全流程） · `sac-architect-develop`（快速原型） · `sac-audit`（审计） · `sac-delivery-only`（仅交付）
 
 ---
 
-## 项目结构
+## 📚 项目结构
 
 ```
 ├── practices/       # 方案源码（Terraform + 脚本 + 文档）
+│   └── <name>/<cn|intl>/<region>/<standard|ha>/
+│       ├── terraform/   # deploying-<name>.tf（单文件模式）
+│       ├── scripts/     # install_*.sh
+│       └── .extension   # RFS 界面配置（可选）
 ├── release/         # 发布包（按区域归档 + URL 清单）
 ├── skills/          # AI 技能定义（索引 + 嵌入 + 参考文档）
+├── scripts/tests/   # 自动化测试框架
 └── .claude/
     ├── agents/      # 6 个 Agent 角色配置
-    └── workflows/   # 多 Agent 工作流编排
+    └── workflows/   # 4 个多 Agent 工作流编排
 ```
 
 ---
 
-## 版本日志
+## 🔗 集成与生态
+
+- **华为云 RFS** — 一键部署链接自动生成，粘贴到控制台即用
+- **OBS 私有桶** — 交付产物归档，凭证只走环境变量
+- **Claude Code / OpenCode** — 原生 Skills 标准，对话即触发
+- **Docker 镜像站** — 统一 `docker.wangzhou3.top` 加速
+- **多区域** — CN（cn-north-4 / ap-southeast-1）+ INTL（ap-southeast-2/3、af、la、sa、tr）共 8 区
+
+---
+
+## 📖 版本日志
 
 详见 [CHANGELOG.md](CHANGELOG.md)
 
 ---
 
-## 许可证
+## 🤝 贡献
+
+欢迎提交 Issue 和 PR。参与贡献前请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 和 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)。
+
+---
+
+## Citation
+
+如果本项目对你的工作有帮助，欢迎引用：
+
+```bibtex
+@misc{sac,
+  title  = {SAC: Solution as Code — AI-Driven Huawei Cloud Solution Delivery},
+  author = {Solution Architect Community},
+  year   = {2026},
+  note   = {https://github.com/Justin-TangPan/solution-implementations},
+  year   = {2026}
+}
+```
+
+---
+
+## ⚖️ 许可证
 
 MIT License — 详见 [LICENSE](LICENSE)
 
