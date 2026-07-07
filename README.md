@@ -4,7 +4,7 @@
 
 ### 解决方案实践 · 让 AI 替你写完从架构到交付的全部代码
 
-**v0.6.0** · 华为云解决方案实践仓库
+**v0.7.0** · 华为云解决方案实践仓库
 
 </div>
 
@@ -15,9 +15,9 @@
 <div align="center">
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.6.0-blue.svg?style=flat-square&label=SAC)](CHANGELOG.md)
-[![Practices](https://img.shields.io/badge/Practices-8-blue.svg?style=flat-square)](#-已有方案)
-[![Skills](https://img.shields.io/badge/Skills-7-green.svg?style=flat-square)](#-skills-架构)
+[![Version](https://img.shields.io/badge/version-v0.7.0-blue.svg?style=flat-square&label=SAC)](CHANGELOG.md)
+[![Practices](https://img.shields.io/badge/Practices-2-blue.svg?style=flat-square)](#-已有方案)
+[![Skills](https://img.shields.io/badge/Skills-6-green.svg?style=flat-square)](#-skills-架构)
 [![Agents](https://img.shields.io/badge/Agents-6-purple.svg?style=flat-square)](#-skills-架构)
 [![Workflows](https://img.shields.io/badge/Workflows-4-orange.svg?style=flat-square)](#-skills-架构)
 [![Platform](https://img.shields.io/badge/华为云-HWC%20Cloud-red.svg?style=flat-square&logo=hua&logoColor=white)](https://www.huaweicloud.com/)
@@ -42,7 +42,7 @@
 | **测试验证** | 手动跑 + 肉眼审 | 4 类静态校验自动跑 | 🧪 全量覆盖 |
 | **安全审计** | 事后补审 | 流程内嵌安全 Agent | 🔒 默认合规 |
 | **交付打包** | 手工整理 + 拼 URL | 自动归档 + RFS 一键链接 | 📦 一键出包 |
-| **区域覆盖** | 单区手改 | CN / INTL 双轨 8 区自动生成 | 🌏 8 区域 |
+| **区域覆盖** | 单区手改 | CN / INTL 双轨多区自动生成 | 🌏 多区域 |
 
 > 全程只需对话，不需要手写任何代码。所有基准在相同 Claude Code 模型栈下测得。
 
@@ -50,7 +50,7 @@
 
 ## 🧊 这是什么
 
-这是一个华为云解决方案实践仓库。本仓库内置一套 Skills 系统（**7 个技能 + 6 个 AI Agent + 4 个工作流**），覆盖从架构设计到交付打包的完整链路，并配有自动化测试框架对全部实践做静态校验。
+这是一个华为云解决方案实践仓库。本仓库内置一套 Skills 系统（**6 个技能 + 6 个 AI Agent + 4 个工作流**），覆盖从架构设计到交付打包的完整链路，并配有自动化测试框架对全部实践做静态校验。
 
 ### 核心工作流
 
@@ -73,7 +73,7 @@ AI 文档    →  生成部署指南 + 方案详情
 AI 交付    →  打包、生成一键部署 URL
   │
   ▼
-你得到：完整的 practices/ + release/ 交付包
+你得到：完整的 practices/ 交付包
 ```
 
 ---
@@ -85,28 +85,27 @@ AI 交付    →  打包、生成一键部署 URL
 你想把一个新应用部署到华为云，从零到一完整交付。
 
 ```
-你：我想把 n8n 工作流自动化平台部署到华为云上，支持香港区域
+你：我想把 LiteLLM 统一 AI 管理网关部署到华为云上，支持香港区域
 AI：好的，先做技术评估...
 
 [AI 架构师设计架构 → 开发写模板 → 测试验证 → 安全审查 → 写文档 → 打包交付]
 
 你：完成了吗？
 AI：已完成！香港区域的标准版和高可用版都已生成：
-   - practices/n8n/cn/ap-southeast-1/standard/terraform/deploying-n8n.tf
-   - practices/n8n/cn/ap-southeast-1/standard/scripts/install_n8n.sh
-   - practices/n8n/cn/docs/README.md
-   - release/n8n/cn/ap-southeast-1/url.txt（含 RFS 一键部署链接）
+   - practices/litellm/cn/cn-north-4/standard/terraform/litellm-standard-cn-north-4.tf
+   - practices/litellm/cn/cn-north-4/standard/scripts/install_litellm.sh
+   - practices/litellm/cn/docs/LiteLLM-部署指南.md
 ```
 
 ### 场景 2 · 快速原型（架构 + 开发，跳过审计文档）
 
 ```
-你：给 headroom-opencode 快速出个版，只要模板和脚本
+你：给 supabase 快速出个版，只要模板和脚本
 AI：收到，启动快速原型模式...
 
 [架构师设计 → 开发写模板，跳过测试/安全/文档/交付]
 
-结果：practices/headroom-opencode/.../ 已生成
+结果：practices/supabase/.../ 已生成
 ```
 
 ### 场景 3 · 审计已有方案
@@ -139,15 +138,14 @@ AI：启动页面增强模式...
 AI：启动交付模式...
 
 结果：
-   - release/litellm/ 目录已整理
+   - practices/litellm/ 目录已整理
    - url.txt 已生成（含 TF 直链 + RFS 一键部署链接）
-   - litellm.zip 已归档
 ```
 
 ### 场景 6 · 业务评估预筛
 
 ```
-你：评估一下"CLI-Anything + Dify 融合方案"的业务价值
+你：评估一下"LiteLLM + Dify 融合方案"的业务价值
 AI：启动业务评估...
 
 [四维模型打分：服务端属性 / 营销价值 / 场景价值 / 云上部署价值]
@@ -194,10 +192,10 @@ claude workflow sac-delivery-only
 
 | 工作流 | 适用 | 输出 |
 |---|---|---|
-| **sac-full-pipeline** | 新方案从零到一 | practices/ + release/ + 文档 |
+| **sac-full-pipeline** | 新方案从零到一 | practices/ + 文档 |
 | **sac-architect-develop** | 快速出模板脚本 | practices/ 模板 + 脚本 |
 | **sac-audit** | 已有方案质检 | 测试 + 安全报告 |
-| **sac-delivery-only** | 模板已就绪只差打包 | release/ + url.txt |
+| **sac-delivery-only** | 模板已就绪只差打包 | practices/ + url.txt |
 
 ---
 
@@ -211,31 +209,14 @@ python -m scripts.tests.runner --json       # JSON 报告
 python -m scripts.tests.runner --practice litellm   # 单方案
 ```
 
-### 📦 OBS 交付上传
-
-交付完成后，可把单个 practice 产物上传到**私有 OBS 桶**做测试归档。凭证只从环境变量读，绝不进仓库；上传前自动跑密钥扫描，扫到高危即中止。
-
-```bash
-python -m scripts.obs.upload --practice litellm --region cn-north-4 \
-  --version 0.3.2 --deploy-type standard --dry-run   # 干跑预览
-```
-
-规范详见 [scripts/obs/spec.md](scripts/obs/spec.md)。
-
 ---
 
 ## 📦 已有方案
 
 | 方案 | 说明 | CN 区域 | INTL 区域 |
 |------|------|---------|-----------|
-| **LiteLLM** | 多模型 API 网关 | cn-north-4, ap-southeast-1 | ap-southeast-2/3, af-north/south-1, la-north-2, sa-brazil-1, tr-west-1 |
-| **Headroom-ClaudeCode** | AI 代码助手平台 | cn-north-4, ap-southeast-1 | ap-southeast-3 |
-| **Headroom-OpenCode** | AI 编码助手平台 | cn-north-4, ap-southeast-1 | ap-southeast-3 |
-| **OpenHands** | AI 开发助手平台 | cn-north-4 | ap-southeast-3 |
-| **Supabase** | 开源后端即服务 | cn-north-4 | ap-southeast-3 |
-| **CodeWhale** | 代码智能分析 | cn-north-4 | ap-southeast-3 |
-| **AiToEarn** | AI 收益系统 | cn-north-4, ap-southeast-1 | ap-southeast-3 |
-| **CLI-Anything-Dify** | Agent-Native AI 应用工厂 | cn-north-4 | — |
+| **LiteLLM** | 多模型 API 统一管理网关 | cn-north-4 | ap-southeast-1/2/3, af-north/south-1, la-north-2, sa-brazil-1, tr-west-1 |
+| **Supabase** | 开源后端即服务 | cn-north-4 | — |
 
 > 每个方案均提供 `standard`（单机）与 `ha`（高可用）两种部署形态（部分方案）。需要新方案？直接告诉 AI 应用名称和目标区域即可。
 
@@ -243,19 +224,18 @@ python -m scripts.obs.upload --practice litellm --region cn-north-4 \
 
 ## 🛠️ Skills 架构
 
-系统内置 **7 个技能 + 6 个 Agent + 4 个工作流**，自动按需加载。
+系统内置 **6 个技能 + 6 个 Agent + 4 个工作流**，自动按需加载。
 
-### 技能（7）
+### 技能（6）
 
 | 技能 | 职责 |
 |------|------|
 | `sac-project-rules` | 项目规则总纲（所有 Agent 的基准技能） |
 | `sac-rfs-practices` | RFS 模板开发（含 27 个 Pitfall 数据库） |
-| `sac-solution-extractor` | 方案信息提取 |
 | `sac-business-evaluator` | 业务价值四维评估预筛 |
+| `sac-technical-evaluator` | 技术可行性评估 |
 | `sac-page-enhance` | 页面文案增强与商品化 |
 | `sac-deep-search` | 深度搜索与调研 |
-| `ppt-forge` | 华为风格 PPT 生成 |
 
 ### Agent（6）
 
@@ -282,7 +262,6 @@ python -m scripts.obs.upload --practice litellm --region cn-north-4 \
 │       ├── terraform/   # deploying-<name>.tf（单文件模式）
 │       ├── scripts/     # install_*.sh
 │       └── .extension   # RFS 界面配置（可选）
-├── release/         # 发布包（按区域归档 + URL 清单）
 ├── skills/          # AI 技能定义（索引 + 嵌入 + 参考文档）
 ├── scripts/tests/   # 自动化测试框架
 └── .claude/
@@ -298,7 +277,7 @@ python -m scripts.obs.upload --practice litellm --region cn-north-4 \
 - **OBS 私有桶** — 交付产物归档，凭证只走环境变量
 - **Claude Code / OpenCode** — 原生 Skills 标准，对话即触发
 - **Docker 镜像站** — 统一 `docker.wangzhou3.top` 加速
-- **多区域** — CN（cn-north-4 / ap-southeast-1）+ INTL（ap-southeast-2/3、af、la、sa、tr）共 8 区
+- **多区域** — CN（cn-north-4）+ INTL（ap-southeast-1/2/3、af、la、sa、tr）多区覆盖
 
 ---
 
@@ -323,8 +302,7 @@ python -m scripts.obs.upload --practice litellm --region cn-north-4 \
   title  = {SAC: Solution Practices — AI-Driven Huawei Cloud Solution Delivery},
   author = {Solution Architect Community},
   year   = {2026},
-  note   = {https://github.com/Justin-TangPan/solution-practices},
-  year   = {2026}
+  note   = {https://github.com/Justin-TangPan/solution-practices}
 }
 ```
 
