@@ -2,7 +2,7 @@
 
 > **文档类型：** 华为云解决方案实践部署指南
 > **文档版本：** 01
-> **发布日期：** 2026-06-26
+> **发布日期：** 2026-07-07
 
 ---
 
@@ -10,7 +10,7 @@
 
 ### 1.1 应用场景
 
-本方案在华为云 Flexus X 实例上通过 Docker Compose 一键部署 Supabase — 开源的 Firebase 替代品（GitHub 103k+ Stars）。提供托管 PostgreSQL 数据库、用户认证、自动生成 REST/GraphQL API、实时数据订阅、文件存储等完整后端服务。
+本方案在华为云 ECS 实例上通过 Docker Compose 一键部署 Supabase — 开源的 Firebase 替代品（GitHub 103k+ Stars）。提供托管 PostgreSQL 数据库、用户认证、自动生成 REST/GraphQL API、实时数据订阅、文件存储等完整后端服务。
 
 典型应用场景包括：
 
@@ -27,7 +27,7 @@
 
 本方案部署以下资源：
 
-- 1 x 华为云 Flexus X 实例（推荐 8vCPUs 16GiB），运行约 10 个 Docker 容器
+- 1 x 华为云 ECS 实例（推荐 8vCPUs 16GiB），运行约 10 个 Docker 容器
 - 1 x 弹性公网 IP（EIP）关联至 ECS，提供公网 Dashboard 和 API 访问
 - 1 x VPC 和子网，用于网络隔离
 
@@ -57,7 +57,7 @@ Kong (API Gateway) ← 统一入口 :8000
 
 - **103k+ Stars 开源项目** — Apache-2.0 协议，社区活跃，持续更新
 - **Docker Compose 一键部署** — 约 10 个容器自动编排，10-15 分钟完成部署
-- **统一镜像站加速** — 镜像统一经 `docker.wangzhou3.top` 拉取，国内 ECS 部署稳定快速
+- **官方 Docker Hub 镜像** — 无镜像站依赖，直接从官方仓库拉取
 - **内置 PostgreSQL 扩展** — pgvector 向量搜索、pgjwt 认证、PostGIS 地理空间等
 - **完整后端能力** — 数据库 + REST API + GraphQL + 认证 + 实时订阅 + 文件存储 + Dashboard
 - **自动重试机制** — 5 次重试保障镜像拉取成功率
@@ -67,7 +67,7 @@ Kong (API Gateway) ← 统一入口 :8000
 - 部署前需拥有华为云账号并完成实名认证，账户余额充足。
 - 若选择包年包月计费，请确保账户余额足够自动扣费，或前往"费用中心 > 待支付订单"手动支付。
 - 部署完成后请等待约 10-15 分钟，让 Docker 镜像拉取和容器启动完成。
-- 推荐实例规格为 x1.8u.16g（8vCPUs 16GiB）及以上，以支撑约 10 个容器同时运行。
+- 推荐实例规格为 c7n.2xlarge.2（8vCPUs 16GiB）及以上，以支撑约 10 个容器同时运行。
 - 系统盘建议 100GB 起步，用于存储 Docker 镜像和数据库数据。
 - 首次部署后请立即修改默认的 JWT 密钥和数据库密码。
 
@@ -83,7 +83,7 @@ Kong (API Gateway) ← 统一入口 :8000
 
 | 华为云服务 | 配置 | 数量 | 预估费用（1小时） |
 |-----------|---------|------|-----------------|
-| Flexus X 实例 | 计费模式：按需计费<br>区域：华北-北京四<br>规格：x1.8u.16g<br>镜像：Ubuntu 24.04 server 64bit<br>系统盘：高IO \| 100GB | 1 | 约 0.20 美元 |
+| ECS 实例 | 计费模式：按需计费<br>区域：中国-香港（ap-southeast-1）<br>规格：c7n.2xlarge.2<br>镜像：Ubuntu 24.04 server 64bit<br>系统盘：高IO \| 100GB | 1 | 约 0.20 美元 |
 | 弹性公网 IP EIP | 计费模式：按需计费<br>线路：动态 BGP<br>带宽：按流量计费<br>大小：300Mbit/s | 1 | 0.00 美元 |
 | **合计** | — | — | **约 0.20 美元** |
 
@@ -93,7 +93,7 @@ Kong (API Gateway) ← 统一入口 :8000
 
 | 华为云服务 | 配置 | 数量 | 预估费用（1个月） |
 |-----------|---------|------|-----------------|
-| Flexus X 实例 | 计费模式：包年包月<br>区域：华北-北京四<br>规格：x1.8u.16g<br>镜像：Ubuntu 24.04 server 64bit<br>系统盘：高IO \| 100GB | 1 | 约 146.00 美元 |
+| ECS 实例 | 计费模式：包年包月<br>区域：中国-香港（ap-southeast-1）<br>规格：c7n.2xlarge.2<br>镜像：Ubuntu 24.04 server 64bit<br>系统盘：高IO \| 100GB | 1 | 约 146.00 美元 |
 | 弹性公网 IP EIP | 计费模式：按流量计费<br>线路：动态 BGP<br>带宽：300Mbit/s | 1 | 按实际流量计费 |
 | **合计** | — | — | **约 146.00 美元/月 + EIP 流量费** |
 
@@ -137,7 +137,7 @@ Kong (API Gateway) ← 统一入口 :8000
 | 参数 | 说明 | 默认值 |
 |------|------|--------|
 | solution_name | 解决方案名称，4-24个字符，支持小写字母、数字、-（中划线），必须以小写字母开头 | supabase |
-| ecs_flavor | 云服务器实例规格，x1.8u.16g（8vCPUs 16GiB）及以上推荐 | x1.8u.16g |
+| ecs_flavor | 云服务器实例规格，c7n.2xlarge.2（8vCPUs 16GiB）及以上推荐，请根据目标区域可用规格调整 | c7n.2xlarge.2 |
 | ecs_password | 云服务器密码，8-26位，至少包含大写字母、小写字母、数字和特殊字符中的三种 | / |
 | db_password | PostgreSQL数据库密码，8-26位，将同时作为所有数据库角色的密码 | / |
 | system_disk_size | 系统盘大小（GB），高IO类型，取值范围：40-1024，Supabase建议100GB起步 | 100 |
@@ -287,9 +287,7 @@ docker compose restart
 | GoTrue | 开源用户认证服务，支持邮箱、OAuth、手机号等多种认证方式 |
 | PostgREST | 自动生成 PostgreSQL 数据库的 RESTful API |
 | pgvector | PostgreSQL 向量搜索扩展，用于 AI 和语义搜索应用 |
-| Flexus X | 华为云 Flexus X 实例，新一代柔性算力云服务器 |
 | RFS | 资源编排服务（Resource Formation Service），华为云的资源编排服务 |
-| SWR | 容器镜像服务（SoftWare Repository for Container），华为云的容器镜像仓库 |
 | JWT | JSON Web Token，用于 API 认证的无状态令牌 |
 
 ### 4.2 参考链接
@@ -297,14 +295,12 @@ docker compose restart
 - [Supabase 官方文档](https://supabase.com/docs)
 - [Supabase GitHub](https://github.com/supabase/supabase)
 - [Supabase 自托管指南](https://supabase.com/docs/guides/self-hosting/docker)
-- [华为云 RFS](https://support.huaweicloud.com/rfs/)
+- [华为云 RFS](https://support.huaweicloud.com/intl/zh-cn/rfs/)
 
 ---
 
 ## 5. 修订记录
 
 | 日期 | 修订记录 |
-|---------|---------|
-| 2026-07-07 | 模板改为全内联 user_data（模式 B），docker-compose/kong.yml/.env 全部在 user_data heredoc 中生成，移除 OBS 脚本分发依赖。|
-| 2026-07-02 | 完善部署脚本：修复 JWT 密钥一致性（ANON/SERVICE_ROLE_KEY 改由随机 JWT_SECRET 派生签发）、补全 imgproxy 接线与 meta 健康检查、Terraform 密码参数校验。|
-| 2026-06-26 | 首次发布。|
+|------|---------|
+| 2026-07-07 | 国际站 ap-southeast-1（香港）首次发布。|

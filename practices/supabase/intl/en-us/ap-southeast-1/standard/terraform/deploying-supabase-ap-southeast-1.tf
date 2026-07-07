@@ -8,101 +8,97 @@ terraform {
 }
 
 provider "huaweicloud" {
-  region = "cn-north-4"
+  region = "ap-southeast-1"
 }
 
 variable "solution_name" {
   default     = "supabase"
-  description = "解决方案名称，4-24个字符，支持小写字母、数字、-（中划线），必须以小写字母开头。"
+  description = "Solution name, 4-24 chars, lowercase letters/digits/hyphens, must start with a lowercase letter."
   type        = string
   nullable    = false
 }
 
 variable "ecs_flavor" {
-  default     = "x1.8u.16g"
-  description = "云服务器实例规格，x1.8u.16g（8vCPUs 16GiB）及以上推荐。Supabase需同时运行约10个Docker容器。"
+  default     = "c7n.2xlarge.2"
+  description = "ECS flavor. Supabase runs ~10 Docker containers, c7n.2xlarge.2 (8vCPUs 16GiB) or above recommended. Change to match available flavors in target region."
   type        = string
   nullable    = false
-  validation {
-    condition     = can(regex("^x1\\.([1-9]|1[0-6])u\\.([1-9][0-9]{0,1}|1[0-2][0-8])g$", var.ecs_flavor))
-    error_message = "规格格式无效，示例：x1.8u.16g"
-  }
 }
 
 variable "ecs_password" {
-  description = "云服务器密码，8-26位，至少包含大写字母、小写字母、数字和特殊字符中的三种。"
+  description = "ECS root password, 8-26 chars, at least 3 of: uppercase, lowercase, digits, special characters."
   type        = string
   sensitive   = true
   nullable    = false
   validation {
     condition     = length(var.ecs_password) >= 8 && length(var.ecs_password) <= 26
-    error_message = "云服务器密码长度必须在8到26位之间。"
+    error_message = "ECS password length must be between 8 and 26 characters."
   }
 }
 
 variable "db_password" {
-  description = "PostgreSQL数据库密码，8-26位。将同时作为所有数据库角色的密码。"
+  description = "PostgreSQL password, 8-26 chars. Used as the password for all database roles."
   type        = string
   sensitive   = true
   nullable    = false
   validation {
     condition     = length(var.db_password) >= 8 && length(var.db_password) <= 26
-    error_message = "数据库密码长度必须在8到26位之间。"
+    error_message = "Database password length must be between 8 and 26 characters."
   }
 }
 
 variable "system_disk_size" {
   default     = 100
-  description = "系统盘大小（GB），高IO类型，取值范围：40-1024。Supabase建议100GB起步。默认：100。"
+  description = "System disk size in GB (high-IO SAS). Docker images + DB data. 100GB recommended. Range: 40-1024."
   type        = number
   nullable    = false
   validation {
     condition     = var.system_disk_size >= 40 && var.system_disk_size <= 1024
-    error_message = "系统盘大小必须在40到1024之间。"
+    error_message = "System disk size must be between 40 and 1024 GB."
   }
 }
 
 variable "bandwidth_size" {
   default     = 300
-  description = "弹性公网带宽（Mbit/s），按流量计费，取值范围：1-300。默认：300。"
+  description = "EIP bandwidth in Mbit/s, traffic billing. Range: 1-300. Default: 300."
   type        = number
   nullable    = false
   validation {
     condition     = var.bandwidth_size >= 1 && var.bandwidth_size <= 300
-    error_message = "带宽必须在1到300之间。"
+    error_message = "Bandwidth must be between 1 and 300 Mbit/s."
   }
 }
 
 variable "charging_mode" {
   default     = "postPaid"
-  description = "计费模式：postPaid（按需计费）或 prePaid（包年包月）。默认：postPaid。"
+  description = "Billing mode: postPaid (pay-per-use) or prePaid (subscription). Default: postPaid."
   type        = string
   nullable    = false
   validation {
     condition     = contains(["postPaid", "prePaid"], var.charging_mode)
-    error_message = "必须为 postPaid 或 prePaid。"
+    error_message = "Must be postPaid or prePaid."
   }
 }
 
 variable "charging_unit" {
   default     = "month"
-  description = "订购周期类型：month（月）或 year（年），仅 prePaid 模式生效。"
+  description = "Subscription unit: month or year. Required when charging_mode is prePaid."
   type        = string
   nullable    = false
   validation {
     condition     = contains(["month", "year"], var.charging_unit)
-    error_message = "必须为 month 或 year。"
+    error_message = "Must be month or year."
   }
 }
 
 variable "charging_period" {
   default     = 1
-  description = "订购周期，1-9（月）或 1-3（年），仅 prePaid 模式生效。"
+  description = "Subscription period: 1-9 (month) or 1-3 (year). Required when charging_mode is prePaid."
   type        = number
   nullable    = false
   validation {
     condition     = var.charging_period >= 1 && var.charging_period <= 9
-    error_message = "周期必须在1到9之间。"
+    error_message = "Period must be between 1 and 9."
   }
 }
 
@@ -130,7 +126,7 @@ resource "huaweicloud_networking_secgroup" "secgroup" {
 
 resource "huaweicloud_networking_secgroup_rule" "allow_ping" {
   security_group_id = huaweicloud_networking_secgroup.secgroup.id
-  description       = "允许ping测试连通性"
+  description       = "Allow ping for connectivity test"
   direction         = "ingress"
   ethertype         = "IPv4"
   protocol          = "icmp"
@@ -139,7 +135,7 @@ resource "huaweicloud_networking_secgroup_rule" "allow_ping" {
 
 resource "huaweicloud_networking_secgroup_rule" "supabase_http" {
   security_group_id = huaweicloud_networking_secgroup.secgroup.id
-  description       = "Supabase Dashboard及API服务"
+  description       = "Supabase Dashboard and API services"
   direction         = "ingress"
   ethertype         = "IPv4"
   protocol          = "tcp"
@@ -149,7 +145,7 @@ resource "huaweicloud_networking_secgroup_rule" "supabase_http" {
 
 resource "huaweicloud_networking_secgroup_rule" "cloud_shell" {
   security_group_id = huaweicloud_networking_secgroup.secgroup.id
-  description       = "Cloud Shell SSH登录"
+  description       = "SSH access via Cloud Shell"
   direction         = "ingress"
   ethertype         = "IPv4"
   protocol          = "tcp"
@@ -201,16 +197,18 @@ resource "huaweicloud_compute_instance" "compute_instance" {
   exec > >(tee -a "$LOG") 2>&1
   echo "[$(date)] Supabase bootstrap: start"
 
-  # ---- Stage 1: Install Docker CE (Huawei Cloud mirror) ----
-  echo "[$(date)] 安装 Docker CE..."
+  # ---- Stage 1: Install Docker CE (official source) ----
+  echo "[$(date)] Installing Docker CE..."
   export DEBIAN_FRONTEND=noninteractive
   apt-get update -y
   apt-get install -y ca-certificates curl gnupg lsb-release
-  curl -fsSL https://mirrors.huaweicloud.com/docker-ce/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker.gpg
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] https://mirrors.huaweicloud.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
+  install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  chmod a+r /etc/apt/keyrings/docker.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
   apt-get update -y
   apt-get install -y docker-ce docker-compose-plugin
-  echo "[$(date)] Docker 安装完成: $(docker --version)"
+  echo "[$(date)] Docker installed: $(docker --version)"
 
   # ---- Stage 2: Prepare directory and generate secrets ----
   SUPABASE_DIR="/opt/supabase"
@@ -303,11 +301,11 @@ resource "huaweicloud_compute_instance" "compute_instance" {
             hide_credentials: true
   KONGEOF
 
-  # ---- Stage 5: Generate docker-compose.yaml ----
+  # ---- Stage 5: Generate docker-compose.yaml (official Docker Hub images) ----
   cat > "$SUPABASE_DIR/docker-compose.yaml" << 'COMPOSEEOF'
   services:
     kong:
-      image: docker.wangzhou3.top/sac/supabase-image/kong:3.9.1
+      image: kong:3.9.1
       container_name: supabase-kong
       restart: unless-stopped
       ports:
@@ -329,7 +327,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         retries: 5
 
     db:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-postgres:15.8.1.085
+      image: supabase/postgres:15.8.1.085
       container_name: supabase-db
       restart: unless-stopped
       ports:
@@ -346,7 +344,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         retries: 10
 
     supavisor:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-supavisor:2.7.4
+      image: supabase/supavisor:2.7.4
       container_name: supabase-pooler
       restart: unless-stopped
       ports:
@@ -369,7 +367,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         retries: 5
 
     auth:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-gotrue:v2.186.0
+      image: supabase/gotrue:v2.186.0
       container_name: supabase-auth
       restart: unless-stopped
       environment:
@@ -391,7 +389,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         retries: 5
 
     rest:
-      image: docker.wangzhou3.top/sac/supabase-image/postgrest-postgrest:v14.8
+      image: postgrest/postgrest:v14.8
       container_name: supabase-rest
       restart: unless-stopped
       environment:
@@ -405,7 +403,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
           condition: service_healthy
 
     realtime:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-realtime:v2.76.5
+      image: supabase/realtime:v2.76.5
       container_name: supabase-realtime
       restart: unless-stopped
       ports:
@@ -429,7 +427,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
           condition: service_healthy
 
     storage:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-storage-api:v1.48.26
+      image: supabase/storage-api:v1.48.26
       container_name: supabase-storage
       restart: unless-stopped
       environment:
@@ -444,7 +442,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         FILE_STORAGE_BACKEND_PATH: /var/lib/storage
         FILE_STORAGE_PATH: /var/lib/storage
         TENANT_ID: default
-        REGION: cn-north-4
+        REGION: ap-southeast-1
         GLOBAL_S3_BUCKET: ""
       volumes:
         - ./volumes/storage:/var/lib/storage
@@ -455,7 +453,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
           condition: service_started
 
     imgproxy:
-      image: docker.wangzhou3.top/sac/supabase-image/darthsim-imgproxy:latest
+      image: darthsim/imgproxy:latest
       container_name: supabase-imgproxy
       restart: unless-stopped
       environment:
@@ -464,7 +462,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         IMGPROXY_ENABLE_WEBP_DETECTION: "true"
 
     meta:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-postgres-meta:v0.96.3
+      image: supabase/postgres-meta:v0.96.3
       container_name: supabase-meta
       restart: unless-stopped
       environment:
@@ -485,7 +483,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         retries: 5
 
     studio:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-studio:latest
+      image: supabase/studio:latest
       container_name: supabase-studio
       restart: unless-stopped
       environment:
@@ -500,7 +498,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
   COMPOSEEOF
 
   # ---- Stage 6: Deploy with retry ----
-  echo "[$(date)] 部署 Supabase..."
+  echo "[$(date)] Deploying Supabase..."
   cd "$SUPABASE_DIR"
   MAX_RETRIES=5
   COUNT=0
@@ -508,16 +506,16 @@ resource "huaweicloud_compute_instance" "compute_instance" {
   until [ $COUNT -ge $MAX_RETRIES ]; do
     docker compose pull 2>&1 && docker compose up -d 2>&1 && deploy_ok=1 && break
     COUNT=$((COUNT+1))
-    echo "[$(date)] 拉取/启动失败 (尝试 $COUNT/$MAX_RETRIES)，30秒后重试..."
+    echo "[$(date)] Pull/start failed (attempt $COUNT/$MAX_RETRIES), retrying in 30s..."
     sleep 30
   done
 
   if [ $deploy_ok -eq 0 ]; then
-    echo "[FATAL] 部署失败，请查看日志"
+    echo "[FATAL] Deployment failed after $MAX_RETRIES attempts"
     docker compose logs --tail=50 2>&1 || true
     exit 1
   fi
-  echo "[$(date)] 容器启动完成"
+  echo "[$(date)] Containers started"
 
   # ---- Stage 7: Configure systemd auto-start ----
   cat > /etc/systemd/system/supabase.service << 'UNITEOF'
@@ -539,10 +537,10 @@ resource "huaweicloud_compute_instance" "compute_instance" {
   UNITEOF
   systemctl daemon-reload
   systemctl enable supabase.service
-  echo "[$(date)] 开机自启已配置"
+  echo "[$(date)] Auto-start configured"
 
   # ---- Stage 8: DB initialization ----
-  echo "[$(date)] 等待 DB 就绪..."
+  echo "[$(date)] Waiting for DB..."
   for i in $$(seq 1 30); do
     docker exec supabase-db pg_isready -U postgres -q 2>/dev/null && break
     sleep 2
@@ -552,7 +550,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
     "SELECT count(*) FROM pg_shadow WHERE usename IN ('authenticator','supabase_auth_admin','supabase_storage_admin') AND passwd IS NOT NULL;" 2>/dev/null || echo "0")
 
   if [ "$HAS_PW" != "3" ]; then
-    echo "[INFO] 初始化数据库角色和 schema..."
+    echo "[INFO] Initializing database roles and schema..."
     docker exec supabase-db psql -U postgres -c "CREATE DATABASE supabase;" 2>/dev/null || true
     docker exec -e PGPASSWORD=$DB_PASSWORD supabase-db psql -U supabase_admin -h localhost \
       -d postgres -c "ALTER USER authenticator WITH PASSWORD '$DB_PASSWORD';" 2>/dev/null || true
@@ -561,26 +559,26 @@ resource "huaweicloud_compute_instance" "compute_instance" {
     docker exec -e PGPASSWORD=$DB_PASSWORD supabase-db psql -U supabase_admin -h localhost \
       -d postgres -c "ALTER USER supabase_storage_admin WITH PASSWORD '$DB_PASSWORD';" 2>/dev/null || true
     docker compose restart auth rest storage realtime 2>/dev/null || true
-    echo "[OK] 数据库初始化完成"
+    echo "[OK] Database initialization complete"
   fi
 
   # ---- Stage 9: Health check ----
-  echo "[$(date)] 健康检查..."
+  echo "[$(date)] Health check..."
   sleep 15
-  echo "--- 容器状态 ---"
+  echo "--- Container status ---"
   docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-  echo "--- Dashboard 检查 ---"
-  curl -sS --connect-timeout 5 http://localhost:8000/project/default 2>&1 | head -3 || echo "Dashboard 未就绪（可能需要更多时间）"
+  echo "--- Dashboard check ---"
+  curl -sS --connect-timeout 5 http://localhost:8000/project/default 2>&1 | head -3 || echo "Dashboard not ready (may need more time)"
 
-  echo "[$(date)] Supabase bootstrap: 完成"
+  echo "[$(date)] Supabase bootstrap: done"
 
   EOT
 }
 
 output "access_info" {
-  description = "部署访问信息"
+  description = "Deployment access information"
   value       = <<-EOT
-等待约10-15分钟部署完成，然后访问：
+Wait ~10-15 minutes for deployment to complete, then access:
 
 Dashboard: http://${huaweicloud_vpc_eip.vpc_eip.address}:8000/project/default
 REST API:   http://${huaweicloud_vpc_eip.vpc_eip.address}:8000/rest/v1/
@@ -589,8 +587,8 @@ Storage:    http://${huaweicloud_vpc_eip.vpc_eip.address}:8000/storage/v1/
 
 SSH: ssh root@${huaweicloud_vpc_eip.vpc_eip.address}
 
-配置目录: /opt/supabase/
-日志: /var/log/supabase-bootstrap.log
+Config: /opt/supabase/
+Logs: /var/log/supabase-bootstrap.log
 EOT
   depends_on  = [huaweicloud_vpc_eip.vpc_eip]
 }

@@ -8,7 +8,7 @@ terraform {
 }
 
 provider "huaweicloud" {
-  region = "cn-north-4"
+  region = "ap-southeast-1"
 }
 
 variable "solution_name" {
@@ -19,14 +19,10 @@ variable "solution_name" {
 }
 
 variable "ecs_flavor" {
-  default     = "x1.8u.16g"
-  description = "云服务器实例规格，x1.8u.16g（8vCPUs 16GiB）及以上推荐。Supabase需同时运行约10个Docker容器。"
+  default     = "c7n.2xlarge.2"
+  description = "云服务器实例规格，c7n.2xlarge.2（8vCPUs 16GiB）及以上推荐。Supabase需同时运行约10个Docker容器。请根据目标区域可用规格调整。"
   type        = string
   nullable    = false
-  validation {
-    condition     = can(regex("^x1\\.([1-9]|1[0-6])u\\.([1-9][0-9]{0,1}|1[0-2][0-8])g$", var.ecs_flavor))
-    error_message = "规格格式无效，示例：x1.8u.16g"
-  }
 }
 
 variable "ecs_password" {
@@ -201,18 +197,20 @@ resource "huaweicloud_compute_instance" "compute_instance" {
   exec > >(tee -a "$LOG") 2>&1
   echo "[$(date)] Supabase bootstrap: start"
 
-  # ---- Stage 1: Install Docker CE (Huawei Cloud mirror) ----
+  # ---- Stage 1: 安装 Docker CE（官方源） ----
   echo "[$(date)] 安装 Docker CE..."
   export DEBIAN_FRONTEND=noninteractive
   apt-get update -y
   apt-get install -y ca-certificates curl gnupg lsb-release
-  curl -fsSL https://mirrors.huaweicloud.com/docker-ce/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker.gpg
-  echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] https://mirrors.huaweicloud.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
+  install -m 0755 -d /etc/apt/keyrings
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  chmod a+r /etc/apt/keyrings/docker.gpg
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
   apt-get update -y
   apt-get install -y docker-ce docker-compose-plugin
   echo "[$(date)] Docker 安装完成: $(docker --version)"
 
-  # ---- Stage 2: Prepare directory and generate secrets ----
+  # ---- Stage 2: 准备目录和生成密钥 ----
   SUPABASE_DIR="/opt/supabase"
   mkdir -p "$SUPABASE_DIR/volumes/api" "$SUPABASE_DIR/volumes/db" "$SUPABASE_DIR/volumes/storage"
   cd "$SUPABASE_DIR"
@@ -221,7 +219,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
   JWT_SECRET="$(openssl rand -base64 32 2>/dev/null || echo "supabase-jwt-$(date +%s)")"
   SECRET_KEY_BASE="$(openssl rand -base64 32 2>/dev/null || echo "supabase-secret-key-base")"
 
-  # Sign ANON_KEY / SERVICE_ROLE_KEY from JWT_SECRET (HS256)
+  # 用 JWT_SECRET 签发 ANON_KEY / SERVICE_ROLE_KEY（HS256）
   gen_jwt() {
     local secret="$1" role="$2"
     local header='{"alg":"HS256","typ":"JWT"}'
@@ -235,7 +233,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
   ANON_KEY="$(gen_jwt "$JWT_SECRET" anon)"
   SERVICE_ROLE_KEY="$(gen_jwt "$JWT_SECRET" service_role)"
 
-  # ---- Stage 3: Generate .env ----
+  # ---- Stage 3: 生成 .env ----
   cat > "$SUPABASE_DIR/.env" << ENVEOF
   POSTGRES_PASSWORD=$DB_PASSWORD
   JWT_SECRET=$JWT_SECRET
@@ -245,7 +243,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
   SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY
   ENVEOF
 
-  # ---- Stage 4: Generate kong.yml ----
+  # ---- Stage 4: 生成 kong.yml ----
   cat > "$SUPABASE_DIR/volumes/api/kong.yml" << 'KONGEOF'
   _format_version: "1.1"
   _transform: true
@@ -303,11 +301,11 @@ resource "huaweicloud_compute_instance" "compute_instance" {
             hide_credentials: true
   KONGEOF
 
-  # ---- Stage 5: Generate docker-compose.yaml ----
+  # ---- Stage 5: 生成 docker-compose.yaml（官方 Docker Hub 镜像） ----
   cat > "$SUPABASE_DIR/docker-compose.yaml" << 'COMPOSEEOF'
   services:
     kong:
-      image: docker.wangzhou3.top/sac/supabase-image/kong:3.9.1
+      image: kong:3.9.1
       container_name: supabase-kong
       restart: unless-stopped
       ports:
@@ -329,7 +327,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         retries: 5
 
     db:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-postgres:15.8.1.085
+      image: supabase/postgres:15.8.1.085
       container_name: supabase-db
       restart: unless-stopped
       ports:
@@ -346,7 +344,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         retries: 10
 
     supavisor:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-supavisor:2.7.4
+      image: supabase/supavisor:2.7.4
       container_name: supabase-pooler
       restart: unless-stopped
       ports:
@@ -369,7 +367,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         retries: 5
 
     auth:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-gotrue:v2.186.0
+      image: supabase/gotrue:v2.186.0
       container_name: supabase-auth
       restart: unless-stopped
       environment:
@@ -391,7 +389,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         retries: 5
 
     rest:
-      image: docker.wangzhou3.top/sac/supabase-image/postgrest-postgrest:v14.8
+      image: postgrest/postgrest:v14.8
       container_name: supabase-rest
       restart: unless-stopped
       environment:
@@ -405,7 +403,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
           condition: service_healthy
 
     realtime:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-realtime:v2.76.5
+      image: supabase/realtime:v2.76.5
       container_name: supabase-realtime
       restart: unless-stopped
       ports:
@@ -429,7 +427,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
           condition: service_healthy
 
     storage:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-storage-api:v1.48.26
+      image: supabase/storage-api:v1.48.26
       container_name: supabase-storage
       restart: unless-stopped
       environment:
@@ -444,7 +442,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         FILE_STORAGE_BACKEND_PATH: /var/lib/storage
         FILE_STORAGE_PATH: /var/lib/storage
         TENANT_ID: default
-        REGION: cn-north-4
+        REGION: ap-southeast-1
         GLOBAL_S3_BUCKET: ""
       volumes:
         - ./volumes/storage:/var/lib/storage
@@ -455,7 +453,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
           condition: service_started
 
     imgproxy:
-      image: docker.wangzhou3.top/sac/supabase-image/darthsim-imgproxy:latest
+      image: darthsim/imgproxy:latest
       container_name: supabase-imgproxy
       restart: unless-stopped
       environment:
@@ -464,7 +462,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         IMGPROXY_ENABLE_WEBP_DETECTION: "true"
 
     meta:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-postgres-meta:v0.96.3
+      image: supabase/postgres-meta:v0.96.3
       container_name: supabase-meta
       restart: unless-stopped
       environment:
@@ -485,7 +483,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         retries: 5
 
     studio:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-studio:latest
+      image: supabase/studio:latest
       container_name: supabase-studio
       restart: unless-stopped
       environment:
@@ -499,7 +497,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         - kong
   COMPOSEEOF
 
-  # ---- Stage 6: Deploy with retry ----
+  # ---- Stage 6: 部署容器（含重试） ----
   echo "[$(date)] 部署 Supabase..."
   cd "$SUPABASE_DIR"
   MAX_RETRIES=5
@@ -519,7 +517,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
   fi
   echo "[$(date)] 容器启动完成"
 
-  # ---- Stage 7: Configure systemd auto-start ----
+  # ---- Stage 7: 配置开机自启 ----
   cat > /etc/systemd/system/supabase.service << 'UNITEOF'
   [Unit]
   Description=Supabase Docker Compose Stack
@@ -541,7 +539,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
   systemctl enable supabase.service
   echo "[$(date)] 开机自启已配置"
 
-  # ---- Stage 8: DB initialization ----
+  # ---- Stage 8: 数据库初始化 ----
   echo "[$(date)] 等待 DB 就绪..."
   for i in $$(seq 1 30); do
     docker exec supabase-db pg_isready -U postgres -q 2>/dev/null && break
@@ -564,7 +562,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
     echo "[OK] 数据库初始化完成"
   fi
 
-  # ---- Stage 9: Health check ----
+  # ---- Stage 9: 健康检查 ----
   echo "[$(date)] 健康检查..."
   sleep 15
   echo "--- 容器状态 ---"

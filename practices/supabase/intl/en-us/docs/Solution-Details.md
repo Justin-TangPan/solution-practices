@@ -124,7 +124,7 @@ Solution value: Realtime service uses PostgreSQL logical replication, WebSocket 
 
 5. **Real-Time Subscriptions with Zero Dev** — Realtime service uses PostgreSQL logical replication, WebSocket pushes DB changes with millisecond latency. Collaboration/IoT scenarios work instantly.
 
-6. **Huawei Cloud Mirror Acceleration** — Docker images pulled via `docker.wangzhou3.top` for stable, fast access on Huawei Cloud ECS. 5 auto-retries ensure high success rate.
+6. **Official Docker Hub Images** — No mirror dependency, images pulled directly from official Docker Hub. 5 auto-retries ensure high success rate.
 
 ---
 

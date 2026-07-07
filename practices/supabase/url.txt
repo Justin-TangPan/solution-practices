@@ -1,0 +1,19 @@
+# Supabase — Open-Source Firebase Alternative
+# 每区域一个桶，桶 endpoint 与桶所在区域一致。模板全内联 user_data，无 install 脚本，故无 sh 行。
+# RFS 控制台一键部署链接：点开即预填 TF 模板。
+
+# ============================================================
+# cn 站点（zh-cn）
+# ============================================================
+
+# --- cn-north-4 (Beijing) Standard ---
+TF:https://tp-00940108.obs.cn-south-1.myhuaweicloud.com/solution-practices/practices/supabase/cn/cn-north-4/standard/terraform/deploying-supabase.tf
+RFS_zh-cn:https://console.huaweicloud.com/rf/?region=cn-north-4&locale=zh-cn#/console/stack/stackCreate?templateUrl=https://tp-00940108.obs.cn-south-1.myhuaweicloud.com/solution-practices/practices/supabase/cn/cn-north-4/standard/terraform/deploying-supabase.tf&stackName=supabase-standard&stackDescription=Supabase+Standard+Open-Source+Firebase+Alternative
+
+# ============================================================
+# intl 站点（en-us）
+# ============================================================
+
+# --- ap-southeast-1 (Hong Kong) Standard ---
+TF:https://tp-00940108.obs.ap-southeast-1.myhuaweicloud.com/solution-practices/practices/supabase/intl/en-us/ap-southeast-1/standard/terraform/deploying-supabase-ap-southeast-1.tf
+RFS_intl:https://console-intl.huaweicloud.com/rf/?region=ap-southeast-1&locale=en-us#/console/stack/stackCreate?templateUrl=https://tp-00940108.obs.ap-southeast-1.myhuaweicloud.com/solution-practices/practices/supabase/intl/en-us/ap-southeast-1/standard/terraform/deploying-supabase-ap-southeast-1.tf&stackName=supabase-standard&stackDescription=Supabase+Standard+Open-Source+Firebase+Alternative
