@@ -30,19 +30,25 @@ variable "ecs_flavor" {
 }
 
 variable "ecs_password" {
-  default     = ""
   description = "云服务器密码，8-26位，至少包含大写字母、小写字母、数字和特殊字符中的三种。"
   type        = string
   sensitive   = true
   nullable    = false
+  validation {
+    condition     = length(var.ecs_password) >= 8 && length(var.ecs_password) <= 26
+    error_message = "云服务器密码长度必须在8到26位之间。"
+  }
 }
 
 variable "db_password" {
-  default     = ""
   description = "PostgreSQL数据库密码，8-26位。将同时作为所有数据库角色的密码。"
   type        = string
   sensitive   = true
   nullable    = false
+  validation {
+    condition     = length(var.db_password) >= 8 && length(var.db_password) <= 26
+    error_message = "数据库密码长度必须在8到26位之间。"
+  }
 }
 
 variable "system_disk_size" {
@@ -100,11 +106,8 @@ variable "charging_period" {
   }
 }
 
-variable "obs_base_url" {
-  default     = "https://tp-00940108.obs.cn-north-4.myhuaweicloud.com"
-  description = "OBS 脚本分发桶地址，用于下载部署脚本。"
-  type        = string
-  nullable    = false
+locals {
+  obs_base_url = "https://tp-00940108.obs.cn-south-1.myhuaweicloud.com/solution-practices/practices"
 }
 
 data "huaweicloud_images_image" "Ubuntu" {
@@ -192,7 +195,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
   tags = {
     app = "Supabase"
   }
-  user_data = "#!/bin/bash\necho 'root:${var.ecs_password}' | chpasswd\nwget -P /home/ ${var.obs_base_url}/supabase/cn/cn-north-4/standard/install_supabase.sh\nJWT_SECRET=$(openssl rand -base64 32 2>/dev/null || echo \"supabase-jwt-$(date +%s)\")\nbash /home/install_supabase.sh \"${var.db_password}\" \"$JWT_SECRET\"\nrm -rf /home/install_supabase.sh"
+  user_data = "#!/bin/bash\necho 'root:${var.ecs_password}' | chpasswd\nwget -P /home/ ${local.obs_base_url}/supabase/cn/cn-north-4/standard/scripts/install_supabase.sh\nJWT_SECRET=$(openssl rand -base64 32 2>/dev/null || echo \"supabase-jwt-$(date +%s)\")\nbash /home/install_supabase.sh \"${var.db_password}\" \"$JWT_SECRET\"\nrm -rf /home/install_supabase.sh"
 }
 
 output "access_info" {

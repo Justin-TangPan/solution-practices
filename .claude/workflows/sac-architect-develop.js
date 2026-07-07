@@ -15,28 +15,34 @@ log(`🚀 SAC 快速原型启动：${PROJECT}`)
 
 // Phase 1: 架构师
 phase('Architect')
-const architectResult = await agent(`
-你是一名 SAC 架构师 Agent。项目：${PROJECT}，区域：${REGIONS.join(', ')}，描述：${DESCRIPTION}
+const architectResult = await agent({
+  label: 'architect',
+  agentType: 'sac-architect',
+  prompt: `## 项目上下文
+项目：${PROJECT}
+区域：${REGIONS.join(', ')}
+描述：${DESCRIPTION}
 
-请输出：
+## 任务
 1. 技术可行性分析
 2. 架构设计方案（ASCII 图 + 资源清单）
 3. 决策点确认（格式/地域/语言/安装策略/容器化）
-4. 变量设计表（7 标准变量 + 应用专属变量）
-`, { schema: {
-  type: 'object',
-  properties: {
-    architecture: { type: 'string' },
-    decisions: { type: 'object', properties: {
-      template_format: { type: 'string' },
-      install_strategy: { type: 'string' },
-      language: { type: 'string' },
-      containerization: { type: 'string' },
-    }, required: ['template_format', 'install_strategy', 'language', 'containerization'] },
-    variables: { type: 'array' },
+4. 变量设计表（7 标准变量 + 应用专属变量）`,
+  schema: {
+    type: 'object',
+    properties: {
+      architecture: { type: 'string' },
+      decisions: { type: 'object', properties: {
+        template_format: { type: 'string' },
+        install_strategy: { type: 'string' },
+        language: { type: 'string' },
+        containerization: { type: 'string' },
+      }, required: ['template_format', 'install_strategy', 'language', 'containerization'] },
+      variables: { type: 'array' },
+    },
+    required: ['architecture', 'decisions', 'variables'],
   },
-  required: ['architecture', 'decisions', 'variables'],
-}})
+})
 
 // Phase 2: 开发（按区域并行）
 phase('Develop')
@@ -44,24 +50,28 @@ const devResults = await pipeline(
   REGIONS,
   async (region) => {
     const is_cn = region === 'cn'
-    const l = is_cn ? 'zh' : 'en'
-    return await agent(`
-你是一名 SAC 开发 Agent。在 practices/${PROJECT}/${region}/ 下创建：
+    return await agent({
+      label: `dev:${region}`,
+      agentType: 'sac-developer',
+      prompt: `## 项目上下文
+项目：${PROJECT}，区域：${region}
+${is_cn ? '源类型：国内（华为云镜像、PyPI镜像）' : '源类型：海外（官方源）'}
+
+在 practices/${PROJECT}/${region}/ 下创建：
 1. terraform/deploying-${PROJECT}.tf
 2. scripts/install_${PROJECT}.sh
 3. scripts/docker-compose.yaml（如适用）
 4. .extension
 
 决策：${JSON.stringify(architectResult.decisions)}
-变量：${JSON.stringify(architectResult.variables)}
-
-${is_cn ? '国内版：Docker 从 mirrors.huaweicloud.com，pip 用清华镜像' : '海外版：Docker 从 download.docker.com'}
-`, { label: `dev:${region}`, schema: {
-  type: 'object',
-  properties: { files_created: { type: 'array', items: { type: 'string' } } },
-  required: ['files_created'],
-}})
-  }
+变量：${JSON.stringify(architectResult.variables)}`,
+      schema: {
+        type: 'object',
+        properties: { files_created: { type: 'array', items: { type: 'string' } } },
+        required: ['files_created'],
+      },
+    })
+  },
 )
 
 log(`✅ 快速原型完成：${PROJECT}`)

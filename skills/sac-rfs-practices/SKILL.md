@@ -19,56 +19,9 @@ description: |
 Build production-ready Huawei Cloud RFS (Resource Formation Service) solution templates.
 Follow standards from `assets/demo/` reference projects plus accumulated field-tested fixes.
 
-## 多 Agent 协同中的定位
+## 定位
 
-本 skill 是 **开发 Agent（sac-developer）** 和 **测试 Agent（sac-tester）** 的核心技能包。
-
-### 开发 Agent 如何使用本 skill
-
-在 `sac-full-pipeline` 工作流中，开发 Agent 加载本 skill 获取：
-- Terraform 模板编写规范（Provider 配置、资源链、命名规则）
-- Shell 安装脚本 4 阶段标准模式
-- Docker Compose 配置规范
-- 所有 Pitfall 经验（避免踩坑）
-- 国内/海外差异处理规则
-
-开发 Agent 按区域并行工作：cn / hk / intl 各一个 Agent 实例，各自加载本 skill 的相同规范。
-
-### 测试 Agent 如何使用本 skill
-
-测试 Agent 加载本 skill 获取验证清单：
-- 模板结构验证标准
-- 脚本语法和逻辑检查标准
-- 安全组配置检查标准
-
-### 与本 skill 配合的其它技能
-
-| Agent | 同时加载的技能 | 用途 |
-|-------|-------------|------|
-| 开发 Agent | `sac-rfs-practices` + `sac-project-rules` | 技术规范 + 项目命名规则 |
-| 测试 Agent | `sac-rfs-practices` + `sac-project-rules` | 验证标准 + 交付标准 |
-| 安全 Agent | `sac-rfs-practices`（安全参考）+ `sac-project-rules` | 安全审计规则 |
-
-## Workflow
-
-### 多 Agent 协作模式（推荐 — `sac-full-pipeline` 工作流）
-
-在多 Agent 工作流中，本 skill 由**开发 Agent** 在收到架构师的决策输出后调用：
-
-```
-架构师 Agent 输出: decisions + variables + architecture
-        │
-        ▼
-开发 Agent（加载本 skill）→ 按区域并行编写模板/脚本
-        │
-        ▼
-测试 Agent（加载本 skill 的验证规范）→ 测试 Agent + 安全 Agent 并行审计
-        │
-        ▼
-文档 Agent → 交付 Agent
-```
-
-开发 Agent 的输入已经包含架构师确认的所有决策点，无需再次确认用户。
+本 skill 是 **开发 Agent（sac-developer）** 的核心技术规范（Terraform 模板 + Shell 脚本 + Docker Compose），也可被 **测试 Agent（sac-tester）** 和 **安全 Agent（sac-security）** 加载用于验证参考。多 Agent 协作流程参见 `.claude/MULTI-AGENT-README.md`。
 
 ### 单 Agent 模式（手动调用）
 
@@ -77,7 +30,7 @@ When asked to create or fix a Huawei Cloud RFS solution directly:
 1. **Confirm decision points** (see Decision Points section below) — ask user for non-default choices
 2. **Write the .tf template**: Variables → locals (name_suffix) → data sources → VPC/subnet/secgroup → EIP → ECS with minimal user_data
 3. **Write the install script**: Independent `.sh` file with all deployment logic
-4. **Write documentation**: Two Word docs per Decision 6 format
+4. **Write documentation**: Two Markdown docs per site-level directory structure
 5. **Upload to OBS**: Template + script + docs, naming per Decision 7
 6. **Test with RFS**: Deploy, SSH in, verify services
 
@@ -97,23 +50,15 @@ All deployment logic (package installation, configuration, service startup) belo
 
 ## Development Workflow (SAC 标准流程)
 
-```
-洞察（用户）→ 技术评估（AI）→ 方案设计（AI）→ 用户拍板 → 开发（AI）→ 测试 OBS 上传 → 用户测试 → 生产打包 → 用户上传生产 OBS → RFS 上线
-```
+参见 `sac-project-rules` Section 8（SAC 交付流程）获取完整阶段定义。
 
 ### 阶段详解
 
 | 阶段 | 负责人 | 产出 |
 |------|--------|------|
-| 1. 洞察 | 用户 | 明确要做的方案、目标用户、核心价值 |
-| 2. 技术评估 | AI | 可行性分析、技术栈评估、依赖清单 |
-| 3. 方案设计 | AI | 技术方案（单机/高可用/云服务接入）+ 业务方案（上线区域、语言） |
-| 4. 拍板敲定 | 用户 | 确认方案、决策点 |
-| 5. 开发 | AI | .tf 模板 + .sh 脚本 + Word 文档（部署指南+业务文档） |
+| 5. 开发 | AI | .tf 模板 + .sh 脚本 + Markdown 文档（部署指南+业务文档） |
 | 6. 测试 OBS 上传 | AI | 上传到测试桶 `tp-00940108`，用户验证 |
-| 7. 用户测试 | 用户 | 在测试 OBS 上部署验证 |
 | 8. 生产打包 | AI | 整理最终归档包，预置生产 OBS 路径的模板 |
-| 9. 用户上传生产 | 用户 | 亲自上传到生产 OBS 桶，生成 RFS URL |
 
 ### OBS 桶规范
 
@@ -123,8 +68,8 @@ All deployment logic (package installation, configuration, service startup) belo
 
 每个方案最终交付：
 1. **RFS 页面 URL** — 预置好模板和参数，用户点击即可部署
-2. **归档包** — `{project}-platform.zip`，包含 cn/ + hk/ 全部文件
-3. **安装脚本** — `install_{app}.sh`，按区域分 cn/ 和 hk/
+2. **归档包** — `{project}.zip`，包含 cn/ + intl/ 全部区域
+3. **安装脚本** — `install_{app}.sh`，位于各区域 standard/scripts/ 目录
 
 ## User Constraints (用户约束)
 
@@ -132,7 +77,7 @@ All deployment logic (package installation, configuration, service startup) belo
 
 ### 1. reference/ 目录只读
 
-`solution-implementations/reference/` 目录仅用户可修改。AI 不得主动修改此目录下的任何文件，除非用户明确授权。
+`solution-practices/reference/` 目录仅用户可修改。AI 不得主动修改此目录下的任何文件，除非用户明确授权。
 
 ### 2. 不硬编码凭证
 
@@ -144,10 +89,11 @@ All deployment logic (package installation, configuration, service startup) belo
 
 ### 4. 文档交付规范
 
-正式交付物为 Word 格式（.doc），分为两篇：
-- `{ProjectName}-Deployment-Guide.doc` — 部署指南
-- `{ProjectName}-Solution-Details.doc` — 业务文档
-- 每篇均中英双语，文件名使用英文命名
+正式交付物为 Markdown 格式（.md），按站点归类：
+- **中国站中文** → `cn/docs/{Name}-部署指南.md` + `cn/docs/{Name}-Solution-Details.md`
+- **国际站中文** → `intl/docs/zh-cn/{Name}-部署指南.md` + `intl/docs/zh-cn/{Name}-Solution-Details.md`
+- **国际站英文** → `intl/docs/en-us/{Name}-Deployment-Guide.md` + `intl/docs/en-us/{Name}-Solution-Details.md`
+- 高可用与标准版合并为一篇文档，在"快速部署"章节按子章节区分
 
 ### 5. 先确认再动手
 
@@ -844,16 +790,42 @@ source /root/.bashrc
 
 Environment variables must be in the process environment (`.bashrc` export), not just in `settings.json`. CLI tools read from process env, not config files.
 
-### Rule 7: Word Docs Are the Formal Delivery
+### Rule 7: Markdown Docs Are the Formal Delivery
 
-Formal documentation is delivered as two Word docs under `doc/`:
-- `{ProjectName}-Deployment-Guide.doc` — Deployment Guide (4 sections, bilingual)
-- `{ProjectName}-Solution-Details.doc` — Solution Details (8 sections, bilingual)
-- Follow the structure defined in Decision 6.
+Formal documentation is delivered as Markdown (.md) under site-level directories:
+- **cn site**: `cn/docs/{Name}-部署指南.md` + `cn/docs/{Name}-Solution-Details.md`
+- **intl site zh-cn**: `intl/docs/zh-cn/{Name}-部署指南.md` + `intl/docs/zh-cn/{Name}-Solution-Details.md`
+- **intl site en-us**: `intl/docs/en-us/{Name}-Deployment-Guide.md` + `intl/docs/en-us/{Name}-Solution-Details.md`
+- HA and Standard content merged into one doc, differentiated at sub-section level under "快速部署"
 
 ### Rule 8: No Docker for Non-Docker Apps
 
 If the application is a CLI tool or Python package (not a containerized service), install directly via pip/npm. Don't wrap in Docker unnecessarily.
+
+### Rule 9: intl ECS Flavor — c7n Series Default, No x1 Validation
+
+`practices/*/intl/` 下的 Terraform 模板：
+
+- `ecs_flavor` 默认值使用 **`c7n.2xlarge.2`**，不使用 `x1` 系列（x1 为中国站专属性能实例，海外不一定存在）
+- `ecs_flavor` 的 `validation` 正则**禁止仅匹配 `x1.*` 中国站专属性能实例**；允许匹配海外通用规格（如 `c7n.*`、`s6.*`）的宽松正则，或干脆不写 validation
+- `description` 注明"请根据目标区域可用规格调整"
+
+```hcl
+# ✅ intl 模板正确写法
+variable "ecs_flavor" {
+  default     = "c7n.2xlarge.2"
+  description = "ECS 规格，请根据目标区域可用规格调整"
+}
+
+# ❌ intl 模板禁止写法 — x1 系列海外不存在
+variable "ecs_flavor" {
+  default     = "x1.4u.8g"
+  validation {
+    condition     = can(regex("^x1\\.([1-9]|1[0-6])u\\.([1-9][0-9]{0,1}|1[0-2][0-8])g$", var.ecs_flavor))
+    error_message = "..."
+  }
+}
+```
 
 ---
 
@@ -867,35 +839,8 @@ The following decisions are confirmed by the user and should be applied consiste
 
 ### Decision 7: OBS Naming Convention — Project Directory & Archive Name
 
-参见 `skills/reference/obs-conventions.md`。
-
-**本地目录结构：**
-```
-practices/{project}/
-├── cn/                               # 中国站基础设施
-│   ├── standard/
-│   │   ├── deploying-{project}.tf
-│   │   ├── scripts/install_{app}.sh
-│   │   └── .extension
-│   └── ha/
-│       ├── deploying-{project}-ha.tf
-│       └── .extension
-├── intl/                             # 国际站基础设施
-│   ├── standard/
-│   │   ├── deploying-{project}-intl.tf
-│   │   ├── scripts/install_{app}.sh
-│   │   └── .extension
-│   └── ha/
-│       ├── deploying-{project}-ha-intl.tf
-│       └── .extension
-└── doc/                              # 文档统一目录
-    ├── {ProjectName}-Deployment-Guide.doc          # 中国站中文（含标准+HA）
-    ├── {ProjectName}-Solution-Details.doc          # 中国站中文
-    ├── {ProjectName}-Deployment-Guide-intl-zh.doc  # 国际站中文（含标准+HA）
-    ├── {ProjectName}-Solution-Details-intl-zh.doc  # 国际站中文
-    ├── {ProjectName}-Deployment-Guide-en.doc       # 国际站英文（含标准+HA）
-    └── {ProjectName}-Solution-Details-en.doc       # 国际站英文
-```
+参见 `skills/reference/obs-conventions.md`（OBS 目录结构、环境区分、RFS URL 格式、上传操作）。
+本地 practices/ 和 release/ 目录结构定义参见 `sac-project-rules` Section 3-4。
 
 ### Decision 8: Docker vs Direct Install
 
@@ -921,20 +866,15 @@ export ANTHROPIC_TARGET_API_URL=https://api.modelarts-maas.com/anthropic
 /v1/messages → https://api.anthropic.com                  ❌ (wrong upstream)
 ```
 
-### Decision 10: Word Document Generation — 3 Versions
+### Decision 10: Document Generation — 3 Site-Level Versions
 
-文档规范参见 `skills/reference/decision-framework.md`（Decision 6: Documentation — 3 Versions per Solution）。
-
-**Cost tables** (in Deployment Guide only):
-- 5-column Dify format: 华为云服务 | 资源名称（默认值） | 配置示例 | 数量 | 每月预估花费
-- Both 按需计费 (pay-per-use) and 包年包月 (monthly) modes
-- Region pricing based on user-provided data
+文档规范参见 `sac-project-rules` Section 3.2（目录结构 + 文档输出规范）和 `skills/reference/decision-framework.md`（Decision 6）。
 
 ---
 
 ## OBS Upload
 
-参见 `skills/reference/obs-conventions.md`。
+参见 `skills/reference/obs-conventions.md`（OBS 目录结构、环境区分、上传操作）。
 
 ---
 

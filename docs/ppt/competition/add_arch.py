@@ -22,7 +22,7 @@ CARD_BORDER = RGBColor(0xE2, 0xE8, 0xF0)
 LAYER_BG = RGBColor(0xF1, 0xF5, 0xF9)
 SUBTLE = RGBColor(0x94, 0xA3, 0xB8)
 
-prs = Presentation(r'C:\Users\Administrator\Desktop\Project\claudeproject\solution-implementations\ppt\competition\competition.pptx')
+prs = Presentation(r'C:\Users\Administrator\Desktop\Project\claudeproject\solution-practices\ppt\competition\competition.pptx')
 
 def set_bg(slide, color):
     bg = slide.background; fill = bg.fill; fill.solid(); fill.fore_color.rgb = color
@@ -234,19 +234,19 @@ print("  Slide 29: InsightPro Technical Architecture")
 
 
 # ==================================================================
-# PAGE 30: SAC 解决方案即代码 架构（详细版）
+# PAGE 30: SAC 解决方案实践 架构（详细版）
 # ==================================================================
 s30 = prs.slides.add_slide(prs.slide_layouts[6])
 set_bg(s30, DARK_BG)
 
 # Chrome
-tb(s30, Inches(0.6), Inches(0.25), Inches(6), Inches(0.3), 'SAC · 解决方案即代码架构', Pt(10), SUBTLE, font='Consolas')
+tb(s30, Inches(0.6), Inches(0.25), Inches(6), Inches(0.3), 'SAC · 解决方案实践架构', Pt(10), SUBTLE, font='Consolas')
 tb(s30, Inches(10), Inches(0.25), Inches(2.8), Inches(0.3), 'Technical Arch · 30 / 30', Pt(10), SUBTLE, align=PP_ALIGN.RIGHT, font='Consolas')
 rect(s30, Inches(0.6), Inches(0.6), Inches(12.1), Pt(1), fill=RGBColor(0x33,0x33,0x50))
 
 # Title
-tb(s30, Inches(0.6), Inches(0.7), Inches(5), Inches(0.35), 'SOLUTION AS CODE ARCHITECTURE', Pt(10), GOLD, bold=True, font='Consolas')
-tb(s30, Inches(0.6), Inches(1.0), Inches(8), Inches(0.5), 'SAC 解决方案即代码 · 全栈技术架构', Pt(28), WHITE, bold=True)
+tb(s30, Inches(0.6), Inches(0.7), Inches(5), Inches(0.35), 'SOLUTION PRACTICES ARCHITECTURE', Pt(10), GOLD, bold=True, font='Consolas')
+tb(s30, Inches(0.6), Inches(1.0), Inches(8), Inches(0.5), 'SAC 解决方案实践 · 全栈技术架构', Pt(28), WHITE, bold=True)
 
 # ---- 7 Solutions Layer ----
 rrect(s30, Inches(0.6), Inches(1.6), Inches(12.1), Inches(0.85), fill=DARK_BG2, border=RGBColor(0x40,0x40,0x60), bw=Pt(1))
@@ -427,12 +427,12 @@ tb(s30, Inches(0.8), Inches(7.63), Inches(11.5), Inches(0.2), ver_sac, Pt(7.5), 
 
 # Footer
 tb(s30, Inches(0.6), Inches(7.9), Inches(6), Inches(0.35), 'SAC · 详细技术架构', Pt(9), SUBTLE, font='Consolas')
-tb(s30, Inches(10), Inches(7.9), Inches(2.8), Inches(0.35), 'Solution as Code', Pt(9), SUBTLE, align=PP_ALIGN.RIGHT, font='Consolas')
+tb(s30, Inches(10), Inches(7.9), Inches(2.8), Inches(0.35), 'Solution Practices', Pt(9), SUBTLE, align=PP_ALIGN.RIGHT, font='Consolas')
 
 print("  Slide 30: SAC Technical Architecture")
 
 # ---- SAVE ----
-out = r'C:\Users\Administrator\Desktop\Project\claudeproject\solution-implementations\ppt\competition\competition.pptx'
+out = r'C:\Users\Administrator\Desktop\Project\claudeproject\solution-practices\ppt\competition\competition.pptx'
 prs.save(out)
 import os
 print(f"\nDone! Total slides: {len(prs.slides)}, Size: {os.path.getsize(out)/1024:.0f} KB")

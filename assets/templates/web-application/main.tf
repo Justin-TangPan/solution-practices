@@ -80,6 +80,7 @@ resource "huaweicloud_compute_instance" "main" {
   security_group_id = huaweicloud_networking_secgroup.ecs.id
   subnet_id         = huaweicloud_vpc_subnet.main.id
   admin_pass        = var.ecs_password
+  eip_id            = huaweicloud_vpc_eip.main.id
 
   user_data = filebase64("${path.module}/userdata/install_web.sh")
 
@@ -88,11 +89,6 @@ resource "huaweicloud_compute_instance" "main" {
     managed_by  = "rfs"
     owner       = "solution"
   }
-}
-
-resource "huaweicloud_vpc_eip_associate" "main" {
-  public_ip  = huaweicloud_vpc_eip.main.address
-  instance_id = huaweicloud_compute_instance.main.id
 }
 
 #======================================

@@ -14,72 +14,53 @@ const REGIONS = args.regions || ['cn', 'hk']
 log(`🔍 SAC 审计启动：${PROJECT} - ${REGIONS.join(', ')}`)
 
 phase('Test')
-const testResult = await agent(`
-你是一名 SAC 测试 Agent（参考 .claude/agents/sac-tester.json）。
-审计项目：${PROJECT}，区域：${REGIONS.join(', ')}
+const testResult = await agent({
+  label: 'tester',
+  agentType: 'sac-tester',
+  prompt: `## 项目上下文
+项目：${PROJECT}，区域：${REGIONS.join(', ')}
 
-检查 practices/${PROJECT}/ 下所有文件：
+检查 practices/${PROJECT}/ 下所有文件，按 sac-tester.json 中的 validation_checklist 逐项验证。
 
-## 模板检查
-- required_providers 是对象？
-- Provider 只有 region？
-- 资源命名用 var.solution_name？
-- user_data 最小化？
-- 无 random provider / uuid()？
-
-## 脚本检查
-- pip 用 --break-system-packages？
-- 国内版用 PyPI 镜像和 mirrors.huaweicloud.com？
-- 健康检查循环？
-
-## 安全组
-- allow_ping（ICMP）？
-- SSH 仅 121.36.59.153/32？
-
-输出结果。
-`, { schema: {
-  type: 'object',
-  properties: {
-    passed: { type: 'boolean' },
-    issues: { type: 'array', items: { type: 'object', properties: {
-      severity: { type: 'string', enum: ['error', 'warning', 'info'] },
-      file: { type: 'string' },
-      message: { type: 'string' },
-    }, required: ['severity', 'file', 'message'] } },
-    summary: { type: 'string' },
+输出结果。`,
+  schema: {
+    type: 'object',
+    properties: {
+      passed: { type: 'boolean' },
+      issues: { type: 'array', items: { type: 'object', properties: {
+        severity: { type: 'string', enum: ['error', 'warning', 'info'] },
+        file: { type: 'string' },
+        message: { type: 'string' },
+      }, required: ['severity', 'file', 'message'] } },
+      summary: { type: 'string' },
+    },
+    required: ['passed', 'issues', 'summary'],
   },
-  required: ['passed', 'issues', 'summary'],
-}})
+})
 
 phase('Security')
-const securityResult = await agent(`
-你是一名 SAC 安全审查 Agent（参考 .claude/agents/sac-security.json）。
-审计项目：${PROJECT}，区域：${REGIONS.join(', ')}
+const securityResult = await agent({
+  label: 'security',
+  agentType: 'sac-security',
+  prompt: `## 项目上下文
+项目：${PROJECT}，区域：${REGIONS.join(', ')}
 
-检查 practices/${PROJECT}/ 下所有文件：
+检查 practices/${PROJECT}/ 下所有文件，按 sac-security.json 中的 check_rules（SEC-001 至 SEC-008）逐条审计。
 
-- SEC-001 [CRITICAL] 凭证硬编码？
-- SEC-002 [CRITICAL] API Key 硬编码？
-- SEC-003 [HIGH] 高危端口暴露 0.0.0.0/0？
-- SEC-004 [HIGH] SSH 限 Cloud Shell IP？
-- SEC-005 [MEDIUM] docker login？
-- SEC-006 [MEDIUM] 密码通过环境变量？
-- SEC-007 [LOW] privileged 模式？
-- SEC-008 [LOW] hss + ces 监控？
-
-输出审计结果。
-`, { schema: {
-  type: 'object',
-  properties: {
-    passed: { type: 'boolean' },
-    findings: { type: 'array', items: { type: 'object', properties: {
-      id: { type: 'string' }, severity: { type: 'string' }, file: { type: 'string' },
-      message: { type: 'string' }, remediated: { type: 'boolean' },
-    }, required: ['id', 'severity', 'file', 'message', 'remediatable'] } },
-    summary: { type: 'string' },
+输出审计结果。`,
+  schema: {
+    type: 'object',
+    properties: {
+      passed: { type: 'boolean' },
+      findings: { type: 'array', items: { type: 'object', properties: {
+        id: { type: 'string' }, severity: { type: 'string' }, file: { type: 'string' },
+        message: { type: 'string' }, remediated: { type: 'boolean' },
+      }, required: ['id', 'severity', 'file', 'message', 'remediatable'] } },
+      summary: { type: 'string' },
+    },
+    required: ['passed', 'findings', 'summary'],
   },
-  required: ['passed', 'findings', 'summary'],
-}})
+})
 
 phase('Report')
 const errors = testResult.issues.filter(i => i.severity === 'error')

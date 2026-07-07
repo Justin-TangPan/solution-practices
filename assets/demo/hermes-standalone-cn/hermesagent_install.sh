@@ -1,9 +1,11 @@
 #!/bin/bash
+# 日志记录到文件
+exec 1>>"$LOGFILE" 2>&1
 
 
 LOGFILE="/var/HermesAgent-install.log"
 exec 1>"$LOGFILE" 2>&1
-trap '{ set +x; } 2>/dev/null; echo -n "[$(date -Is)]  "; set -x' DEBUG
+
 
 sleep 10
 
@@ -16,7 +18,7 @@ echo "y" | apt-get -qq install docker-ce
 
 
 # 配置docker镜像仓
-echo '{"registry-mirrors": ["https://b4a1f63a156e435f9aeb797bdf515250.mirror.swr.myhuaweicloud.com","https://docker.1ms.run"]}' >/etc/docker/daemon.json
+echo '{"registry-mirrors": ["https://docker.wangzhou3.top"]}' >/etc/docker/daemon.json
 systemctl restart docker
 
 mkdir -p /root/hermes-agent
@@ -25,7 +27,7 @@ cd /root/hermes-agent
 cat > docker-compose.yaml << 'EOF'
 services:
   hermes:
-    image: nousresearch/hermes-agent:v2026.5.7
+    image: docker.wangzhou3.top/nousresearch/hermes-agent:v2026.5.7
     container_name: hermes
     restart: unless-stopped
     command: gateway run

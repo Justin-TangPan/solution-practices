@@ -1,0 +1,47 @@
+# LiteLLM — Unified AI Management Gateway
+# 每区域一个桶，桶 endpoint 与桶所在区域一致。模板全内联 user_data，无 install 脚本，故无 sh 行。
+# RFS 控制台一键部署链接：点开即预填 TF 模板。
+
+# ============================================================
+# cn 站点（zh-cn）
+# ============================================================
+
+# --- cn-north-4 (Beijing) Standard ---
+TF:https://documentation-samples.obs.cn-north-4.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/zh-cn/standard/litellm-standard-cn-north-4.tf
+RFS_zh-cn:https://console-intl.huaweicloud.com/rf/?region=cn-north-4&locale=zh-cn#/console/stack/stackCreate?templateUrl=https://documentation-samples.obs.cn-north-4.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/zh-cn/standard/litellm-standard-cn-north-4.tf&stackName=litellm-standard&stackDescription=LiteLLM+Standard+Unified+AI+Management+Gateway
+
+# ============================================================
+# intl 站点（en-us）
+# ============================================================
+
+# --- ap-southeast-1 (Hong Kong) Standard ---
+TF:https://documentation-samples-5.obs.ap-southeast-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/litellm-standard-en-ap-southeast-1.tf
+RFS_intl:https://console-intl.huaweicloud.com/rf/?region=ap-southeast-1&locale=en-us#/console/stack/stackCreate?templateUrl=https://documentation-samples-5.obs.ap-southeast-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/litellm-standard-en-ap-southeast-1.tf&stackName=litellm-standard&stackDescription=LiteLLM+Standard+Unified+AI+Management+Gateway
+
+# --- ap-southeast-2 (Bangkok) Standard ---
+TF:https://documentation-samples-6.obs.ap-southeast-2.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/litellm-standard-en-ap-southeast-2.tf
+RFS_intl:https://console-intl.huaweicloud.com/rf/?region=ap-southeast-2&locale=en-us#/console/stack/stackCreate?templateUrl=https://documentation-samples-6.obs.ap-southeast-2.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/litellm-standard-en-ap-southeast-2.tf&stackName=litellm-standard&stackDescription=LiteLLM+Standard+Unified+AI+Management+Gateway
+
+# --- ap-southeast-3 (Singapore) Standard ---
+TF:https://documentation-samples-4.obs.ap-southeast-3.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/litellm-standard-en-ap-southeast-3.tf
+RFS_intl:https://console-intl.huaweicloud.com/rf/?region=ap-southeast-3&locale=en-us#/console/stack/stackCreate?templateUrl=https://documentation-samples-4.obs.ap-southeast-3.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/litellm-standard-en-ap-southeast-3.tf&stackName=litellm-standard&stackDescription=LiteLLM+Standard+Unified+AI+Management+Gateway
+
+# --- af-north-1 (Cairo) Standard ---
+TF:https://documentation-samples-10.obs.af-north-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/litellm-standard-en-af-north-1.tf
+RFS_intl:https://console-intl.huaweicloud.com/rf/?region=af-north-1&locale=en-us#/console/stack/stackCreate?templateUrl=https://documentation-samples-10.obs.af-north-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/litellm-standard-en-af-north-1.tf&stackName=litellm-standard&stackDescription=LiteLLM+Standard+Unified+AI+Management+Gateway
+
+# --- af-south-1 (Johannesburg) Standard ---
+TF:https://documentation-samples-11.obs.af-south-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/litellm-standard-en-af-south-1.tf
+RFS_intl:https://console-intl.huaweicloud.com/rf/?region=af-south-1&locale=en-us#/console/stack/stackCreate?templateUrl=https://documentation-samples-11.obs.af-south-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/litellm-standard-en-af-south-1.tf&stackName=litellm-standard&stackDescription=LiteLLM+Standard+Unified+AI+Management+Gateway
+
+# --- la-north-2 (Mexico City) Standard ---
+TF:https://documentation-samples-13.obs.la-north-2.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/litellm-standard-en-la-north-2.tf
+RFS_intl:https://console-intl.huaweicloud.com/rf/?region=la-north-2&locale=en-us#/console/stack/stackCreate?templateUrl=https://documentation-samples-13.obs.la-north-2.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/litellm-standard-en-la-north-2.tf&stackName=litellm-standard&stackDescription=LiteLLM+Standard+Unified+AI+Management+Gateway
+
+# --- sa-brazil-1 (São Paulo) Standard ---
+TF:https://documentation-samples-14.obs.sa-brazil-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/litellm-standard-en-sa-brazil-1.tf
+RFS_intl:https://console-intl.huaweicloud.com/rf/?region=sa-brazil-1&locale=en-us#/console/stack/stackCreate?templateUrl=https://documentation-samples-14.obs.sa-brazil-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/litellm-standard-en-sa-brazil-1.tf&stackName=litellm-standard&stackDescription=LiteLLM+Standard+Unified+AI+Management+Gateway
+
+# --- tr-west-1 (Istanbul) Standard ---
+TF:https://documentation-samples-8.obs.tr-west-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/litellm-standard-en-tr-west-1.tf
+RFS_intl:https://console-intl.huaweicloud.com/rf/?region=tr-west-1&locale=en-us#/console/stack/stackCreate?templateUrl=https://documentation-samples-8.obs.tr-west-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/litellm-standard-en-tr-west-1.tf&stackName=litellm-standard&stackDescription=LiteLLM+Standard+Unified+AI+Management+Gateway

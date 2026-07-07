@@ -1,4 +1,6 @@
 #!/bin/bash
+# 日志记录到文件
+exec 1>>"$LOGFILE" 2>&1
 DIFY_VERSION=$1
 
 # Dify版本参数校验
@@ -8,7 +10,7 @@ fi
 
 LOGFILE="/var/dify-install.log"
 exec 1>"$LOGFILE" 2>&1
-trap '{ set +x; } 2>/dev/null; echo -n "[$(date -Is)]  "; set -x' DEBUG
+
 
 RETRY_INTERVAL=10
 MAX_RETRIES=10
@@ -28,7 +30,7 @@ done
 rm get.docker.sh
 
 # 配置docker镜像仓
-echo '{"registry-mirrors": ["https://docker.1ms.run","https://b4a1f63a156e435f9aeb797bdf515250.mirror.swr.myhuaweicloud.com"]}' >/etc/docker/daemon.json
+echo '{"registry-mirrors": ["https://docker.wangzhou3.top"]}' >/etc/docker/daemon.json
 systemctl restart docker
 
 # 安装dify
@@ -93,14 +95,14 @@ wget -P /dify/docker/ https://documentation-samples.obs.cn-north-4.myhuaweicloud
 chmod u+x /dify/docker/configure_dify_domain_name.sh
 
 # 安装searxng
-docker pull searxng/searxng:2025.10.4-7bf65d68c
+docker pull docker.wangzhou3.top/searxng/searxng:2025.10.4-7bf65d68c
 
 # 更新配置文件
 rm -f /dify/api/core/tools/provider/builtin/searxng/docker/settings.yml
 wget -P /dify/api/core/tools/provider/builtin/searxng/docker/ https://documentation-samples.obs.cn-north-4.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-moudle/building-a-dify-llm-application-development-platform/userdata/settings.yml
 
 # 启动searxngvim
-docker run --rm -d -p 8080:8080 -v "/dify/api/core/tools/provider/builtin/searxng/docker:/etc/searxng" searxng/searxng:2025.10.4-7bf65d68c
+docker run --rm -d -p 8080:8080 -v "/dify/api/core/tools/provider/builtin/searxng/docker:/etc/searxng" docker.wangzhou3.top/searxng/searxng:2025.10.4-7bf65d68c
 
 # searxng开机自启动
 echo "[Unit]
@@ -111,7 +113,7 @@ After=network.target
 User=root
 Group=root
 WorkingDirectory=/root
-ExecStart=docker run --rm -d -p 8080:8080 -v '/dify/api/core/tools/provider/builtin/searxng/docker:/etc/searxng' searxng/searxng:2025.10.4-7bf65d68c
+ExecStart=docker run --rm -d -p 8080:8080 -v '/dify/api/core/tools/provider/builtin/searxng/docker:/etc/searxng' docker.wangzhou3.top/searxng/searxng:2025.10.4-7bf65d68c
 Restart=always
 
 [Install]

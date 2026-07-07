@@ -1,4 +1,0 @@
-﻿# --- tr-west-1 (Istanbul) HA ---
-TF:https://documentation-samples-8.obs.tr-west-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-moudle/litellm-unified-ai-management-gateway/en-us/ha/deploying-litellm-ha-tr-west-1.tf
-RFS_intl:https://console-intl.huaweicloud.com/rf/?region=tr-west-1&locale=en-us#/console/stack/stackCreate?templateUrl=https://documentation-samples-8.obs.tr-west-1.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-moudle/litellm-unified-ai-management-gateway/en-us/ha/deploying-litellm-ha-tr-west-1.tf&stackName=litellm-ha&stackDescription=LiteLLM+HA+Unified+AI+Management+Gateway
-

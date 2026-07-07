@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SAC · Solution as Code",
+  title: "SAC · Solution Practices",
   description: "华为云解决方案实践可视化目录 — 方案、评估、部署",
 };
 

@@ -72,17 +72,14 @@ resource "huaweicloud_networking_secgroup_rule" "rds_mysql" {
 # ELB 负载均衡
 #======================================
 resource "huaweicloud_elb_loadbalancer" "main" {
-  name          = "${var.cluster_name}-elb"
-  description   = "Web cluster load balancer"
-  vpc_id        = huaweicloud_vpc.main.id
-  ipv4_subnet_id = huaweicloud_vpc_subnet.zone1.id
-
-  bandwidth {
-    name        = "${var.cluster_name}-elb-bandwidth"
-    size        = var.elb_bandwidth
-    share_type  = "PER"
-    charge_mode = "traffic"
-  }
+  name                 = "${var.cluster_name}-elb"
+  description          = "Web cluster load balancer"
+  vpc_id               = huaweicloud_vpc.main.id
+  ipv4_subnet_id       = huaweicloud_vpc_subnet.zone1.id
+  availability_zone    = [var.availability_zone_1]
+  bandwidth_size       = var.elb_bandwidth
+  sharetype            = "PER"
+  bandwidth_charge_mode = "traffic"
 
   tags = {
     Name       = "${var.cluster_name}-elb"
@@ -91,26 +88,26 @@ resource "huaweicloud_elb_loadbalancer" "main" {
   }
 }
 
-resource "huaweicloud_lb_listener" "http" {
+resource "huaweicloud_elb_listener" "http" {
   name            = "${var.cluster_name}-http-listener"
   protocol        = "HTTP"
   protocol_port   = 80
   loadbalancer_id = huaweicloud_elb_loadbalancer.main.id
 }
 
-resource "huaweicloud_lb_pool" "web" {
+resource "huaweicloud_elb_pool" "web" {
   name        = "${var.cluster_name}-web-pool"
   protocol    = "HTTP"
   lb_method   = "ROUND_ROBIN"
-  listener_id = huaweicloud_lb_listener.http.id
+  listener_id = huaweicloud_elb_listener.http.id
 }
 
-resource "huaweicloud_lb_monitor" "web" {
+resource "huaweicloud_elb_monitor" "web" {
   protocol    = "HTTP"
   interval    = 5
   timeout     = 3
   max_retries = 3
-  pool_id     = huaweicloud_lb_pool.web.id
+  pool_id     = huaweicloud_elb_pool.web.id
 }
 
 #======================================
@@ -137,11 +134,11 @@ resource "huaweicloud_compute_instance" "cluster" {
 }
 
 # 将 ECS 加入 ELB 后端池
-resource "huaweicloud_lb_member" "cluster" {
+resource "huaweicloud_elb_member" "cluster" {
   count         = var.ecs_count
-  address       = huaweicloud_compute_instance.cluster[count.index].access_ip_v4
+  address       = huaweicloud_compute_instance.cluster[count.index].network[0].fixed_ip_v4
   protocol_port = 80
-  pool_id       = huaweicloud_lb_pool.web.id
+  pool_id       = huaweicloud_elb_pool.web.id
   subnet_id     = count.index == 0 ? huaweicloud_vpc_subnet.zone1.id : huaweicloud_vpc_subnet.zone2.id
 }
 

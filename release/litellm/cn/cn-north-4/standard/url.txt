@@ -1,4 +1,0 @@
-# --- cn-north-4 (Beijing) Standard ---
-TF:https://documentation-samples-5.obs.cn-north-4.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/zh-cn/standard/deploying-litellm-cn-north-4.tf
-sh:https://documentation-samples-5.obs.cn-north-4.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/zh-cn/standard/install_litellm.sh
-RFS_zh-cn:https://console-intl.huaweicloud.com/rf/?region=cn-north-4&locale=zh-cn#/console/stack/stackCreate?templateUrl=https://documentation-samples-5.obs.cn-north-4.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/zh-cn/standard/deploying-litellm-cn-north-4.tf&stackName=litellm-standard&stackDescription=LiteLLM+Standard+Unified+AI+Management+Gateway

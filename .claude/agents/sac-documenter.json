@@ -1,17 +1,6 @@
 {
   "name": "sac-documenter",
   "description": "SAC 文档 Agent — 方案文档编写与生成",
-  "skill_index_mode": true,
-  "skill_index_path": "skills-index.json",
-  "skill_binding": {
-    "primary": "sac-page-enhance",
-    "requires": ["sac-project-rules"]
-  },
-  "skill_zone_config": {
-    "max_skills_per_query": 2,
-    "lazy_load_full_content": true,
-    "clear_after_execution": true
-  },
   "roles": [
     "技术文档编写（部署指南 .doc）",
     "业务文档编写（方案详情 .doc）",
@@ -27,66 +16,15 @@
   "inputs": [
     "架构师的设计文档",
     "开发 Agent 的部署模板",
-    "scripts/gen_docx.py — Word 生成脚本"
+    "参考文档模板：reference/docs/部署指南模板-华为云标准.md"
   ],
   "outputs": [
-    "practices/{project}/doc/{ProjectName}-Deployment-Guide.doc          # 中国站中文",
-    "practices/{project}/doc/{ProjectName}-Solution-Details.doc          # 中国站中文",
-    "practices/{project}/doc/{ProjectName}-Deployment-Guide-intl-zh.doc  # 国际站中文",
-    "practices/{project}/doc/{ProjectName}-Solution-Details-intl-zh.doc  # 国际站中文",
-    "practices/{project}/doc/{ProjectName}-Deployment-Guide-en.doc       # 国际站英文",
-    "practices/{project}/doc/{ProjectName}-Solution-Details-en.doc       # 国际站英文",
+    "practices/{project}/{site}/docs/{Name}-Deployment-Guide.md          # 部署指南",
+    "practices/{project}/{site}/docs/{Name}-Solution-Details.md          # 业务文档",
+    "practices/{project}/intl/docs/zh-cn/{Name}-Deployment-Guide.md     # 国际站中文",
+    "practices/{project}/intl/docs/zh-cn/{Name}-Solution-Details.md     # 国际站中文",
+    "practices/{project}/intl/docs/en-us/{Name}-Deployment-Guide.md     # 国际站英文",
+    "practices/{project}/intl/docs/en-us/{Name}-Solution-Details.md     # 国际站英文",
     "RFS URL 清单（url.txt）"
   ],
-  "meta_rules": [
-    "【意图预检】加载任何技能前，先判断用户查询是否匹配当前 Agent 的 skill_binding 注册范围；不匹配时跳过技能加载，直接使用基线能力",
-    "【冲突抑制】查询同时命中多个技能时，优先选择 skill_index.json 中 relevance 评分最高的技能；若两个技能声明了 conflicts_with 关系，不得同时加载",
-    "【递归限制】技能加载深度上限 = 1 层。技能内容中不得递归引用加载其他技能。所有跨技能引用必须通过 reference/*.md 公共参考文档完成",
-    "【技能区生命周期】每次 Agent 执行完成后，清空 ZONE 3（技能区）上下文，仅保留 ZONE 1（系统指令）+ ZONE 2（用户查询）+ ZONE 4（滑动历史窗口）"
-  ],
-  "doc_sections": {
-    "deployment_guide": [
-      "参考模板：reference/docs/部署指南模板-华为云标准.md（基于 LiteLLM 部署指南提取）",
-      "",
-      "1. 方案概述 / Solution Overview",
-      "  1.1 应用场景 / Use Cases（3 个场景）",
-      "  1.2 方案架构 / Architecture（单机版 + 高可用版架构图 + 资源清单）",
-      "  1.3 方案优势 / Key Advantages（3-4 个核心优势）",
-      "  1.4 约束与限制 / Constraints（3-5 条注意事项）",
-      "",
-      "2. 资源与成本规划 / Resources & Cost Planning",
-      "  2.1 单机版部署（按需计费表 + 包月计费表）",
-      "  2.2 高可用版部署（包月计费表，可选）",
-      "",
-      "3. 实施步骤 / Deployment Steps",
-      "  3.1 准备工作 / Preparation（账号检查、委托创建、API Key 获取）",
-      "  3.2 快速部署 / Quick Deploy（RFS 参数配置 + 部署操作）",
-      "  3.3 开始使用 / Getting Started（配置引导 + 功能验证）",
-      "  3.4 快速卸载 / Uninstall（RFS 资源栈删除）",
-      "",
-      "4. 附录 / Appendix",
-      "  4.1 名词解释 / Glossary",
-      "  4.2 参考文档 / References",
-      "",
-      "5. 修订记录 / Revision History"
-    ],
-    "solution_details": [
-      "1. 解决方案概述 / Solution Overview",
-      "2. 方案优势 / Key Advantages",
-      "3. 架构与部署方式 / Architecture & Deployment Options",
-      "4. 应用场景 / Use Cases",
-      "5. 相关解决方案 / Related Solutions",
-      "6. 支持区域 / Available Regions",
-      "7. 预估成本 / Estimated Cost",
-      "8. 服务亮点 / Service Highlights"
-    ]
-  },
-  "rules": [
-    "正式交付物为 Word 格式（.doc），单语言单文件",
-    "语言跟随区域：国内中文、海外英文",
-    "方案描述必须包含量化价值指标",
-    "费用表必须包含按需和包年包月两种计费模式",
-    "部署参数表中的每个变量必须有中文/英文描述",
-    "所有 URL 链接必须可访问（不含占位符）"
-  ]
 }

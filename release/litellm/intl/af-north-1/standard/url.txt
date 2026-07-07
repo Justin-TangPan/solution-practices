@@ -1,5 +1,0 @@
-﻿# --- af-north-1 (Cairo) ---
-TF:https://documentation-samples-10.obs.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/deploying-litellm-af-north-1.tf
-sh:https://documentation-samples-10.obs.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/install_litellm.sh
-RFS_intl:https://console-intl.huaweicloud.com/rf/?region=af-north-1&locale=en-us#/console/stack/stackCreate?templateUrl=https://documentation-samples-10.obs.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/standard/deploying-litellm-af-north-1.tf&stackName=litellm-standard&stackDescription=LiteLLM+Standard+Unified+AI+Management+Gateway
-

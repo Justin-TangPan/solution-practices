@@ -1,5 +1,47 @@
 # Changelog
 
+## v0.6.2 (2026-07-03) — 区域重构与安全修复
+
+### 新功能
+- **新加坡区域 LiteLLM 部署** — 新增 `ap-southeast-1` 区域的 LiteLLM 标准部署和高可用部署配置文件
+- **中英文双语变量分组** — 所有 Terraform 变量添加中英文双语描述和分组信息
+- **香港区域迁移完成** — 自 2026-07-03 起，香港区域正式从 `cn` 站点迁移到 `intl` 国际站
+
+### 安全修复
+- **脚本调试信息移除** — 移除 `dify_search_css.sh`、`dify_search.sh`、`hermesagent_install.sh` 中的 `set -x` 调试输出，防止生产环境敏感信息泄露
+- **Python 脚本规范化** — 为所有 Python 脚本添加正确的 shebang (`#!/usr/bin/env python3`)
+- **文件权限修复** — 为所有 shell 脚本添加执行权限
+- **敏感变量检查** — 检查所有 Terraform 文件中的敏感变量标记
+
+### 文档更新
+- **README 升级** — 采用 mem0 风格，添加徽章、能力矩阵和引用
+- **SKILL 文档完善** — 修复 `sac-business-evaluator/SKILL.md` 中的占位符问题
+- **gitignore 更新** — 添加 `.next/`、`node_modules/` 等构建产物目录
+
+### 关键文件
+- `practices/litellm/intl/ap-southeast-1/ha/.extension` — 新加坡高可用配置
+- `practices/litellm/intl/en-us/ap-southeast-1/standard/.extension` — 新加坡标准配置
+- `scripts/fix_security_issues.sh` — 安全修复脚本
+- `.gitignore` — 新增构建产物排除规则
+- `skills/sac-business-evaluator/SKILL.md` — 修复占位符
+
+## v0.6.1 (2026-07-02) — supabase 方案完善
+
+### 修复
+- **JWT 密钥一致性（critical）** — `install_supabase.sh` 原现场随机生成 `JWT_SECRET`，但 `.env` 里 `ANON_KEY`/`SERVICE_ROLE_KEY` 用的是 supabase 官方 demo JWT（与随机 secret 不匹配），导致部署后 PostgREST 拒绝 anon key、Studio 无法登录管理。改为用 openssl HS256 现场签发与 `JWT_SECRET` 配套的 `ANON_KEY`/`SERVICE_ROLE_KEY`，开箱即用。
+- **imgproxy 接线** — `storage` 服务补 `IMGPROXY_URL: http://imgproxy:5001`，图片变换功能不再悬空。
+- **meta 健康检查** — `postgres-meta` 加 healthcheck，`docker ps` 状态可见、依赖链更准。
+- **Terraform 密码校验** — `ecs_password`/`db_password` 去掉空默认值并加 8-26 长度校验，避免空密码部署出装不出 Supabase 的 ECS。
+
+### 文档
+- 三份部署指南（cn / intl-zh / intl-en）同步：1.3 镜像加速表述改为 `docker.wangzhou3.top`；3.3.2/3.3.3 改写密钥说明（JWT_SECRET 随机生成、key 派生关系、轮换步骤）；修订记录加条目。
+
+### 关键文件
+- `practices/supabase/{cn/cn-north-4,intl/ap-southeast-3}/standard/scripts/install_supabase.sh` — gen_jwt 函数
+- `practices/supabase/{cn/cn-north-4,intl/ap-southeast-3}/standard/scripts/docker-compose.yaml` — imgproxy/healthcheck
+- `practices/supabase/{cn/cn-north-4,intl/ap-southeast-3}/standard/terraform/deploying-supabase*.tf` — 密码校验
+- `practices/supabase/cn/docs/Supabase-部署指南.md` + `practices/supabase/intl/docs/{zh-cn,en-us}/Supabase-*.md`
+
 ## v0.6.0 (2026-07-01) — SAC Web 可视化重构（静态导出 + 瑞士/Claude 设计）
 
 ### 重构 Web UI

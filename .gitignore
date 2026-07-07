@@ -6,6 +6,11 @@
 *.key
 *.p12
 *.pfx
+.obs/
+.obs-credentials
+.env
+.env.local
+*.env
 
 # ============================================
 # Terraform
@@ -50,6 +55,21 @@ desktop.ini
 # Build outputs
 # ============================================
 output/
+.next/
+node_modules/
+*.log
+logs/
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# ============================================
+# Web build artifacts
+# ============================================
+web/.next/
+web/out/
+web/.turbo/
 
 # ============================================
 # Claude Code (project-specific, not shared)
@@ -57,6 +77,14 @@ output/
 .claude/settings.json
 .claude/settings.local.json
 .claude/skills/huawei-style-ppt-skill/
+
+# ============================================
+# Internal reference (not for public repo)
+# ============================================
+skills/reference/obs-production-buckets.md
+skills/reference/obs-conventions.md
+scripts/obs_upload_*
+scripts/obs/
 
 # ============================================
 # Serena MCP

@@ -21,7 +21,7 @@ echo "[$(date)] 下载 Supabase 配置..."
 mkdir -p /opt/supabase/volumes/api /opt/supabase/volumes/db
 cd /opt/supabase
 
-OBS_BASE="${OBS_BASE_URL:-https://tp-00940108.obs.cn-north-4.myhuaweicloud.com}/supabase/cn/cn-north-4/standard"
+OBS_BASE="${OBS_BASE_URL:-https://tp-00940108.obs.cn-south-1.myhuaweicloud.com/solution-practices/practices}/supabase/cn/cn-north-4/standard/scripts"
 wget -q "$OBS_BASE/docker-compose.yaml" -O docker-compose.yaml
 wget -q "$OBS_BASE/kong.yml" -O volumes/api/kong.yml
 
@@ -30,14 +30,29 @@ DB_PASSWORD="${1?Usage: install_supabase.sh <db_password> [jwt_secret]}"
 JWT_SECRET="${2:-$(openssl rand -base64 32 2>/dev/null || echo 'change-me-secret-key')}"
 SECRET_KEY_BASE="$(openssl rand -base64 32 2>/dev/null || echo 'supabase-secret-key-base')"
 
+# 用 JWT_SECRET 现场签发 ANON_KEY / SERVICE_ROLE_KEY（HS256）
+# 注意：ANON_KEY/SERVICE_ROLE_KEY 必须与 JWT_SECRET 同源签发，否则 PostgREST/GoTrue/Storage 验签全失败
+gen_jwt() {
+  local secret="$1" role="$2"
+  local header='{"alg":"HS256","typ":"JWT"}'
+  local payload="{\"iss\":\"supabase\",\"role\":\"$role\",\"exp\":1983810273,\"ref\":\"default\"}"
+  local h p sig
+  h=$(printf '%s' "$header"  | openssl base64 -A | tr '/+' '_-' | tr -d '=')
+  p=$(printf '%s' "$payload" | openssl base64 -A | tr '/+' '_-' | tr -d '=')
+  sig=$(printf '%s' "$h.$p" | openssl dgst -sha256 -hmac "$secret" -binary | openssl base64 -A | tr '/+' '_-' | tr -d '=')
+  printf '%s' "$h.$p.$sig"
+}
+ANON_KEY="$(gen_jwt "$JWT_SECRET" anon)"
+SERVICE_ROLE_KEY="$(gen_jwt "$JWT_SECRET" service_role)"
+
 cat > .env << ENVEOF
 # Supabase 环境配置（由部署脚本自动生成）
 POSTGRES_PASSWORD=${DB_PASSWORD}
 JWT_SECRET=${JWT_SECRET}
 SECRET_KEY_BASE=${SECRET_KEY_BASE}
 APP_NAME=supabase
-ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTAyNzN9.CRXP1A7WOeoJeXxjNni43kdEDwNnnP7IGiD1k3ivLc0
-SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMDI3M30.sQTxYmZxLJmhFIVwYl_cfMZMZNmrUIMmF8v3Rj7obI0
+ANON_KEY=${ANON_KEY}
+SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY}
 ENVEOF
 
 # ===== Stage 3: 部署容器 =====
@@ -60,6 +75,29 @@ if [ $deploy_ok -eq 0 ]; then
   exit 1
 fi
 echo "[$(date)] 容器启动完成"
+
+# ===== Stage 3.1: 配置开机自启 =====
+echo "[$(date)] 配置 systemd 开机自启..."
+cat > /etc/systemd/system/supabase.service << 'UNITEOF'
+[Unit]
+Description=Supabase Docker Compose Stack
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/supabase
+ExecStart=/usr/bin/docker compose up -d
+ExecStop=/usr/bin/docker compose down
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target
+UNITEOF
+systemctl daemon-reload
+systemctl enable supabase.service
+echo "[$(date)] 开机自启已配置: systemctl enable supabase.service"
 
 # ===== Stage 3.5: DB 初始化 =====
 echo "[$(date)] 等待 DB 就绪..."

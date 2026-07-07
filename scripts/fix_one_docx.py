@@ -3,7 +3,7 @@
 import os, shutil
 from docx import Document
 
-base = r'C:\Users\Administrator\Desktop\Project\claudeproject\solution-implementations'
+base = r'C:\Users\Administrator\Desktop\Project\claudeproject\solution-practices'
 rel = r'release\headroom-claude-code\hk'
 
 src = os.path.join(base, rel, 'Headroom-ClaudeCode-部署指南.docx')

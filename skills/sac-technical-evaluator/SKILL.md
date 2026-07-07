@@ -2,7 +2,7 @@
 name: sac-technical-evaluator
 description: |
   SAC 技术评估子 Agent。负责分析应用架构、设计部署方案、规划云资源、评估安全风险。
-  由 sac-orchestrator 编排器调用，也可独立使用。
+  由 sac-architect Agent 在方案设计阶段加载，也可独立使用。
   触发关键词：技术评估、架构设计、资源规划、安全评估、technical evaluation。
   当用户提到"分析一下架构"、"规划资源"、"技术可行性"时触发。
 ---

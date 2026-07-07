@@ -9,7 +9,9 @@
       { "id": "template-development", "name": "模板开发", "description": "RFS/OpenTofu template writing, shell scripts, deployment, Docker patterns", "skills": ["sac-rfs-practices"] },
       { "id": "content-pipeline", "name": "内容提取与增强", "description": "Page extraction from Huawei Cloud, AI copy enhancement, commercialisation", "skills": ["sac-page-enhance"] },
       { "id": "research", "name": "调研分析", "description": "Multi-layer deep search, competitive analysis, technology selection", "skills": ["sac-deep-search"] },
-      { "id": "presentation", "name": "演示文稿", "description": "PPT creation, visual design, slide authoring, Huawei style density standards", "skills": ["ppt-forge"] }
+      { "id": "presentation", "name": "演示文稿", "description": "PPT creation, visual design, slide authoring, Huawei style density standards", "skills": ["ppt-forge"] },
+      { "id": "business-evaluation", "name": "业务评估", "description": "四维商业可行性评估：服务端属性、营销价值、场景价值、云上部署价值", "skills": ["sac-business-evaluator"] },
+      { "id": "technical-evaluation", "name": "技术评估", "description": "应用架构分析、部署方案设计、云资源规划、安全风险评估", "skills": ["sac-technical-evaluator"] }
     ]
   },
 
@@ -68,6 +70,32 @@
       "merge_group": "research"
     },
     {
+      "id": "sac-business-evaluator",
+      "name": "解决方案实践业务评估",
+      "path": "skills/sac-business-evaluator/SKILL.md",
+      "tokens": 9000,
+      "compressed_description": "四维评估模型：服务端属性(25%)、营销价值(25%)、场景价值(25%)、云上部署价值(25%)。每维度0-10分加权，总分决定推荐等级(强烈推荐/值得做/勉强可做/不建议)。含典型项目评估参考对照表。",
+      "category": "business-evaluation",
+      "agents": ["sac-architect"],
+      "keywords": ["业务评估", "商业可行性", "四维评估", "服务端属性", "营销价值", "场景价值", "云上部署价值", "商业预筛"],
+      "requires": ["sac-project-rules"],
+      "conflicts_with": [],
+      "merge_group": "evaluation"
+    },
+    {
+      "id": "sac-technical-evaluator",
+      "name": "SAC 技术评估",
+      "path": "skills/sac-technical-evaluator/SKILL.md",
+      "tokens": 6000,
+      "compressed_description": "技术评估子Agent：应用架构分析(技术栈/运行时/存储/网络)、部署架构设计(单机/主从/集群)、云资源规划(VPC/ECS/EIP/安全组)、安全风险评估(网络/数据/合规)。含ECS/磁盘/带宽选择规范。",
+      "category": "technical-evaluation",
+      "agents": ["sac-architect"],
+      "keywords": ["技术评估", "架构分析", "部署设计", "资源规划", "安全评估", "ECS规格", "费用估算"],
+      "requires": ["sac-project-rules"],
+      "conflicts_with": [],
+      "merge_group": "evaluation"
+    },
+    {
       "id": "ppt-forge",
       "name": "华为风格 PPT 生产线",
       "path": ".claude/skills/huawei-style-ppt-skill/ppt-forge/SKILL.md",
@@ -91,7 +119,7 @@
   },
 
   "agent_skill_bindings": {
-    "sac-architect":    { "primary": ["sac-deep-search"],    "base": ["sac-project-rules"], "max_skills": 2 },
+    "sac-architect":    { "primary": ["sac-deep-search"],    "base": ["sac-project-rules"], "optional": ["sac-business-evaluator", "sac-technical-evaluator"], "max_skills": 3 },
     "sac-developer":    { "primary": ["sac-rfs-practices"],  "base": ["sac-project-rules"], "max_skills": 2 },
     "sac-tester":       { "primary": [],                     "base": ["sac-project-rules"], "max_skills": 1 },
     "sac-security":     { "primary": [],                     "base": ["sac-project-rules"], "max_skills": 1 },

@@ -27,7 +27,7 @@ DB_COLOR = RGBColor(0x05, 0x96, 0x69)
 RAG_COLOR = RGBColor(0x6D, 0x28, 0xD9)
 
 # Load existing presentation
-prs = Presentation(r'C:\Users\Administrator\Desktop\Project\claudeproject\solution-implementations\ppt\competition\competition.pptx')
+prs = Presentation(r'C:\Users\Administrator\Desktop\Project\claudeproject\solution-practices\ppt\competition\competition.pptx')
 
 def set_bg(slide, color):
     bg = slide.background; fill = bg.fill; fill.solid(); fill.fore_color.rgb = color
@@ -184,11 +184,11 @@ print("  Slide 29: InsightPro Technical Architecture")
 
 
 # ================================================================
-# SLIDE 30: SAC 解决方案即代码 详细技术架构
+# SLIDE 30: SAC 解决方案实践 详细技术架构
 # ================================================================
 s = prs.slides.add_slide(prs.slide_layouts[6])
 set_bg(s, DARK_BG)
-chrome(s, 'SAC · 解决方案即代码 详细架构', 'Act III / Arch Detail · 30 / 30')
+chrome(s, 'SAC · 解决方案实践 详细架构', 'Act III / Arch Detail · 30 / 30')
 tb(s, Inches(0.8), Inches(0.8), Inches(10), Inches(0.5), 'SAC 全栈技术架构', Pt(32), WHITE, bold=True)
 tb(s, Inches(0.8), Inches(1.3), Inches(11), Inches(0.3), '4个AI Skills · 9个Python脚本 · 7个解决方案 · CN/HK双区域 · RFS一键部署', Pt(12), SUBTLE_TEXT)
 
@@ -314,8 +314,8 @@ for i, (name, desc) in enumerate(scripts):
     tb(s, Inches(9.6), y, Inches(3), Inches(0.18), name, Pt(8), WHITE, bold=True, font='Consolas')
     tb(s, Inches(9.6), y+Inches(0.17), Inches(3), Inches(0.15), desc, Pt(7.5), SUBTLE_TEXT)
 
-footer(s, 'SAC · 详细技术架构', 'Solution as Code')
+footer(s, 'SAC · 详细技术架构', 'Solution Practices')
 
 # Save
-prs.save(r'C:\Users\Administrator\Desktop\Project\claudeproject\solution-implementations\ppt\competition\competition.pptx')
+prs.save(r'C:\Users\Administrator\Desktop\Project\claudeproject\solution-practices\ppt\competition\competition.pptx')
 print(f"Saved! Total slides: {len(prs.slides)}")

@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🧊 SAC — Solution as Code
+# 🧊 SAC — Solution Practices
 
-### 解决方案即代码 · 让 AI 替你写完从架构到交付的全部代码
+### 解决方案实践 · 让 AI 替你写完从架构到交付的全部代码
 
 **v0.6.0** · 华为云解决方案实践仓库
 
@@ -320,10 +320,10 @@ python -m scripts.obs.upload --practice litellm --region cn-north-4 \
 
 ```bibtex
 @misc{sac,
-  title  = {SAC: Solution as Code — AI-Driven Huawei Cloud Solution Delivery},
+  title  = {SAC: Solution Practices — AI-Driven Huawei Cloud Solution Delivery},
   author = {Solution Architect Community},
   year   = {2026},
-  note   = {https://github.com/Justin-TangPan/solution-implementations},
+  note   = {https://github.com/Justin-TangPan/solution-practices},
   year   = {2026}
 }
 ```

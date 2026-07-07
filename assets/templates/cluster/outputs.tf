@@ -1,11 +1,11 @@
 output "elb_address" {
   description = "ELB 公网地址（应用入口）"
-  value       = huaweicloud_elb_loadbalancer.main.ipv4_address
+  value       = huaweicloud_elb_loadbalancer.main.ipv4_eip
 }
 
 output "web_url" {
   description = "应用访问地址"
-  value       = "http://${huaweicloud_elb_loadbalancer.main.ipv4_address}"
+  value       = "http://${huaweicloud_elb_loadbalancer.main.ipv4_eip}"
 }
 
 output "ecs_ids" {

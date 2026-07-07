@@ -1,7 +1,7 @@
 ﻿---
 name: sac-project-rules
 description: |
-  SAC（Solution as Code — 解决方案实践）交付包项目的完整规则定义。
+  SAC（Solution Practices — 解决方案实践）交付包项目的完整规则定义。
 
   本 skill 定义了项目的命名规范、目录结构、文件组织、多 Agent 协同架构、交付流程和操作守则。
 
@@ -16,13 +16,13 @@ description: |
 
 # SAC 交付包项目规则
 
-> **SAC = Solution as Code**（解决方案即代码）
+> **SAC = Solution Practices**（解决方案实践）
 >
 > 中文名：**解决方案实践**
-> 英文名：**Solution Practice**
+> 英文名：**Solution Practices**
 > 简称：**SAC**
 
-本文档定义了本项目（Solution Practice）的完整组织规则、命名规范、文件结构和交付流程。
+本文档定义了本项目（Solution Practices）的完整组织规则、命名规范、文件结构和交付流程。
 
 ---
 
@@ -75,13 +75,11 @@ solution-practice/
 solution-practice/
 ├── practices/          # 实践方案源码（开发目录）
 │   ├── litellm/        # 完整参考：cn+intl双站点，standard+ha双变体
-│   │   ├── cn/         # 中国站（含cn-north-4北京 + ap-southeast-1香港）
+│   │   ├── cn/         # 中国站（含cn-north-4北京）
 │   │   │   ├── cn-north-4/standard/...
 │   │   │   ├── cn-north-4/ha/...
-│   │   │   ├── ap-southeast-1/standard/...
-│   │   │   ├── ap-southeast-1/ha/...
 │   │   │   └── docs/         ← 中国站中文文档（站点级）
-│   │   └── intl/       # 国际站（多个区域 + docs/{zh-cn,en-us}）
+│   │   └── intl/       # 国际站（含ap-southeast-1香港 + 其他区域 + docs/{zh-cn,en-us}）
 │   ├── headroom-claude-code/
 │   ├── headroom-opencode/
 │   ├── openhands/
@@ -119,8 +117,8 @@ solution-practice/
 
 | 站点 | 包含的具体区域 | 特点 |
 |------|--------------|------|
-| `cn` | cn-north-4（华北-北京四）、**ap-southeast-1（中国-香港）** | 中国站，中文文档。香港虽在海外但归 cn 站点 |
-| `intl` | ap-southeast-3（亚太-新加坡）、ap-southeast-2（亚太-曼谷）、af-south-1（非洲-约翰内斯堡）、af-north-1（非洲-开罗）、tr-west-1（土耳其-伊斯坦布尔）、la-north-2（拉美-墨西哥城2）、sa-brazil-1（拉美-圣保罗）等 | 国际站，中/英文文档 |
+| `cn` | cn-north-4（华北-北京四） | 中国站，中文文档 |
+| `intl` | **ap-southeast-1（中国-香港）**、ap-southeast-3（亚太-新加坡）、ap-southeast-2（亚太-曼谷）、af-south-1（非洲-约翰内斯堡）、af-north-1（非洲-开罗）、tr-west-1（土耳其-伊斯坦布尔）、la-north-2（拉美-墨西哥城2）、sa-brazil-1（拉美-圣保罗）等 | 国际站，中/英文文档 |
 
 ### 3.2 practices/ 按区域组组织（开发目录）
 
@@ -137,15 +135,19 @@ practices/{project}/
 │   │   └── ha/             # 高可用版（可选）
 │   │       ├── terraform/
 │   │       └── .extension
-│   ├── ap-southeast-1/     # 香港区域（归属中国站）
-│   │   ├── standard/
-│   │   └── ha/
 │   │
 │   └── docs/               # ← 中国站中文文档（站点级，不按区域重复）
 │       ├── {Name}-部署指南.md        # 合并 HA+标准版
 │       └── {Name}-Solution-Details.md
 │
 ├── intl/                   # 国际站
+│   ├── ap-southeast-1/     # 香港区域（归属 intl 国际站）
+│   │   ├── en-us/
+│   │   │   ├── standard/
+│   │   │   └── ha/
+│   │   └── zh-cn/
+│   │       ├── standard/
+│   │       └── ha/
 │   ├── ap-southeast-3/     # 新加坡
 │   │   ├── standard/
 │   │   │   ├── terraform/
@@ -168,6 +170,14 @@ practices/{project}/
 
 `.extension` 定义了参数分组和国际化配置，支持 `zh-cn` 和 `en-us`。
 
+### 3.4 国际站双语言规则（intl）
+
+`practices/*/intl/` 下必须同时存在 `en-us/` 和 `zh-cn/` 目录，且满足：
+
+1. **必须同时存在** — 不允许只有 en-us 没有 zh-cn，反之亦然
+2. **逻辑完全一致** — zh-cn 版仅翻译 `description` / `error_message` / shell 注释 / `output`，资源定义和部署逻辑与 en-us 完全一致
+3. **同步创建** — 新增区域时，en-us 和 zh-cn 同步创建，不允许先建一个再补另一个
+
 ---
 
 ## 4. release/ 按具体区域组织（发布目录）
@@ -186,17 +196,17 @@ release/{project}/
 │   │   └── ha/
 │   │       ├── deploying-{project}-ha.tf
 │   │       └── url.txt
-│   └── ap-southeast-1/           # 香港（归属中国站）
-│       ├── standard/
-│       │   ├── deploying-{project}-ap-southeast-1.tf
-│       │   ├── install_{project}.sh
-│       │   ├── .extension
-│       │   └── url.txt
-│       └── ha/
-│           ├── deploying-{project}-ha-ap-southeast-1.tf
-│           └── url.txt
 │
 ├── intl/                         # 国际多区域
+│   ├── ap-southeast-1/           # 香港（归属 intl 国际站）
+│   │   ├── standard/
+│   │   │   ├── deploying-{project}-ap-southeast-1.tf
+│   │   │   ├── install_{project}.sh
+│   │   │   ├── .extension
+│   │   │   └── url.txt
+│   │   └── ha/
+│   │       ├── deploying-{project}-ha-ap-southeast-1.tf
+│   │       └── url.txt
 │   ├── ap-southeast-3/
 │   ├── ap-southeast-2/
 │   ├── af-south-1/
@@ -324,10 +334,15 @@ provider "huaweicloud" {
 VPC → Subnet → Security Group → EIP → ECS
 ```
 
-### 7.3 模板与脚本分离
+### 7.3 user_data 风格（两种模式，按实践选定）
 
-`.tf` 的 `user_data` 必须**最小化**：重置密码 → 下载脚本 → 执行 → 清理。
-所有部署逻辑在 `.sh` 脚本中。
+**模式 A — OBS 脚本分发（脚本与模板分离）**：`.tf` 的 `user_data` 最小化：重置密码 → `wget` 下载 `install_*.sh` → 执行 → 清理。所有部署逻辑在 `scripts/install_*.sh` 中，脚本与模板解耦，改逻辑不动模板。适用于需要 OBS 分发链路的实践。
+
+**模式 B — 全内联 user_data（2026-07-03 起，litellm 采用）**：`.tf` 的 `user_data` 用 HCL heredoc `<<-EOT` 内联全部部署逻辑（装 Docker → heredoc 生成 docker-compose/config/prometheus → `docker compose up` → 健康检查），**不依赖 OBS、无 `scripts/` 目录**。`.tf`（HCL heredoc）与 `.tf.json`（单行字面量）的 user_data 渲染结果必须一致。
+
+> ⚠️ **HCL2 转义坑**：user_data 里给 curl 的 `%{http_code}` 必须写成 `%%{http_code}`（`%{}` 是 HCL2 模板指令语法，`%%` 才是字面 `%`）；shell/docker 的 `${VAR}` 必须写成 `$${VAR}`（`${}` 是 HCL2 插值，`$$` 才是字面 `$`）。Terraform 变量用 `${var.xxx}`。
+
+> ℹ️ **intl 语言层**：intl 站点在 region 之上加 `en-us`/`zh-cn` 层：`practices/<practice>/intl/<en-us|zh-cn>/<region>/standard/terraform/litellm-standard-<region>.tf(.json)`。两版内容仅注释语言不同。
 
 ---
 
@@ -349,6 +364,26 @@ VPC → Subnet → Security Group → EIP → ECS
 | 6. 测试上传 | AI | 上传测试桶验证 |
 | 7. 用户测试 | 用户 | 部署验证 |
 | 8. 生产打包 | AI | 预置生产路径到 `release/` |
+
+### 8.1 交付步骤（AI 执行）
+
+| 步骤 | 操作 | 说明 |
+|------|------|------|
+| 1 | 整理 practices/ 到 release/ | 按区域复制 practices 文件到 release 目录 |
+| 2 | 预置生产 OBS 路径 | 将 templateUrl 中的测试桶路径替换为生产桶路径 |
+| 3 | 生成 URL 清单 | 为每个区域生成 TF 链接、SH 链接、RFS 页面链接 |
+| 4 | 打包归档 | 创建 {project}.zip，包含全部区域文件 |
+| 5 | 更新变更日志 | 在 CHANGELOG.md 中记录版本变更 |
+| 6 | Git 提交 | 提交 release/ 目录到仓库 |
+
+### 8.2 URL 格式
+
+| 类型 | 格式 |
+|------|------|
+| TF 模板 | `https://{bucket}.obs.{region}.myhuaweicloud.com/{path}/deploying-{project}.tf` |
+| 安装脚本 | `https://{bucket}.obs.{region}.myhuaweicloud.com/{path}/install_{project}.sh` |
+| RFS（intl） | `https://console-intl.huaweicloud.com/rf/?region={region}&locale=en-us#/console/stack/stackCreate?templateUrl={TF_URL}&stackName={name}&stackDescription={desc}` |
+| RFS（cn） | `https://console.huaweicloud.com/rf/?region={region}&locale=zh-cn#/console/stack/stackCreate?templateUrl={TF_URL}&stackName={name}&stackDescription={desc}` |
 
 ---
 
@@ -378,7 +413,14 @@ VPC → Subnet → Security Group → EIP → ECS
 |------|------------|-------------------------------|
 | Docker 安装源 | `mirrors.huaweicloud.com` | `download.docker.com` |
 | pip 镜像 | 清华 PyPI | 直连 pypi.org |
-| Docker 镜像 | SWR + `docker.1ms.run` | 直接从 Docker Hub |
+| Docker 镜像 | `docker.wangzhou3.top` 镜像站 | 官方 Docker Hub / ghcr.io |
+
+### 10.2 文档交付规则
+
+- **方案描述必须包含量化价值指标** — 如"降低 70% 运维成本"、"部署时间从 2 小时缩短至 10 分钟"
+- **费用表必须包含按需和包年包月两种计费模式** — 两种模式都要列出，方便用户对比
+- **部署参数表中的每个变量必须有中文/英文描述** — cn 站点中文描述，intl 站点英文描述
+- **所有 URL 链接必须可访问** — 文档中不含占位符 URL（如 `https://xxx`），所有链接必须指向真实地址
 
 ---
 
@@ -394,6 +436,17 @@ VPC → Subnet → Security Group → EIP → ECS
 
 ---
 
+## 13. 版本管理
+
+每次提交代码前，检查是否需要更新 `CHANGELOG.md`：
+
+- **新功能 / 架构变更** → 升次版本号（如 v0.3.0 → v0.4.0）
+- **修复 / 小改动** → 升修订号（如 v0.3.0 → v0.3.1）
+
+CHANGELOG 格式参照已有条目：**日期 + 版本标题 + 分类描述 + 关键文件清单**。
+
+---
+
 *文档版本：2026-06-25*
-*英文名：Solution Practice*
+*英文名：Solution Practices*
 *区域：practices 按区域组，release 按具体区域代码*

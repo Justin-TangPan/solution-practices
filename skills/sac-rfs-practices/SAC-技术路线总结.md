@@ -1,12 +1,12 @@
 # 华为云解决方案实践（SAC）技术路线总结
 
-> Solution as Code — 基于华为云 RFS 的一键部署方案技术全景
+> Solution Practices — 基于华为云 RFS 的一键部署方案技术全景
 
 ---
 
 ## 一、什么是 SAC
 
-SAC（Solution as Code）是华为云解决方案实践的标准化交付模式。核心思想：
+SAC（Solution Practices）是华为云解决方案实践的标准化交付模式。核心思想：
 
 **用一段模板描述整个基础设施 + 应用部署，用户点击"一键部署"，RFS 自动完成全部资源创建和应用安装。**
 
@@ -398,7 +398,7 @@ services:
 | **Docker 镜像拉取** | SWR 预推送 + 镜像加速 | 直接从 Docker Hub / ghcr.io |
 | **SWR** | 必须 | 不需要 |
 | **语言** | 中文 | 英文 |
-| **目录后缀** | 无 | `-hk` (香港) / `-platform` (其他) |
+| **目录后缀** | 无 | `-platform` (非香港区域) |
 | **daemon.json** | 需要配置 registry-mirrors | 不需要 |
 | **GPG Key** | 华为云镜像 | Docker 官方 |
 
@@ -546,23 +546,39 @@ output "access_info" {
 ### 9.1 项目目录结构
 
 ```
-solution-implementations/
+solution-practices/
 ├── practices/
-│   ├── litellm/                    # 国内版（北京四）
-│   │   ├── deploying-litellm.tf    # RFS 模板
-│   │   ├── deploying-litellm.tf.json  # 备用 JSON 格式
-│   │   ├── .extension              # 参数分组 + 国际化
-│   │   ├── README.md               # 部署文档（中文）
-│   │   └── scripts/                # OBS 脚本（如用 OBS 模式）
-│   │       ├── install_litellm.sh
-│   │       ├── docker-compose.yaml
-│   │       └── config.yaml
-│   │
-│   └── litellm-hk/                 # 海外版（香港）
-│       ├── deploying-litellm.tf
-│       ├── deploying-litellm.tf.json
-│       ├── .extension
-│       └── README.md               # 部署文档（英文）
+│   ├── litellm/                    # 方案根目录
+│   │   ├── cn/                     # 中国站
+│   │   │   ├── cn-north-4/         # 华北-北京四
+│   │   │   │   └── standard/
+│   │   │   │       ├── terraform/deploying-litellm.tf
+│   │   │   │       ├── terraform/deploying-litellm.tf.json
+│   │   │   │       ├── scripts/install_litellm.sh
+│   │   │   │       └── .extension
+│   │   │   └── docs/
+│   │   │       ├── LiteLLM-部署指南.md
+│   │   │       └── Solution-Details.md
+│   │   └── intl/                   # 国际站
+│   │       ├── ap-southeast-1/     # 中国-香港（归属 intl 国际站）
+│   │       │   └── standard/
+│   │       │       ├── terraform/deploying-litellm-ap-southeast-1.tf
+│   │       │       ├── .extension
+│   │       │       └── scripts/
+│   │       ├── ap-southeast-3/     # 亚太-新加坡
+│   │       │   └── standard/
+│   │       │       ├── terraform/deploying-litellm-ap-southeast-3.tf
+│   │       │       ├── scripts/
+│   │       │       └── .extension
+│   │       ├── af-south-1/
+│   │       ├── ...                 # 其他 intl 区域
+│   │       └── docs/
+│   │           ├── zh-cn/
+│   │           │   ├── LiteLLM-部署指南.md
+│   │           │   └── Solution-Details.md
+│   │           └── en-us/
+│   │               ├── LiteLLM-Deployment-Guide.md
+│   │               └── Solution-Details.md
 │
 └── skills/
     └── sac-rfs-practices/
@@ -574,13 +590,17 @@ solution-implementations/
 
 | 对象 | 命名规则 | 示例 |
 |------|---------|------|
-| 国内目录 | `{project}` | `litellm` |
-| 海外目录（香港） | `{project}-hk` | `litellm-hk` |
-| 海外目录（其他） | `{project}-platform` | `litellm-platform` |
-| 模板文件 | `deploying-{project}.tf` | `deploying-litellm.tf` |
-| JSON 备份 | `deploying-{project}.tf.json` | `deploying-litellm.tf.json` |
+| 项目根目录 | `{project}` | `litellm` |
+| cn 区域目录 | `cn/{region}/{variant}/` | `cn/cn-north-4/standard/` |
+| intl 区域目录 | `intl/{region}/{variant}/` | `intl/ap-southeast-3/standard/` |
+| 模板（默认区域） | `deploying-{project}.tf` | `deploying-litellm.tf` |
+| 模板（非默认区域） | `deploying-{project}-{region}.tf` | `deploying-litellm-ap-southeast-1.tf` |
+| 高可用模板 | `deploying-{project}-ha[-{region}].tf` | `deploying-litellm-ha-cn-north-4.tf` |
 | 安装脚本 | `install_{project}.sh` | `install_litellm.sh` |
-| OBS 上传 | `{project}[-hk\|-platform].zip` | `litellm-hk.zip` |
+| 文档（中国站） | `{Name}-部署指南.md` / `{Name}-Solution-Details.md` | `LiteLLM-部署指南.md` |
+| 文档（国际站中文） | 同上，位于 `intl/docs/zh-cn/` | `LiteLLM-部署指南.md` |
+| 文档（国际站英文） | `{Name}-Deployment-Guide.md` / `{Name}-Solution-Details.md` | `LiteLLM-Deployment-Guide.md` |
+| OBS 归档包 | `{project}.zip` | `litellm.zip` |
 | 资源名 | `${var.solution_name}-{type}` | `litellm-vpc` |
 | 安全组规则 | `{app}_{port}` | `litellm_api` |
 
@@ -623,7 +643,7 @@ solution-implementations/
 | 4 | 语言 | 中文 / 英文 | 跟随地域 |
 | 5 | 脚本架构 | 单文件 / 多文件 | 跟随安装策略 |
 | 6 | 部署文档 | 必须输出 README.md | 强制 |
-| 7 | 命名规范 | `{project}` / `-hk` / `-platform` | 跟随地域 |
+| 7 | 命名规范 | `{project}` / `-platform` | 跟随地域 |
 
 ---
 
@@ -637,7 +657,7 @@ solution-implementations/
    └── 语言：中文还是英文？
 
 2. 创建目录
-   practices/{project}[-hk|-platform]/
+   practices/{project}[-platform]/
 
 3. 编写模板
    ├── terraform + provider 块
@@ -663,7 +683,7 @@ solution-implementations/
    └── 验证端口/功能
 
 7. 打包上传
-   └── obs://{bucket}/{project}[-hk|-platform].zip
+   └── obs://{bucket}/{project}[-platform].zip
 ```
 
 ---

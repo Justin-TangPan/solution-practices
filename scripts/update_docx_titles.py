@@ -5,7 +5,7 @@ import os
 import re
 from docx import Document
 
-BASE = r'C:\Users\Administrator\Desktop\Project\claudeproject\solution-implementations'
+BASE = r'C:\Users\Administrator\Desktop\Project\claudeproject\solution-practices'
 
 # Map of replacements per file
 files = [

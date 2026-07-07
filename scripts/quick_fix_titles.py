@@ -3,7 +3,7 @@
 import shutil, os, sys
 from docx import Document
 
-base = r'C:\Users\Administrator\Desktop\Project\claudeproject\solution-implementations'
+base = r'C:\Users\Administrator\Desktop\Project\claudeproject\solution-practices'
 
 updates = [
     (r'practices\headroom-claude-code\hk\Headroom-ClaudeCode-Deployment-Guide.docx',

@@ -1,4 +1,0 @@
-﻿# --- ap-southeast-3 (Singapore) HA ---
-TF:https://documentation-samples-5.obs.ap-southeast-3.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/ha/deploying-litellm-ha-ap-southeast-3.tf
-RFS_intl:https://console-intl.huaweicloud.com/rf/?region=ap-southeast-3&locale=en-us#/console/stack/stackCreate?templateUrl=https://documentation-samples-5.obs.ap-southeast-3.myhuaweicloud.com/solution-as-code-publicbucket/solution-as-code-module/litellm-unified-ai-management-gateway/en-us/ha/deploying-litellm-ha-ap-southeast-3.tf&stackName=litellm-ha&stackDescription=LiteLLM+HA+Unified+AI+Management+Gateway
-

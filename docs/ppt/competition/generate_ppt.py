@@ -220,9 +220,9 @@ add_accent_line(slide, Inches(0.8), Inches(1.2), Inches(1.5), ACCENT_GOLD, Pt(3)
 
 agenda_items = [
     ("01", "背景与挑战", "从信息过载到智能决策"),
-    ("02", "项目全景·双轨并行", "InsightPro + SAC 解决方案即代码"),
+    ("02", "项目全景·双轨并行", "InsightPro + SAC 解决方案实践"),
     ("03", "InsightPro·商业洞察平台", "企业级AI商业洞察平台"),
-    ("04", "SAC·解决方案即代码", "基于RFS/OpenTofu的自动化方案"),
+    ("04", "SAC·解决方案实践", "基于RFS/OpenTofu的自动化方案"),
     ("05", "华为云产品深度使用", "MaaS · RFS · Headroom"),
     ("06", "创新性与业务价值总结", "双AI引擎 · 上下文压缩 · 6大场景"),
 ]
@@ -353,7 +353,7 @@ add_shape(slide, Inches(7.0), Inches(1.6), Inches(5.5), Inches(4.5),
 add_text_box(slide, Inches(7.3), Inches(1.8), Inches(5), Inches(0.5),
              "Project B", font_name=TITLE_FONT, font_size=14, bold=True, color=ACCENT_CYAN)
 add_text_box(slide, Inches(7.3), Inches(2.2), Inches(5), Inches(0.6),
-             "SAC 解决方案即代码", font_name=TITLE_FONT, font_size=28, bold=True, color=WHITE)
+             "SAC 解决方案实践", font_name=TITLE_FONT, font_size=28, bold=True, color=WHITE)
 add_text_box(slide, Inches(7.3), Inches(2.8), Inches(5), Inches(0.5),
              "基于RFS/OpenTofu的自动化方案", font_name=BODY_FONT, font_size=16, bold=False, color=MID_GRAY)
 add_accent_line(slide, Inches(7.3), Inches(3.4), Inches(2), ACCENT_CYAN, Pt(2))
@@ -660,7 +660,7 @@ add_shape(slide, Inches(0), Inches(7.42), Inches(13.33), Pt(4), fill_color=ACCEN
 # ═══════════════════════════════════════════════════════════════
 # SLIDE 13 - ACT 3 DIVIDER: SAC
 # ═══════════════════════════════════════════════════════════════
-add_section_divider(prs, "SAC 解决方案即代码", "Solutions as Code")
+add_section_divider(prs, "SAC 解决方案实践", "Solution Practices")
 
 # ═══════════════════════════════════════════════════════════════
 # SLIDE 14 - SIX SOLUTIONS PANORAMA
@@ -1136,7 +1136,7 @@ add_accent_line(slide, Inches(0.8), Inches(0.9), Inches(1.2), ACCENT_GOLD, Pt(3)
 innovations = [
     ("双AI引擎协同", "DeepSeek结构化分析 + MaaS流式对话\n双引擎互补，覆盖全场景", ACCENT_BLUE),
     ("上下文压缩革命", "AST级别可逆压缩\nToken成本降低60-95%", PURPLE_ACCENT),
-    ("解决方案即代码", "RFS + OpenTofu一键部署\n从需求到上线流程标准化", GREEN_ACCENT),
+    ("解决方案实践", "RFS + OpenTofu一键部署\n从需求到上线流程标准化", GREEN_ACCENT),
     ("Agent辅助竞争分析", "AI自动采集对比五大厂商\n六大场景深度结构化", ACCENT_CYAN),
     ("自动化情报流水线", "APScheduler定时采集分析\n从数据到洞察全自动化", ACCENT_GOLD),
     ("Skill技能市场", "可复用AI Skill组件\n持续积累组织智慧", RED_ACCENT),
@@ -1290,7 +1290,7 @@ add_text_box(slide, Inches(1.5), Inches(5.2), Inches(10.3), Inches(0.4),
              "github.com/Justin-TangPan/Insightpro", font_name=BODY_FONT, font_size=14, bold=False, color=LIGHT_GRAY,
              alignment=PP_ALIGN.CENTER)
 add_text_box(slide, Inches(1.5), Inches(5.5), Inches(10.3), Inches(0.4),
-             "github.com/Justin-TangPan/solution-implementations", font_name=BODY_FONT, font_size=14, bold=False, color=LIGHT_GRAY,
+             "github.com/Justin-TangPan/solution-practices", font_name=BODY_FONT, font_size=14, bold=False, color=LIGHT_GRAY,
              alignment=PP_ALIGN.CENTER)
 
 # Speaker

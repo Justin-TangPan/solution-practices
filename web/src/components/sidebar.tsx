@@ -44,7 +44,7 @@ function Brand() {
     <div className="px-8 pt-10 pb-6 border-b border-border">
       <Link href="/" className="flex items-baseline gap-2.5">
         <span className="serif text-2xl font-bold text-ink leading-none">SAC</span>
-        <span className="eyebrow">Solution as Code</span>
+        <span className="eyebrow">Solution Practices</span>
       </Link>
     </div>
   )
@@ -81,7 +81,7 @@ export function Sidebar() {
       <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-cream border-b border-border z-40 flex items-center justify-between px-5">
         <Link href="/" className="flex items-baseline gap-2">
           <span className="serif text-xl font-bold text-ink leading-none">SAC</span>
-          <span className="eyebrow">Solution as Code</span>
+          <span className="eyebrow">Solution Practices</span>
         </Link>
         <button onClick={() => setOpen(true)} aria-label="打开菜单" className="p-2 -mr-2 text-ink hover:text-accent transition-colors">
           <Menu className="h-5 w-5" />

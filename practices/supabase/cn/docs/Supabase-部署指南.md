@@ -57,7 +57,7 @@ Kong (API Gateway) ← 统一入口 :8000
 
 - **103k+ Stars 开源项目** — Apache-2.0 协议，社区活跃，持续更新
 - **Docker Compose 一键部署** — 约 10 个容器自动编排，10-15 分钟完成部署
-- **SWR 镜像加速** — 华为云 SWR 内网拉取 Docker 镜像，国内 ECS 稳定快速
+- **统一镜像站加速** — 镜像统一经 `docker.wangzhou3.top` 拉取，国内 ECS 稳定快速
 - **内置 PostgreSQL 扩展** — pgvector 向量搜索、pgjwt 认证、PostGIS 地理空间等
 - **完整后端能力** — 数据库 + REST API + GraphQL + 认证 + 实时订阅 + 文件存储 + Dashboard
 - **自动重试机制** — 5 次重试保障镜像拉取成功率
@@ -211,22 +211,39 @@ cat /opt/supabase/.env
 | `SERVICE_ROLE_KEY` | 管理员密钥 | 服务端使用，拥有完整权限，**切勿暴露到客户端** |
 | `POSTGRES_PASSWORD` | PostgreSQL 数据库密码 | 数据库连接使用 |
 
-> **安全提示：** 部署后请立即修改默认的 `JWT_SECRET` 和 `POSTGRES_PASSWORD`，并妥善保管 `SERVICE_ROLE_KEY`。
+> **安全提示：** 部署时 `JWT_SECRET` 与 `SECRET_KEY_BASE` 已随机生成，`ANON_KEY`/`SERVICE_ROLE_KEY` 由 `JWT_SECRET` 派生签发，开箱即用。请妥善保管 `.env` 中所有密钥，`SERVICE_ROLE_KEY` 切勿暴露到客户端。
 
 ----结束
 
-#### 3.3.3 修改安全密钥（推荐）
+#### 3.3.3 轮换安全密钥（如需）
+
+部署时 `JWT_SECRET`、`SECRET_KEY_BASE` 已随机生成，`ANON_KEY`/`SERVICE_ROLE_KEY` 用 `JWT_SECRET` 现场签发。如需轮换：
 
 ```bash
 ssh root@<EIP>
-vi /opt/supabase/.env
-# 修改以下值：
-# POSTGRES_PASSWORD=您的强密码
-# JWT_SECRET=您的随机密钥（至少32字符）
-# SECRET_KEY_BASE=您的随机密钥
+cd /opt/supabase
 
-cd /opt/supabase && docker compose restart
+# 1. 生成新 JWT_SECRET
+NEW_JWT=$(openssl rand -base64 32)
+
+# 2. 用新 JWT_SECRET 重新签发 ANON_KEY / SERVICE_ROLE_KEY
+gen_jwt() {
+  local secret="$1" role="$2"
+  local h p sig
+  h=$(printf '%s' '{"alg":"HS256","typ":"JWT"}' | openssl base64 -A | tr '/+' '_-' | tr -d '=')
+  p=$(printf '%s' "{\"iss\":\"supabase\",\"role\":\"$role\",\"exp\":1983810273,\"ref\":\"default\"}" | openssl base64 -A | tr '/+' '_-' | tr -d '=')
+  sig=$(printf '%s' "$h.$p" | openssl dgst -sha256 -hmac "$secret" -binary | openssl base64 -A | tr '/+' '_-' | tr -d '=')
+  printf '%s' "$h.$p.$sig"
+}
+
+# 3. 写回 .env 并重启
+sed -i "s|^JWT_SECRET=.*|JWT_SECRET=$NEW_JWT|" .env
+sed -i "s|^ANON_KEY=.*|ANON_KEY=$(gen_jwt "$NEW_JWT" anon)|" .env
+sed -i "s|^SERVICE_ROLE_KEY=.*|SERVICE_ROLE_KEY=$(gen_jwt "$NEW_JWT" service_role)|" .env
+docker compose restart
 ```
+
+> **注意：** 单独改 `JWT_SECRET` 而不重新签发 `ANON_KEY`/`SERVICE_ROLE_KEY` 会导致 REST/Auth/Storage 验签全部失败。`POSTGRES_PASSWORD` 轮换需同步 `ALTER USER` 各数据库角色，建议直接重建栈完成。
 
 ----结束
 
@@ -288,4 +305,5 @@ cd /opt/supabase && docker compose restart
 
 | 日期 | 修订记录 |
 |---------|---------|
+| 2026-07-02 | 完善部署脚本：修复 JWT 密钥一致性（ANON/SERVICE_ROLE_KEY 改由随机 JWT_SECRET 派生签发）、补全 imgproxy 接线与 meta 健康检查、Terraform 密码参数校验。|
 | 2026-06-26 | 首次发布。|

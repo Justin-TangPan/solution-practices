@@ -1,5 +1,5 @@
 {
-  "generated": "2026-06-30T10:56:58.443Z",
+  "generated": "2026-07-02T09:05:53.646Z",
   "count": 8,
   "practices": [
     {
@@ -15,7 +15,7 @@
         "cn-north-4"
       ],
       "hasHA": false,
-      "docsPath": "C:/Users/Administrator/Desktop/Project/claudeproject/solution-implementations/practices/aitoearn/cn/docs/Solution-Details.md"
+      "docsPath": "C:/Users/Administrator/Desktop/Project/claudeproject/solution-practices/practices/aitoearn/cn/docs/Solution-Details.md"
     },
     {
       "slug": "cli-anything-dify",
@@ -27,7 +27,7 @@
         "cn-north-4"
       ],
       "hasHA": false,
-      "docsPath": "C:/Users/Administrator/Desktop/Project/claudeproject/solution-implementations/practices/cli-anything-dify/cn/docs/Solution-Details.md"
+      "docsPath": "C:/Users/Administrator/Desktop/Project/claudeproject/solution-practices/practices/cli-anything-dify/cn/docs/Solution-Details.md"
     },
     {
       "slug": "codewhale",
@@ -56,7 +56,7 @@
         "cn-north-4"
       ],
       "hasHA": false,
-      "docsPath": "C:/Users/Administrator/Desktop/Project/claudeproject/solution-implementations/practices/headroom-claude-code/cn/docs/Solution-Details.md"
+      "docsPath": "C:/Users/Administrator/Desktop/Project/claudeproject/solution-practices/practices/headroom-claude-code/cn/docs/Solution-Details.md"
     },
     {
       "slug": "headroom-opencode",
@@ -71,7 +71,7 @@
         "cn-north-4"
       ],
       "hasHA": false,
-      "docsPath": "C:/Users/Administrator/Desktop/Project/claudeproject/solution-implementations/practices/headroom-opencode/cn/docs/Solution-Details.md"
+      "docsPath": "C:/Users/Administrator/Desktop/Project/claudeproject/solution-practices/practices/headroom-opencode/cn/docs/Solution-Details.md"
     },
     {
       "slug": "litellm",
@@ -92,7 +92,7 @@
         "tr-west-1"
       ],
       "hasHA": true,
-      "docsPath": "C:/Users/Administrator/Desktop/Project/claudeproject/solution-implementations/practices/litellm/cn/docs/Solution-Details.md"
+      "docsPath": "C:/Users/Administrator/Desktop/Project/claudeproject/solution-practices/practices/litellm/cn/docs/Solution-Details.md"
     },
     {
       "slug": "openhands",

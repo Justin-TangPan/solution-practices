@@ -28,7 +28,7 @@
       "variable": {
         "resource_name_prefix": { "description": "Resource name prefix. Naming rule: {prefix}-{resource_name}. Range: 4-24 characters, lowercase letters, digits, hyphens. Must start with lowercase letter. Default: ha-litellm" },
         "bandwidth_size": { "description": "Elastic IP bandwidth (Mbit/s), traffic-based billing. Range: 1-300. Default: 300" },
-        "litellm_version": { "description": "LiteLLM Proxy image version. Auto-assembled as docker.litellm.ai/berriai/litellm:{version}. Default: 1.87.0" },
+        "litellm_version": { "description": "LiteLLM Proxy image version. Auto-assembled as docker.wangzhou3.top/berriai/litellm:{version}. Default: 1.87.0" },
         "litellm_master_key": { "description": "LiteLLM master key, must start with sk-. Bearer token for external API calls. Max 24 characters." },
         "litellm_salt_key": { "description": "LiteLLM salt key for encrypting sensitive data in database. 8-24 characters. Cannot be changed once set." },
         "cce_cluster_flavor": { "description": "CCE Turbo cluster flavor. Default: cce.s2.small (small-scale multi-master, max 50 nodes). Options: cce.s2.small/medium/large/xlarge" },
@@ -48,7 +48,7 @@
       "variable": {
         "resource_name_prefix": { "description": "资源名称前缀。命名规则：{前缀}-{资源英文名}。取值范围：4-24字符，支持小写字母、数字、中划线，须以小写字母开头。默认：ha-litellm" },
         "bandwidth_size": { "description": "弹性公网带宽大小（Mbit/s），按流量计费。取值范围：1-300。默认：300" },
-        "litellm_version": { "description": "LiteLLM Proxy 镜像版本号。自动拼接为 docker.litellm.ai/berriai/litellm:{version}。默认：1.87.0" },
+        "litellm_version": { "description": "LiteLLM Proxy 镜像版本号。自动拼接为 docker.wangzhou3.top/berriai/litellm:{version}。默认：1.87.0" },
         "litellm_master_key": { "description": "LiteLLM 主密钥，须以 sk- 开头。对外调用 Proxy 时的 Bearer Token。最长24位。" },
         "litellm_salt_key": { "description": "LiteLLM 加密密钥，用于加密数据库中的敏感数据。8-24位，一旦使用不可更改。" },
         "cce_cluster_flavor": { "description": "CCE Turbo 集群规格。默认：cce.s2.small（小规模多控制节点，最大50节点）。可选：cce.s2.small/medium/large/xlarge" },

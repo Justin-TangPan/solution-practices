@@ -8,7 +8,7 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml.ns import qn, nsdecls
 from docx.oxml import parse_xml
 
-BASE = r'C:\Users\Administrator\Desktop\Project\claudeproject\solution-implementations'
+BASE = r'C:\Users\Administrator\Desktop\Project\claudeproject\solution-practices'
 OUT = os.path.join(BASE, 'reports', 'headroom-claude-code')
 
 def set_cell_shading(cell, color):

@@ -174,7 +174,7 @@ foot(s1, 'InsightPro · 详细技术架构', 'Architecture Detail')
 # ══════════════════════════════════════════════════════════════
 s2 = prs.slides.add_slide(prs.slide_layouts[6])
 bg(s2, DARK_BG)
-header(s2, 'SAC · 解决方案即代码 详细架构', '30 / 30', dark=True)
+header(s2, 'SAC · 解决方案实践 详细架构', '30 / 30', dark=True)
 
 txt(s2, Inches(0.8), Inches(0.75), Inches(10), Inches(0.45), 'SAC 全栈技术架构', Pt(30), WHITE, b=True)
 txt(s2, Inches(0.8), Inches(1.15), Inches(11), Inches(0.25),
@@ -265,10 +265,10 @@ for i,(a,b) in enumerate([('Docker源:','华为云镜像 / 官方'),('SWR:','需
     txt(s2, Inches(9.6), y, Inches(0.7), Inches(0.14), a, Pt(7), CYAN, b=True, f='Consolas')
     txt(s2, Inches(10.3), y, Inches(2.3), Inches(0.14), b, Pt(7), SUBTLE, f='Consolas')
 
-foot(s2, 'SAC · 详细技术架构', 'Solution as Code')
+foot(s2, 'SAC · 详细技术架构', 'Solution Practices')
 
 # ── Save ──
-out = r'C:\Users\Administrator\Desktop\Project\claudeproject\solution-implementations\ppt\competition\arch_detail.pptx'
+out = r'C:\Users\Administrator\Desktop\Project\claudeproject\solution-practices\ppt\competition\arch_detail.pptx'
 prs.save(out)
 import os
 print(f"Saved: {out}")

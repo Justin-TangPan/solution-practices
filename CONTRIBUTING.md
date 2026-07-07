@@ -4,7 +4,7 @@
 
 ## 项目概述
 
-SAC (Solution as Code) 是一个华为云解决方案实践仓库。核心工作流：
+SAC (Solution Practices) 是一个华为云解决方案实践仓库。核心工作流：
 1. AI 架构师评估方案可行性
 2. AI 开发生成 Terraform 模板 + 安装脚本
 3. AI 测试验证模板语法

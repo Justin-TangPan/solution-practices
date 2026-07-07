@@ -66,7 +66,7 @@ def create_docx(output_path, lang):
         add_para('中国香港 一键部署指南',
                  bold=True, align=WD_ALIGN_PARAGRAPH.CENTER).runs[0].font.size = Pt(22)
         doc.add_paragraph()
-        add_para('Solution as Code (SAC)',
+        add_para('Solution Practices (SAC)',
                  align=WD_ALIGN_PARAGRAPH.CENTER).runs[0].font.size = Pt(14)
         add_para('华为云资源编排服务 (RFS)',
                  align=WD_ALIGN_PARAGRAPH.CENTER).runs[0].font.size = Pt(14)
@@ -76,7 +76,7 @@ def create_docx(output_path, lang):
         add_para('Hong Kong Region — One-Click Deployment Guide',
                  bold=True, align=WD_ALIGN_PARAGRAPH.CENTER).runs[0].font.size = Pt(22)
         doc.add_paragraph()
-        add_para('Solution as Code (SAC)',
+        add_para('Solution Practices (SAC)',
                  align=WD_ALIGN_PARAGRAPH.CENTER).runs[0].font.size = Pt(14)
         add_para('Huawei Cloud Resource Formation Service (RFS)',
                  align=WD_ALIGN_PARAGRAPH.CENTER).runs[0].font.size = Pt(14)
@@ -588,7 +588,7 @@ def create_docx(output_path, lang):
 if __name__ == '__main__':
     base = (
         r'C:\Users\Administrator\Desktop\Project\claudeproject'
-        r'\solution-implementations\release\litellm\hk'
+        r'\solution-practices\release\litellm\hk'
     )
     create_docx(f'{base}\\LiteLLM-部署指南.docx', 'zh')
     create_docx(f'{base}\\LiteLLM-Deployment-Guide.docx', 'en')
