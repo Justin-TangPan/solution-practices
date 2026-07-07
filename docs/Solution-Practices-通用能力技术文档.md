@@ -439,14 +439,14 @@ practices/{solution-name}/{region}/
 
 | 用途 | OBS 桶 | 路径格式 |
 |------|--------|----------|
-| 内部开发（practices） | `tp-00940108` | `obs://tp-00940108/{solution-name}-{region}/` |
+| 内部开发（practices） | 见本地开发记忆 | `obs://{test-bucket}/{solution-name}-{region}/` |
 | 公开发布（release） | `documentation-samples-5` | `obs://documentation-samples-5/solution-as-code-publicbucket/solution-as-code-module/{solution-name}-{region}/` |
 
 ### 5.3 .extension 配置规范
 
 ```json
 {
-  "template_url": "https://tp-00940108.obs.ap-southeast-1.myhuaweicloud.com/.../deploying-*.tf",
+  "template_url": "https://{PRODUCTION_BUCKET}.obs.{region}.myhuaweicloud.com/.../deploying-*.tf",
   "group_order": ["network_config", "ecs_config", "charging_config"],
   "parameters": {
     "ecs_flavor": {

@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.8.0 (2026-07-07) — Supabase 全内联 + INTL 香港双语言 + 规则完善
+
+### 新功能
+- **Supabase 全内联 user_data（模式 B）** — cn-north-4 删除 `scripts/` 目录，`deploying-supabase.tf` 改为 HCL heredoc 全内联部署逻辑（Docker Compose + 配置 + 健康检查），不再依赖 OBS 脚本分发
+- **Supabase INTL ap-southeast-1 双语言** — 新增 `intl/en-us/ap-southeast-1/` + `intl/zh-cn/ap-southeast-1/`，含 standard 版 Terraform 模板 + .extension
+- **Supabase INTL 文档** — 新增英文 `Supabase-Deployment-Guide.md` + 中文 `Supabase-部署指南.md`
+
+### 规则更新
+- **sac-project-rules SKILL.md** — 补充版本管理规则：版本号变更时必须同步更新 README.md 中的版本徽章和显示文本
+
+### 关键文件
+- `practices/supabase/cn/cn-north-4/standard/terraform/deploying-supabase.tf` — 全内联 user_data
+- `practices/supabase/cn/cn-north-4/standard/.extension` — 参数分组更新
+- `practices/supabase/intl/en-us/ap-southeast-1/standard/` — 香港英文标准版
+- `practices/supabase/intl/zh-cn/ap-southeast-1/standard/` — 香港中文标准版
+- `practices/supabase/intl/en-us/docs/Supabase-Deployment-Guide.md` — 英文部署指南
+- `practices/supabase/intl/zh-cn/docs/Supabase-部署指南.md` — 中文部署指南
+- `practices/supabase/url.txt` — URL 清单
+- `skills/sac-project-rules/SKILL.md` — 版本管理规则完善
+
 ## v0.6.2 (2026-07-03) — 区域重构与安全修复
 
 ### 新功能

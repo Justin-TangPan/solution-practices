@@ -57,7 +57,7 @@ All deployment logic (package installation, configuration, service startup) belo
 | 阶段 | 负责人 | 产出 |
 |------|--------|------|
 | 5. 开发 | AI | .tf 模板 + .sh 脚本 + Markdown 文档（部署指南+业务文档） |
-| 6. 测试 OBS 上传 | AI | 上传到测试桶 `tp-00940108`，用户验证 |
+| 6. 测试 OBS 上传 | AI | 上传到测试桶（桶名见本地开发记忆），用户验证 |
 | 8. 生产打包 | AI | 整理最终归档包，预置生产 OBS 路径的模板 |
 
 ### OBS 桶规范

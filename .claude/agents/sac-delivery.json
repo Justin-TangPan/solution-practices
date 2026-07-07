@@ -4,7 +4,7 @@
   "roles": [
     "Release 目录组织与归档打包",
     "URL 清单生成（每个区域 standard/ 和 ha/ 下的 url.txt）",
-    "OBS 测试桶上传（tp-00940108）",
+    "OBS 测试桶上传（桶名见本地开发记忆）",
     "生产包预置（templateUrl 指向生产 OBS 路径）",
     "多区域 RFS URL 生成",
     "变更日志更新",

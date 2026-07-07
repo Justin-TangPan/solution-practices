@@ -4,7 +4,7 @@
 
 ### 解决方案实践 · 让 AI 替你写完从架构到交付的全部代码
 
-**v0.7.0** · 华为云解决方案实践仓库
+**v0.8.0** · 华为云解决方案实践仓库
 
 </div>
 
@@ -15,7 +15,7 @@
 <div align="center">
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.7.0-blue.svg?style=flat-square&label=SAC)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.8.0-blue.svg?style=flat-square&label=SAC)](CHANGELOG.md)
 [![Practices](https://img.shields.io/badge/Practices-2-blue.svg?style=flat-square)](#-已有方案)
 [![Skills](https://img.shields.io/badge/Skills-6-green.svg?style=flat-square)](#-skills-架构)
 [![Agents](https://img.shields.io/badge/Agents-6-purple.svg?style=flat-square)](#-skills-架构)
@@ -216,7 +216,7 @@ python -m scripts.tests.runner --practice litellm   # 单方案
 | 方案 | 说明 | CN 区域 | INTL 区域 |
 |------|------|---------|-----------|
 | **LiteLLM** | 多模型 API 统一管理网关 | cn-north-4 | ap-southeast-1/2/3, af-north/south-1, la-north-2, sa-brazil-1, tr-west-1 |
-| **Supabase** | 开源后端即服务 | cn-north-4 | — |
+| **Supabase** | 开源后端即服务 | cn-north-4 | ap-southeast-1 |
 
 > 每个方案均提供 `standard`（单机）与 `ha`（高可用）两种部署形态（部分方案）。需要新方案？直接告诉 AI 应用名称和目标区域即可。
 

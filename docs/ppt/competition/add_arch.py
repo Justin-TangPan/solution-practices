@@ -323,7 +323,7 @@ infra = [
     ('安全组\nSSH:22\nProxy:8787\nPing:ICMP', GREEN),
     ('EIP弹性IP\n300Mbit/s\n按流量计费', GOLD),
     ('Flexus X ECS\nx1.2u.4g\nUbuntu 24.04\n40GB SSD', PURPLE),
-    ('OBS存储\ntp-00940108\n模板+脚本托管\nCN/HK双桶', GOLD),
+    ('OBS存储\n模板+脚本托管\nCN/HK双桶', GOLD),
 ]
 for i, (txt, c) in enumerate(infra):
     x = Inches(0.68) + i * Inches(2.03)
