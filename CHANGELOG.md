@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.8.1 (2026-07-08) — 项目范围治理与质量门禁修复
+
+### 改进
+- **正式范围配置** — 新增 `project.config.json`，集中声明当前可用 practice、质量门禁策略和资产状态
+- **项目治理文档** — 新增 `OWNERSHIP.md`、`docs/project-state.md` 和 `docs/contracts/`，明确项目状态、资产归属、目录契约、脚本策略和发布契约
+- **README 可用入口** — README 改为面向使用者展示当前可用实践和常用入口，并同步版本号到 v0.8.1
+- **脚本分级说明** — 新增 `scripts/README.md`，区分正式脚本、可选脚本、实验脚本和归档候选
+
+### 修复
+- **测试发现逻辑** — `scripts.tests.runner` 改为递归发现部署实例，并按 `project.config.json` 过滤正式 practice，覆盖 `intl/<locale>/<region>/<variant>` 结构
+- **一致性检查策略** — `scripts/` 目录改为按配置可选，兼容全内联 `user_data` 部署模式
+- **OBS 上传定位** — `scripts.obs.upload` 适配结构化 practice 字段，并支持 `--locale` 指定国际站语言版本
+- **OBS 工具纳入版本管理** — `.gitignore` 继续忽略 OBS 运行产物，同时允许 `scripts/obs/__init__.py`、`scripts/obs/upload.py`、`scripts/obs/spec.md`
+
+### 验证
+- `python -m scripts.tests.runner`：20 个 practice 实例，560 项检查，0 ERROR
+- `python -m scripts.obs.upload --dry-run`：CN 与 INTL 指定 locale 实例定位、扫描、打包预览通过
+
 ## v0.8.0 (2026-07-07) — Supabase 全内联 + INTL 香港双语言 + 规则完善
 
 ### 新功能

@@ -21,6 +21,7 @@ from dataclasses import dataclass, field, asdict
 
 ROOT = Path(__file__).resolve().parent.parent.parent
 PRACTICES_DIR = ROOT / "practices"
+PROJECT_CONFIG = ROOT / "project.config.json"
 SKIP_DIRS = {"docs", "__pycache__", ".git", ".github"}
 
 
@@ -61,38 +62,55 @@ class PracticeReport:
 
 
 def discover_practices():
+    config = load_project_config()
+    formal_practices = set(config.get("formal", {}).get("practices", []))
     entries = []
+
+    def _has_deployable_content(path: Path) -> bool:
+        return (path / "terraform").is_dir() or (path / "scripts").is_dir()
+
+    def _is_skipped(path: Path) -> bool:
+        return any(part in SKIP_DIRS for part in path.parts)
+
     for practice_dir in sorted(PRACTICES_DIR.iterdir()):
         if not practice_dir.is_dir() or practice_dir.name in SKIP_DIRS:
             continue
         pname = practice_dir.name
-        for region_dir in sorted(practice_dir.iterdir()):
-            if not region_dir.is_dir() or region_dir.name in SKIP_DIRS:
+        if formal_practices and pname not in formal_practices:
+            continue
+
+        for deploy_dir in sorted(p for p in practice_dir.rglob("*") if p.is_dir()):
+            rel_parts = deploy_dir.relative_to(PRACTICES_DIR).parts
+            if _is_skipped(Path(*rel_parts)) or not _has_deployable_content(deploy_dir):
                 continue
-            for deploy_dir in sorted(region_dir.iterdir()):
-                if not deploy_dir.is_dir() or deploy_dir.name in SKIP_DIRS:
-                    continue
+            if len(rel_parts) < 4:
+                continue
 
-                def _has_tf_or_sh(d):
-                    return (d / "terraform").is_dir() or (d / "scripts").is_dir()
+            site = rel_parts[1]
+            deploy_type = rel_parts[-1]
+            region = rel_parts[-2]
+            locale = ""
 
-                if _has_tf_or_sh(deploy_dir):
-                    entries.append({
-                        "name": pname,
-                        "region": region_dir.name,
-                        "deploy_type": deploy_dir.name,
-                        "path": deploy_dir,
-                    })
-                else:
-                    for sub in sorted(deploy_dir.iterdir()):
-                        if sub.is_dir() and sub.name not in SKIP_DIRS and _has_tf_or_sh(sub):
-                            entries.append({
-                                "name": pname,
-                                "region": region_dir.name,
-                                "deploy_type": f"{deploy_dir.name}/{sub.name}",
-                                "path": sub,
-                            })
+            if site == "intl" and len(rel_parts) >= 5 and rel_parts[2] in {"en-us", "zh-cn"}:
+                locale = rel_parts[2]
+                region = rel_parts[-2]
+
+            entries.append({
+                "name": pname,
+                "site": site,
+                "locale": locale,
+                "region": region,
+                "deploy_type": deploy_type,
+                "path": deploy_dir,
+            })
     return entries
+
+
+def load_project_config():
+    if not PROJECT_CONFIG.exists():
+        return {}
+    with PROJECT_CONFIG.open("r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 def run_checks(entries, check_filter=None):
@@ -100,7 +118,8 @@ def run_checks(entries, check_filter=None):
 
     all_reports = []
     for entry in entries:
-        report = PracticeReport(practice=f"{entry['name']}/{entry['region']}/{entry['deploy_type']}")
+        parts = [entry["name"], entry.get("site", ""), entry.get("locale", ""), entry["region"], entry["deploy_type"]]
+        report = PracticeReport(practice="/".join(p for p in parts if p))
         report.start_time = time.time()
         pp = entry["path"]
 

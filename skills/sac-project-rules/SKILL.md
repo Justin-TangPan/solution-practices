@@ -1,5 +1,8 @@
 ﻿---
 name: sac-project-rules
+status: formal
+scope: formal-delivery
+owner: project
 description: |
   SAC（Solution Practices — 解决方案实践）交付包项目的完整规则定义。
 
@@ -23,6 +26,28 @@ description: |
 > 简称：**SAC**
 
 本文档定义了本项目（Solution Practices）的完整组织规则、命名规范、文件结构和交付流程。
+
+---
+
+## 0. 当前范围与事实源
+
+本 skill 是正式规则源，但不直接声明当前有哪些 practice 属于正式版本。当前正式范围以仓库根目录 `project.config.json` 为准。
+
+事实源优先级：
+
+1. `project.config.json`：正式 practice 范围、质量门禁策略、资产状态。
+2. `practices/`：可部署方案实现。
+3. `scripts/tests/`：正式质量门禁。
+4. `skills/`：规则和可复用知识。
+5. `web/`：未来可视化原型，不反向约束正式版本。
+
+当前治理文件：
+
+- `docs/project-state.md`：当前版本状态。
+- `OWNERSHIP.md`：资产归属。
+- `docs/contracts/`：目录、脚本、skill、发布契约。
+
+历史半成品 practice、旧 web catalog、旧一次性脚本或旧 README 示例，不构成正式交付依据，除非对应 practice 被重新加入 `project.config.json`。
 
 ---
 
@@ -306,43 +331,17 @@ RFS_intl:https://console-intl.huaweicloud.com/rf/?region=af-south-1&locale=en-us
 
 ## 7. 模板技术规范
 
-### 7.1 Provider 配置
+参见 `sac-rfs-practices` 获取完整技术规范：
 
-```hcl
-terraform {
-  required_providers {
-    huaweicloud = {
-      source  = "huawei.com/provider/huaweicloud"
-      version = ">= 1.20.0"
-    }
-  }
-}
-
-provider "huaweicloud" {
-  region = "ap-southeast-1"   # 只写 region
-}
-```
-
-**关键规则：**
-- Provider 块**只写 `region`**，不加 `auth_url`/`cloud`/`insecure`
-- RFS 仅支持 `huaweicloud` provider
-- `required_providers` 是**对象**格式（`{}`），不是数组（`[]`）
-
-### 7.2 标准资源创建顺序
-
-```
-VPC → Subnet → Security Group → EIP → ECS
-```
-
-### 7.3 user_data 风格（两种模式，按实践选定）
-
-**模式 A — OBS 脚本分发（脚本与模板分离）**：`.tf` 的 `user_data` 最小化：重置密码 → `wget` 下载 `install_*.sh` → 执行 → 清理。所有部署逻辑在 `scripts/install_*.sh` 中，脚本与模板解耦，改逻辑不动模板。适用于需要 OBS 分发链路的实践。
-
-**模式 B — 全内联 user_data（2026-07-03 起，litellm 采用）**：`.tf` 的 `user_data` 用 HCL heredoc `<<-EOT` 内联全部部署逻辑（装 Docker → heredoc 生成 docker-compose/config/prometheus → `docker compose up` → 健康检查），**不依赖 OBS、无 `scripts/` 目录**。`.tf`（HCL heredoc）与 `.tf.json`（单行字面量）的 user_data 渲染结果必须一致。
-
-> ⚠️ **HCL2 转义坑**：user_data 里给 curl 的 `%{http_code}` 必须写成 `%%{http_code}`（`%{}` 是 HCL2 模板指令语法，`%%` 才是字面 `%`）；shell/docker 的 `${VAR}` 必须写成 `$${VAR}`（`${}` 是 HCL2 插值，`$$` 才是字面 `$`）。Terraform 变量用 `${var.xxx}`。
-
-> ℹ️ **intl 语言层**：intl 站点在 region 之上加 `en-us`/`zh-cn` 层：`practices/<practice>/intl/<en-us|zh-cn>/<region>/standard/terraform/litellm-standard-<region>.tf(.json)`。两版内容仅注释语言不同。
+| 本节主题 | 对应位置 |
+|---------|---------|
+| Provider 配置（只写 region） | `sac-rfs-practices` Rule 1 + Pitfall 19 |
+| required_providers 对象格式 | `sac-rfs-practices` tf.json Template Standards |
+| 标准资源创建顺序 | `sac-rfs-practices` VPC/Subnet/Security Group/EIP/ECS |
+| 模板-脚本分离（模式 A） | `sac-rfs-practices` Rule 3 + user_data Pattern |
+| 全内联 user_data（模式 B） | `sac-rfs-practices` User Constraints §7 |
+| HCL2 转义坑（`%%{}`/`$$`） | `sac-rfs-practices` Pitfall 22 |
+| intl 语言层 | `sac-rfs-practices` 定位 → intl 语言层说明 |
 
 ---
 
@@ -402,18 +401,9 @@ VPC → Subnet → Security Group → EIP → ECS
 
 ## 10. 项目约束规则
 
-- **不硬编码凭证** — 无 AK/SK/API Key
-- **不修改第三方源码** — 通过配置定制
-- **先确认再动手** — 开发前确认决策点
-- **国内/海外差异** — Docker 源、pip 镜像、语言
+通用开发约束参见 `sac-rfs-practices` User Constraints（不硬编码凭证 → UC2，不修改第三方源码 → UC3，先确认再动手 → UC5）。
 
-### 10.1 国内/海外差异
-
-| 维度 | 国内 (cn-*) | 海外 (ap-*, af-*, tr-*, la-*) |
-|------|------------|-------------------------------|
-| Docker 安装源 | `mirrors.huaweicloud.com` | `download.docker.com` |
-| pip 镜像 | 清华 PyPI | 直连 pypi.org |
-| Docker 镜像 | `docker.wangzhou3.top` 镜像站 | 官方 Docker Hub / ghcr.io |
+国内/海外差异（Docker 源、pip 镜像、Docker 镜像站）参见 `skills/reference/docker-registry.md`。
 
 ### 10.2 文档交付规则
 

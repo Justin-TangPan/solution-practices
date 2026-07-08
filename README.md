@@ -4,18 +4,18 @@
 
 ### 解决方案实践 · 让 AI 替你写完从架构到交付的全部代码
 
-**v0.8.0** · 华为云解决方案实践仓库
+**v0.8.1** · 华为云解决方案实践仓库
 
 </div>
 
-> 你不需要自己写 Terraform 模板、Shell 脚本或部署文档 —— **直接告诉 AI 你想要什么，它会自动完成全部工作**。
+> 任意项目，极速落地华为云全栈部署 —— **直接告诉 AI 你想要什么，它会自动完成全部工作**。
 
 ---
 
 <div align="center">
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.8.0-blue.svg?style=flat-square&label=SAC)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.8.1-blue.svg?style=flat-square&label=SAC)](CHANGELOG.md)
 [![Practices](https://img.shields.io/badge/Practices-2-blue.svg?style=flat-square)](#-已有方案)
 [![Skills](https://img.shields.io/badge/Skills-6-green.svg?style=flat-square)](#-skills-架构)
 [![Agents](https://img.shields.io/badge/Agents-6-purple.svg?style=flat-square)](#-skills-架构)
@@ -30,6 +30,22 @@
 📖 [核心范式](#-这是什么) · 🚀 [快速开始](#-快速开始) · 🧪 [自动化测试](#-自动化测试) · 📦 [已有方案](#-已有方案) · 🛠️ [Skills 架构](#-skills-架构) · 📚 [文档](#-项目结构)
 
 </div>
+
+---
+
+## 当前可用内容
+
+当前可直接使用的解决方案实践：
+
+- `litellm`：统一 LLM API 网关部署实践。
+- `supabase`：开源 BaaS 平台部署实践。
+
+常用入口：
+
+- 查看方案源码：`practices/`
+- 运行质量检查：`python -m scripts.tests.runner`
+- 查看项目规则：`skills/sac-project-rules/`
+- 查看 RFS 模板规范：`skills/sac-rfs-practices/`
 
 ---
 
@@ -93,14 +109,14 @@ AI：好的，先做技术评估...
 你：完成了吗？
 AI：已完成！香港区域的标准版和高可用版都已生成：
    - practices/litellm/cn/cn-north-4/standard/terraform/litellm-standard-cn-north-4.tf
-   - practices/litellm/cn/cn-north-4/standard/scripts/install_litellm.sh
+   - practices/litellm/cn/cn-north-4/standard/.extension
    - practices/litellm/cn/docs/LiteLLM-部署指南.md
 ```
 
 ### 场景 2 · 快速原型（架构 + 开发，跳过审计文档）
 
 ```
-你：给 supabase 快速出个版，只要模板和脚本
+你：给 supabase 快速出个版，只要模板和参数配置
 AI：收到，启动快速原型模式...
 
 [架构师设计 → 开发写模板，跳过测试/安全/文档/交付]
@@ -260,7 +276,7 @@ python -m scripts.tests.runner --practice litellm   # 单方案
 ├── practices/       # 方案源码（Terraform + 脚本 + 文档）
 │   └── <name>/<cn|intl>/<region>/<standard|ha>/
 │       ├── terraform/   # deploying-<name>.tf（单文件模式）
-│       ├── scripts/     # install_*.sh
+│       ├── scripts/     # install_*.sh（可选，部分方案使用内联 user_data）
 │       └── .extension   # RFS 界面配置（可选）
 ├── skills/          # AI 技能定义（索引 + 嵌入 + 参考文档）
 ├── scripts/tests/   # 自动化测试框架

@@ -1,0 +1,29 @@
+{
+  "formal": {
+    "practices": [
+      "litellm",
+      "supabase"
+    ],
+    "exclude": [
+      "web",
+      ".claude",
+      "scripts/archive",
+      "scripts/experimental"
+    ]
+  },
+  "quality_gate": {
+    "require_terraform_dir": true,
+    "require_scripts_dir": false,
+    "require_extension": false,
+    "allow_inline_install_script": true
+  },
+  "asset_status": {
+    "practices": "formal",
+    "skills": "formal",
+    "scripts/tests": "formal",
+    "scripts/obs": "optional",
+    ".claude/agents": "local",
+    ".claude/workflows": "local",
+    "web": "experimental"
+  }
+}

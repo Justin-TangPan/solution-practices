@@ -83,7 +83,10 @@ web/.turbo/
 # Internal scripts (contain credentials)
 # ============================================
 scripts/obs_upload_*
-scripts/obs/
+scripts/obs/*
+!scripts/obs/__init__.py
+!scripts/obs/upload.py
+!scripts/obs/spec.md
 
 # ============================================
 # Internal infrastructure (contains bucket names, endpoints)
