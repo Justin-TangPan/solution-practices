@@ -77,14 +77,23 @@ web/.turbo/
 .claude/settings.json
 .claude/settings.local.json
 .claude/skills/huawei-style-ppt-skill/
+.claude/FIXES_SUMMARY.md
 
 # ============================================
-# Internal reference (not for public repo)
+# Internal scripts (contain credentials)
 # ============================================
-skills/reference/obs-production-buckets.md
-skills/reference/obs-conventions.md
 scripts/obs_upload_*
 scripts/obs/
+
+# ============================================
+# Internal infrastructure (contains bucket names, endpoints)
+# ============================================
+skills/reference/obs-production-buckets.md
+
+# ============================================
+# Web UI (future direction, not in formal release)
+# ============================================
+web/
 
 # ============================================
 # Serena MCP
