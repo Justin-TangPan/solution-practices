@@ -62,7 +62,7 @@
 | **交付打包** | 手工整理 + 拼 URL | 自动归档 + RFS 一键链接 | 📦 一键出包 |
 | **区域覆盖** | 单区手改 | CN / INTL 双轨多区自动生成 | 🌏 多区域 |
 
-> 全程只需对话，不需要手写任何代码。所有基准在相同 Claude Code 模型栈下测得。
+> 全程以对话驱动，交付质量由仓库内的静态检查、安全审计和发布门禁共同约束。
 
 ---
 
@@ -178,7 +178,7 @@ AI：启动业务评估...
 ### 前提
 
 - Node.js 20 或更高版本
-- Codex（推荐）或 Claude Code
+- Codex（推荐）或 Claude Code；其他 AI Agent 可复用根 `skills/` 中的项目知识
 
 ### npm 安装（Codex）
 
@@ -339,9 +339,7 @@ python -m scripts.tests.runner --practice litellm   # 单方案
 ## 🔗 集成与生态
 
 - **华为云 RFS** — 一键部署链接自动生成，粘贴到控制台即用
-- **OBS 私有桶** — 交付产物归档，凭证只走环境变量
 - **Claude Code / OpenCode** — 原生 Skills 标准，对话即触发
-- **Docker 镜像站** — 统一 `docker.wangzhou3.top` 加速
 - **多区域** — CN（cn-north-4）+ INTL（ap-southeast-1/2/3、af、la、sa、tr）多区覆盖
 
 ---
