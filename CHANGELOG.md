@@ -1,5 +1,55 @@
 # Changelog
 
+## v0.8.4 (2026-07-10) — 模板版本治理与发布门禁
+
+### 规则更新
+- **Terraform 候选版本化** — 新建或修改模板使用 `deploying-{solution}_vN.tf` 不可变候选，用户确认测试通过后再提升无版本正式入口
+- **测试与正式版本分离** — 正式发布使用三级版本，待验证修改使用 SAC 四级测试版本，并明确四级版本不是 SemVer
+- **发布门禁** — 增加用户测试确认、候选与正式入口一致性、云上运行验证、文档和安全一致性要求
+
+### 项目治理
+- **渐进迁移** — 保留历史模板和既有 RFS/OBS 链接，现有无版本模板在下一次修改时进入 `_v1` 候选流程
+- **范围校准** — 项目状态同步正式 practice `litellm`、`supabase`、`openjiuwen`
+- **职责边界** — 通用治理进入项目规则，RFS 模板执行流程进入 `sac-rfs-practices`
+- **凭证治理** — Supabase OBS 上传兼容入口改为参数化包装器，移除硬编码测试凭证和本机绝对路径
+- **Skill 结构标准化** — 清除正式 skill 的 BOM，并将项目分类字段归入受支持的 `metadata`
+
+### 关键文件
+- `skills/sac-project-rules/SKILL.md`
+- `skills/sac-rfs-practices/SKILL.md`
+- `docs/contracts/practice-layout.md`
+- `docs/contracts/release-contract.md`
+- `docs/project-state.md`
+
+## v0.8.3 (2026-07-10) — 新增 openJiuwen Agent Studio 首版实践
+
+### 新功能
+- **openJiuwen 单机标准版** — 新增 `cn-north-4` 标准版 Terraform 模板，自动创建 VPC、ECS、安全组、EIP，并通过内联 `user_data` 部署 openJiuwen Agent Studio 官方 Docker 版本包
+- **官方部署路径适配** — 模板使用官方 `deployTool_0.1.5_amd64.zip`，生成 `.env.custom` 后执行 `service.sh up -n`
+- **文档交付** — 新增中文部署指南与中文方案详情，文件名遵循 `_zh` 新标准
+
+### 关键文件
+- `practices/openjiuwen/cn/cn-north-4/standard/terraform/deploying-openjiuwen.tf`
+- `practices/openjiuwen/cn/cn-north-4/standard/.extension`
+- `practices/openjiuwen/cn/docs/openJiuwen-部署指南_zh.md`
+- `practices/openjiuwen/cn/docs/openJiuwen-方案详情_zh.md`
+- `project.config.json`
+
+## v0.8.2 (2026-07-09) — SAC 文档命名与版本规则收敛
+
+### 规则更新
+- **文档命名标准化** — 中文内容文件统一使用中文文档类型名并追加 `_zh`，英文内容文件统一使用英文文档类型名并追加 `_en`
+- **方案详情命名修正** — 中文方案详情标准名改为 `{Name}-方案详情_zh.md`，英文方案详情标准名为 `{Name}-Solution-Details_en.md`
+- **部署指南命名修正** — 中文部署指南标准名为 `{Name}-部署指南_zh.md`，英文部署指南标准名为 `{Name}-Deployment-Guide_en.md`
+- **版本规则统一** — 项目版本号统一使用三级语义化版本；非大版本变更递增修订号
+
+### 关键文件
+- `skills/sac-project-rules/SKILL.md` — 文档命名、版本管理规则
+- `skills/sac-rfs-practices/SKILL.md` — RFS 交付文档命名规则
+- `skills/reference/doc-templates.md` — 部署指南与方案详情标准文件名
+- `.claude/agents/sac-documenter.json` — 文档 Agent 输出文件名
+- `.claude/CLAUDE.md` — 高频版本规则摘要
+
 ## v0.8.1 (2026-07-08) — 项目范围治理与质量门禁修复
 
 ### 改进

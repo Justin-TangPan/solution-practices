@@ -1,5 +1,8 @@
 ---
 name: sac-business-evaluator
+status: optional
+scope: research
+owner: project
 description: |
   解决方案实践业务评估 — 从商业和场景角度评估开源项目的解决方案实践可行性。
 

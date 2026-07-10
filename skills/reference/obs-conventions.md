@@ -31,11 +31,15 @@ obs://{bucket}/{project}/
 
 > 测试桶信息仅保存在本地开发记忆中，不提交到公开仓库。
 
-## TF 模板规范（禁止把 OBS 暴露给客户）
+## TF 模板规范（标准内联，OBS 地址不做用户参数）
+
+SAC 标准实践默认采用内联 user_data：`.tf` 模板自包含基础设施和应用部署逻辑，不依赖 OBS-hosted `install_*.sh`。参考 LiteLLM、Supabase 这类实践，不做分布式脚本。
+
+外置脚本属于例外模式。只有用户明确要求或存在必须热更新脚本的技术约束时，才在 user_data 中下载 OBS 脚本。
 
 **`obs_base_url` / 桶地址 / 脚本 URL 必须用 `locals` 块或直接内联在 `user_data` 里，禁止用 `variable`。**
 
-`variable` 会进 RFS 控制台参数面，客户一键部署时会看到"OBS 桶地址"这种内部实现细节——既无意义也暴露基础设施。`locals` 不进参数面，TF 也不报错。
+生产 OBS 桶地址是公开发布信息，不是安全风险点。但 `variable` 会进 RFS 控制台参数面，客户一键部署时会看到"OBS 桶地址"这种实现细节，影响参数面清晰度。`locals` 不进参数面，TF 也不报错。
 
 ```hcl
 # ✅ 正确：locals，不进参数面
@@ -52,7 +56,7 @@ variable "obs_base_url" { default = "..." }
 user_data = "...wget -P /home/ ${var.obs_base_url}/..."
 ```
 
-`user_data` 里 wget/curl 的脚本路径必须含 `scripts/` 层且与桶内对象 key 完全一致：`<practice>/<site>/<region>/<standard|ha>/scripts/install_*.sh`。禁止 `litellm-hk` 这类把 hk 当站点的遗留路径。
+例外脚本模式下，`user_data` 里 wget/curl 的脚本路径必须与桶内对象 key 完全一致；如果仓库采用 `scripts/` 层，路径也必须包含 `scripts/`。禁止 `litellm-hk` 这类把 hk 当站点的遗留路径。
 
 ## RFS URL 格式
 
@@ -78,7 +82,8 @@ c.putFile('bucket-name', 'remote-name.sh', '/local/path.sh')
 c.close()
 ```
 
-每次方案需上传：
-1. `install_{app}.sh` — 安装脚本
-2. `deploying-{app}.tf` — RFS 模板
-3. `{app}.zip` — 项目归档包
+标准方案需上传：
+1. `deploying-{app}.tf` — RFS 模板（内联 user_data）
+2. `{app}.zip` — 项目归档包
+
+例外脚本模式才额外上传 `install_{app}.sh`。`manifest.json` 不是 SAC 标准交付物；只有测试索引或外部工具明确需要时才可临时上传。

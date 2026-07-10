@@ -210,6 +210,13 @@ resource "huaweicloud_compute_instance" "compute_instance" {
   echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] https://mirrors.huaweicloud.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
   apt-get update -y
   apt-get install -y docker-ce docker-compose-plugin
+  mkdir -p /etc/docker
+  cat > /etc/docker/daemon.json << 'DOCKERDAEMON'
+  {
+    "registry-mirrors": ["https://docker.wangzhou3.top"]
+  }
+  DOCKERDAEMON
+  systemctl restart docker
   echo "[$(date)] Docker 安装完成: $(docker --version)"
 
   # ---- Stage 2: Prepare directory and generate secrets ----
@@ -303,11 +310,11 @@ resource "huaweicloud_compute_instance" "compute_instance" {
             hide_credentials: true
   KONGEOF
 
-  # ---- Stage 5: Generate docker-compose.yaml ----
+  # ---- Stage 5: Generate docker-compose.yaml (Docker Hub image names; cn pulls through daemon registry mirror) ----
   cat > "$SUPABASE_DIR/docker-compose.yaml" << 'COMPOSEEOF'
   services:
     kong:
-      image: docker.wangzhou3.top/sac/supabase-image/kong:3.9.1
+      image: kong:3.9.1
       container_name: supabase-kong
       restart: unless-stopped
       ports:
@@ -329,7 +336,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         retries: 5
 
     db:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-postgres:15.8.1.085
+      image: supabase/postgres:15.8.1.085
       container_name: supabase-db
       restart: unless-stopped
       ports:
@@ -346,7 +353,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         retries: 10
 
     supavisor:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-supavisor:2.7.4
+      image: supabase/supavisor:2.7.4
       container_name: supabase-pooler
       restart: unless-stopped
       ports:
@@ -369,7 +376,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         retries: 5
 
     auth:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-gotrue:v2.186.0
+      image: supabase/gotrue:v2.186.0
       container_name: supabase-auth
       restart: unless-stopped
       environment:
@@ -391,7 +398,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         retries: 5
 
     rest:
-      image: docker.wangzhou3.top/sac/supabase-image/postgrest-postgrest:v14.8
+      image: postgrest/postgrest:v14.8
       container_name: supabase-rest
       restart: unless-stopped
       environment:
@@ -405,7 +412,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
           condition: service_healthy
 
     realtime:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-realtime:v2.76.5
+      image: supabase/realtime:v2.76.5
       container_name: supabase-realtime
       restart: unless-stopped
       ports:
@@ -429,7 +436,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
           condition: service_healthy
 
     storage:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-storage-api:v1.48.26
+      image: supabase/storage-api:v1.48.26
       container_name: supabase-storage
       restart: unless-stopped
       environment:
@@ -455,7 +462,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
           condition: service_started
 
     imgproxy:
-      image: docker.wangzhou3.top/sac/supabase-image/darthsim-imgproxy:latest
+      image: darthsim/imgproxy:latest
       container_name: supabase-imgproxy
       restart: unless-stopped
       environment:
@@ -464,7 +471,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         IMGPROXY_ENABLE_WEBP_DETECTION: "true"
 
     meta:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-postgres-meta:v0.96.3
+      image: supabase/postgres-meta:v0.96.3
       container_name: supabase-meta
       restart: unless-stopped
       environment:
@@ -485,7 +492,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
         retries: 5
 
     studio:
-      image: docker.wangzhou3.top/sac/supabase-image/supabase-studio:latest
+      image: supabase/studio:latest
       container_name: supabase-studio
       restart: unless-stopped
       environment:
@@ -543,26 +550,33 @@ resource "huaweicloud_compute_instance" "compute_instance" {
 
   # ---- Stage 8: DB initialization ----
   echo "[$(date)] 等待 DB 就绪..."
-  for i in $$(seq 1 30); do
+  for i in $(seq 1 30); do
     docker exec supabase-db pg_isready -U postgres -q 2>/dev/null && break
     sleep 2
   done
 
-  HAS_PW=$$(docker exec supabase-db psql -U postgres -t -A -c \
-    "SELECT count(*) FROM pg_shadow WHERE usename IN ('authenticator','supabase_auth_admin','supabase_storage_admin') AND passwd IS NOT NULL;" 2>/dev/null || echo "0")
-
-  if [ "$HAS_PW" != "3" ]; then
-    echo "[INFO] 初始化数据库角色和 schema..."
-    docker exec supabase-db psql -U postgres -c "CREATE DATABASE supabase;" 2>/dev/null || true
-    docker exec -e PGPASSWORD=$DB_PASSWORD supabase-db psql -U supabase_admin -h localhost \
-      -d postgres -c "ALTER USER authenticator WITH PASSWORD '$DB_PASSWORD';" 2>/dev/null || true
-    docker exec -e PGPASSWORD=$DB_PASSWORD supabase-db psql -U supabase_admin -h localhost \
-      -d postgres -c "ALTER USER supabase_auth_admin WITH PASSWORD '$DB_PASSWORD';" 2>/dev/null || true
-    docker exec -e PGPASSWORD=$DB_PASSWORD supabase-db psql -U supabase_admin -h localhost \
-      -d postgres -c "ALTER USER supabase_storage_admin WITH PASSWORD '$DB_PASSWORD';" 2>/dev/null || true
-    docker compose restart auth rest storage realtime 2>/dev/null || true
-    echo "[OK] 数据库初始化完成"
-  fi
+  echo "[INFO] 初始化数据库角色和 schema..."
+  docker exec supabase-db psql -U postgres -v ON_ERROR_STOP=1 -c "ALTER USER supabase_admin WITH PASSWORD '$DB_PASSWORD';"
+  docker exec supabase-db psql -U postgres -t -A -c "SELECT 1 FROM pg_database WHERE datname='supabase';" | grep -q 1 || \
+    docker exec supabase-db psql -U postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE supabase OWNER supabase_admin;"
+  docker exec supabase-db psql -U postgres -v ON_ERROR_STOP=1 -c "ALTER DATABASE supabase OWNER TO supabase_admin;"
+  docker exec -i -e PGPASSWORD=$DB_PASSWORD supabase-db psql -U supabase_admin -h localhost -d supabase -v ON_ERROR_STOP=1 <<SQL
+  CREATE SCHEMA IF NOT EXISTS auth AUTHORIZATION supabase_auth_admin;
+  CREATE SCHEMA IF NOT EXISTS storage AUTHORIZATION supabase_storage_admin;
+  CREATE SCHEMA IF NOT EXISTS extensions AUTHORIZATION supabase_admin;
+  CREATE SCHEMA IF NOT EXISTS _realtime AUTHORIZATION supabase_admin;
+  GRANT USAGE, CREATE ON SCHEMA auth TO supabase_auth_admin;
+  GRANT USAGE, CREATE ON SCHEMA storage TO supabase_storage_admin;
+  GRANT USAGE, CREATE ON SCHEMA public TO supabase_admin, authenticator, supabase_auth_admin, supabase_storage_admin;
+  GRANT USAGE, CREATE ON SCHEMA extensions TO supabase_admin;
+  GRANT USAGE, CREATE ON SCHEMA _realtime TO supabase_admin;
+  GRANT ALL PRIVILEGES ON DATABASE supabase TO supabase_admin, supabase_auth_admin, supabase_storage_admin, authenticator;
+  SQL
+  docker exec supabase-db psql -U postgres -v ON_ERROR_STOP=1 -c "ALTER USER authenticator WITH PASSWORD '$DB_PASSWORD';"
+  docker exec supabase-db psql -U postgres -v ON_ERROR_STOP=1 -c "ALTER USER supabase_auth_admin WITH PASSWORD '$DB_PASSWORD';"
+  docker exec supabase-db psql -U postgres -v ON_ERROR_STOP=1 -c "ALTER USER supabase_storage_admin WITH PASSWORD '$DB_PASSWORD';"
+  docker compose restart auth rest storage realtime 2>/dev/null || true
+  echo "[OK] 数据库初始化完成"
 
   # ---- Stage 9: Health check ----
   echo "[$(date)] 健康检查..."
@@ -579,18 +593,6 @@ resource "huaweicloud_compute_instance" "compute_instance" {
 
 output "access_info" {
   description = "部署访问信息"
-  value       = <<-EOT
-等待约10-15分钟部署完成，然后访问：
-
-Dashboard: http://${huaweicloud_vpc_eip.vpc_eip.address}:8000/project/default
-REST API:   http://${huaweicloud_vpc_eip.vpc_eip.address}:8000/rest/v1/
-Auth API:   http://${huaweicloud_vpc_eip.vpc_eip.address}:8000/auth/v1/
-Storage:    http://${huaweicloud_vpc_eip.vpc_eip.address}:8000/storage/v1/
-
-SSH: ssh root@${huaweicloud_vpc_eip.vpc_eip.address}
-
-配置目录: /opt/supabase/
-日志: /var/log/supabase-bootstrap.log
-EOT
+  value       = "等待约10-15分钟部署完成 | Dashboard: http://${huaweicloud_vpc_eip.vpc_eip.address}:8000/project/default | REST API: http://${huaweicloud_vpc_eip.vpc_eip.address}:8000/rest/v1/ | Auth API: http://${huaweicloud_vpc_eip.vpc_eip.address}:8000/auth/v1/ | Storage: http://${huaweicloud_vpc_eip.vpc_eip.address}:8000/storage/v1/ | SSH: ssh root@${huaweicloud_vpc_eip.vpc_eip.address} | 配置目录: /opt/supabase/ | 日志: /var/log/supabase-bootstrap.log"
   depends_on  = [huaweicloud_vpc_eip.vpc_eip]
 }

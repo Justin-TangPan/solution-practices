@@ -1,5 +1,8 @@
 ---
 name: sac-technical-evaluator
+status: optional
+scope: research
+owner: project
 description: |
   SAC 技术评估子 Agent。负责分析应用架构、设计部署方案、规划云资源、评估安全风险。
   由 sac-architect Agent 在方案设计阶段加载，也可独立使用。

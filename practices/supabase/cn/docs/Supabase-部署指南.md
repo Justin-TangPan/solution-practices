@@ -57,7 +57,7 @@ Kong (API Gateway) ← 统一入口 :8000
 
 - **103k+ Stars 开源项目** — Apache-2.0 协议，社区活跃，持续更新
 - **Docker Compose 一键部署** — 约 10 个容器自动编排，10-15 分钟完成部署
-- **统一镜像站加速** — 镜像统一经 `docker.wangzhou3.top` 拉取，国内 ECS 部署稳定快速
+- **Docker 代理加速** — Compose 保留官方镜像名，国内 ECS 通过 Docker daemon `registry-mirrors` 使用 `docker.wangzhou3.top` 代理加速
 - **内置 PostgreSQL 扩展** — pgvector 向量搜索、pgjwt 认证、PostGIS 地理空间等
 - **完整后端能力** — 数据库 + REST API + GraphQL + 认证 + 实时订阅 + 文件存储 + Dashboard
 - **自动重试机制** — 5 次重试保障镜像拉取成功率
@@ -305,6 +305,7 @@ docker compose restart
 
 | 日期 | 修订记录 |
 |---------|---------|
+| 2026-07-09 | 国内模板改为保留官方 Docker Hub 镜像名，并通过 Docker daemon `registry-mirrors` 使用 `docker.wangzhou3.top` 代理，避免代理站未同步自定义镜像路径导致拉取失败。|
 | 2026-07-07 | 模板改为全内联 user_data（模式 B），docker-compose/kong.yml/.env 全部在 user_data heredoc 中生成，移除 OBS 脚本分发依赖。|
 | 2026-07-02 | 完善部署脚本：修复 JWT 密钥一致性（ANON/SERVICE_ROLE_KEY 改由随机 JWT_SECRET 派生签发）、补全 imgproxy 接线与 meta 健康检查、Terraform 密码参数校验。|
 | 2026-06-26 | 首次发布。|

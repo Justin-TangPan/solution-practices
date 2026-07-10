@@ -83,7 +83,7 @@ log('💻 开发 Agent 开始工作...')
 const devResults = await pipeline(
   REGIONS,
   async (region) => {
-    const is_cn = region === 'cn'
+    const is_cn = region === 'cn' || region.startsWith('cn/')
 
     const result = await agent({
       label: `dev:${region}`,
@@ -100,11 +100,11 @@ ${JSON.stringify(architectResult.decisions, null, 2)}
 ${JSON.stringify(architectResult.variables, null, 2)}
 
 ## 任务
-在 practices/${PROJECT}/${region}/ 下创建文件：
-1. terraform/deploying-${PROJECT}.tf
-2. scripts/install_${PROJECT}.sh（4阶段模式）
-3. scripts/docker-compose.yaml（如适用）
-4. .extension
+	按 sac-project-rules 的 site/locale/region/variant 目录模型，在 practices/${PROJECT}/ 下创建文件：
+	1. <site>/<locale?>/<region>/<variant>/terraform/deploying-${PROJECT}.tf
+	2. <site>/<locale?>/<region>/<variant>/scripts/install_${PROJECT}.sh（OBS 下载模式需要；全内联模式可省略 scripts/）
+	3. <site>/<locale?>/<region>/<variant>/scripts/docker-compose.yaml（如适用）
+	4. <site>/<locale?>/<region>/<variant>/.extension（当前质量门禁可选）
 
 输出创建的文件列表及路径`,
       schema: {
@@ -140,7 +140,7 @@ const [testResult, securityResult] = await parallel([
 项目：${PROJECT}
 区域：${REGIONS.join(', ')}
 
-请检查 practices/${PROJECT}/ 下所有文件，按 sac-tester.json 中的 validation_checklist 逐项验证。
+	请检查 practices/${PROJECT}/ 下所有文件，按 skills/reference/validation-checklist.md 逐项验证。
 
 输出验证结果。`,
       schema: {
@@ -163,7 +163,7 @@ const [testResult, securityResult] = await parallel([
 项目：${PROJECT}
 区域：${REGIONS.join(', ')}
 
-请检查 practices/${PROJECT}/ 下所有文件，按 sac-security.json 中的 check_rules（SEC-001 至 SEC-008）逐条审计。
+	请检查 practices/${PROJECT}/ 下所有文件，按 skills/reference/security-check-rules.md（SEC-001 至 SEC-008）逐条审计。
 
 输出审计结果。`,
       schema: {
@@ -214,9 +214,10 @@ const docResults = await pipeline(
 语言：${is_cn ? '中文' : '英文'}
 
 ## 任务
-在 practices/${PROJECT}/${region}/ 下创建文档：
-1. docs/README.md（10个标准章节）
-2. docs/Solution-Details.md（面向客户的价值描述）
+	按站点级文档目录创建正式 Markdown 文档：
+	1. cn/docs/{Name}-部署指南.md 和 cn/docs/{Name}-Solution-Details.md（中国站）
+	2. intl/docs/zh-cn/{Name}-部署指南.md 和 intl/docs/zh-cn/{Name}-Solution-Details.md（国际站中文）
+	3. intl/docs/en-us/{Name}-Deployment-Guide.md 和 intl/docs/en-us/{Name}-Solution-Details.md（国际站英文）
 
 输出创建的文件列表。`,
       schema: {

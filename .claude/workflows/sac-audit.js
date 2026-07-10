@@ -9,7 +9,7 @@ export const meta = {
 }
 
 const PROJECT = args.project
-const REGIONS = args.regions || ['cn', 'hk']
+const REGIONS = args.regions || ['cn', 'intl']
 
 log(`🔍 SAC 审计启动：${PROJECT} - ${REGIONS.join(', ')}`)
 
@@ -20,7 +20,7 @@ const testResult = await agent({
   prompt: `## 项目上下文
 项目：${PROJECT}，区域：${REGIONS.join(', ')}
 
-检查 practices/${PROJECT}/ 下所有文件，按 sac-tester.json 中的 validation_checklist 逐项验证。
+	检查 practices/${PROJECT}/ 下所有文件，按 skills/reference/validation-checklist.md 逐项验证。
 
 输出结果。`,
   schema: {
@@ -45,7 +45,7 @@ const securityResult = await agent({
   prompt: `## 项目上下文
 项目：${PROJECT}，区域：${REGIONS.join(', ')}
 
-检查 practices/${PROJECT}/ 下所有文件，按 sac-security.json 中的 check_rules（SEC-001 至 SEC-008）逐条审计。
+	检查 practices/${PROJECT}/ 下所有文件，按 skills/reference/security-check-rules.md（SEC-001 至 SEC-008）逐条审计。
 
 输出审计结果。`,
   schema: {
@@ -55,7 +55,7 @@ const securityResult = await agent({
       findings: { type: 'array', items: { type: 'object', properties: {
         id: { type: 'string' }, severity: { type: 'string' }, file: { type: 'string' },
         message: { type: 'string' }, remediated: { type: 'boolean' },
-      }, required: ['id', 'severity', 'file', 'message', 'remediatable'] } },
+      }, required: ['id', 'severity', 'file', 'message', 'remediated'] } },
       summary: { type: 'string' },
     },
     required: ['passed', 'findings', 'summary'],

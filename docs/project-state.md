@@ -4,7 +4,7 @@ This document records the current repository scope. It should be updated when a 
 
 ## Current Formal Scope
 
-- Formal practices: `litellm`, `supabase`
+- Formal practices: `litellm`, `supabase`, `openjiuwen`
 - Formal quality gate: `scripts/tests/`
 - Formal rules: `skills/sac-project-rules/`, `skills/sac-rfs-practices/`
 - Scope config: `project.config.json`

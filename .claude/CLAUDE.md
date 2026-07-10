@@ -10,6 +10,14 @@
 - `web/` 是未来可视化原型，暂不进入正式版本质量门禁。
 - `.claude/agents/` 和 `.claude/workflows/` 是本地协作配置，不作为公开交付包必要组成。
 - 历史半成品 practice 的旧文档、旧脚本或旧 catalog 记录不构成正式交付依据。
+- 所有修改批次必须记录到本地 `.var/log/internal-changelog.md`，使用时间戳 + 三级版本号；`.var/` 不提交、不上传远端。
+- 生产 OBS 桶地址和 `docker.wangzhou3.top` 镜像源均为公开发布信息，不作为安全风险点；测试桶和凭证仍视为敏感信息。
+
+## 本地开发环境
+
+- SAC Python 开发统一使用仓库根目录 `.venv-sac`，由 `uv venv .venv-sac --python 3.11` 创建。
+- 后续缺失 Python 依赖时安装到该环境：`uv pip install --python .venv-sac/bin/python <package>`。
+- 运行 Python 工具优先使用 `.venv-sac/bin/python`，避免污染系统 Python 或临时 `/tmp` 环境。
 
 ## 项目命名
 

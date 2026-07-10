@@ -59,7 +59,7 @@
 ```
 Workflow({scriptPath: '.claude/workflows/sac-full-pipeline.js', args: {
   project: 'litellm',
-  regions: ['cn', 'hk', 'intl'],
+	  regions: ['cn/cn-north-4', 'intl/ap-southeast-1', 'intl/ap-southeast-3'],
   description: 'Multi-model API Gateway'
 }})
 ```
@@ -74,7 +74,7 @@ Workflow({scriptPath: '.claude/workflows/sac-full-pipeline.js', args: {
 ```
 Workflow({scriptPath: '.claude/workflows/sac-architect-develop.js', args: {
   project: 'litellm',
-  regions: ['cn', 'hk'],
+	  regions: ['cn/cn-north-4', 'intl/ap-southeast-1'],
   description: 'Multi-model API Gateway'
 }})
 ```
@@ -89,7 +89,7 @@ Workflow({scriptPath: '.claude/workflows/sac-architect-develop.js', args: {
 ```
 Workflow({scriptPath: '.claude/workflows/sac-audit.js', args: {
   project: 'litellm',
-  regions: ['cn', 'hk']
+	  regions: ['cn/cn-north-4', 'intl/ap-southeast-1']
 }})
 ```
 
@@ -103,7 +103,7 @@ Workflow({scriptPath: '.claude/workflows/sac-audit.js', args: {
 ```
 Workflow({scriptPath: '.claude/workflows/sac-delivery-only.js', args: {
   project: 'litellm',
-  regions: ['cn', 'hk']
+	  regions: ['cn/cn-north-4', 'intl/ap-southeast-1']
 }})
 ```
 
@@ -124,7 +124,7 @@ Workflow({scriptPath: '.claude/workflows/sac-delivery-only.js', args: {
     "scriptPath": ".claude/workflows/sac-full-pipeline.js",
     "args": {
       "project": "litellm",
-      "regions": ["cn", "hk"],
+	      "regions": ["cn/cn-north-4", "intl/ap-southeast-1"],
       "description": "Multi-model API Gateway"
     }
   }
@@ -156,13 +156,13 @@ Agent({...})  // 只调测试做验证
 ### 全流程时序图
 
 ```
-用户: "做 litellm 方案，支持 cn/hk/intl 三个区域"
+	用户: "做 litellm 方案，支持 cn-north-4、ap-southeast-1、ap-southeast-3 三个区域"
   │
   ├── 🧠 架构师 Agent ────────────────────────────────────── 1-2 轮对话
   │   输出：技术评估报告 + 架构设计 + 决策点 + 变量表
   │
   ├── 💻 开发 Agent（cn 区域）──────┐
-  ├── 💻 开发 Agent（hk 区域）──────┤  并行执行
+	  ├── 💻 开发 Agent（intl/ap-southeast-1 区域）──────┤  并行执行
   ├── 💻 开发 Agent（intl 区域）────┘  ─────────────── 1 轮对话
   │   输出：每个区域的 .tf + .sh + .extension 文件
   │
@@ -171,9 +171,9 @@ Agent({...})  // 只调测试做验证
   │   输出：验证报告 + 安全审计报告
   │
   ├── 📝 文档 Agent（cn）──────────┐
-  ├── 📝 文档 Agent（hk）──────────┤  并行执行
+	  ├── 📝 文档 Agent（intl/zh-cn + intl/en-us）──────────┤  并行执行
   ├── 📝 文档 Agent（intl）────────┘  ────────────── 1 轮对话
-  │   输出：README.md + Solution-Details.md
+  │   输出：部署指南_zh / 方案详情_zh / Deployment-Guide_en / Solution-Details_en
   │
   ├── 📦 交付 Agent ─────────────────────────────────────── 1 轮对话
   │   输出：release/ 目录 + url.txt + .zip 归档

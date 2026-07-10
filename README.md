@@ -4,7 +4,7 @@
 
 ### 解决方案实践 · 让 AI 替你写完从架构到交付的全部代码
 
-**v0.8.1** · 华为云解决方案实践仓库
+**v0.8.4** · 华为云解决方案实践仓库
 
 </div>
 
@@ -15,7 +15,7 @@
 <div align="center">
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.8.1-blue.svg?style=flat-square&label=SAC)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.8.4-blue.svg?style=flat-square&label=SAC)](CHANGELOG.md)
 [![Practices](https://img.shields.io/badge/Practices-2-blue.svg?style=flat-square)](#-已有方案)
 [![Skills](https://img.shields.io/badge/Skills-6-green.svg?style=flat-square)](#-skills-架构)
 [![Agents](https://img.shields.io/badge/Agents-6-purple.svg?style=flat-square)](#-skills-架构)
@@ -39,6 +39,7 @@
 
 - `litellm`：统一 LLM API 网关部署实践。
 - `supabase`：开源 BaaS 平台部署实践。
+- `openjiuwen`：openJiuwen Agent 智能体开发平台部署实践。
 
 常用入口：
 
@@ -110,7 +111,7 @@ AI：好的，先做技术评估...
 AI：已完成！香港区域的标准版和高可用版都已生成：
    - practices/litellm/cn/cn-north-4/standard/terraform/litellm-standard-cn-north-4.tf
    - practices/litellm/cn/cn-north-4/standard/.extension
-   - practices/litellm/cn/docs/LiteLLM-部署指南.md
+   - practices/litellm/cn/docs/LiteLLM-部署指南_zh.md
 ```
 
 ### 场景 2 · 快速原型（架构 + 开发，跳过审计文档）

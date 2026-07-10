@@ -13,5 +13,8 @@ Before a practice is released:
 
 - It must be listed in `project.config.json`.
 - Its deployable instances must pass the configured quality gate.
+- The exact versioned Terraform candidate must have explicit user confirmation that cloud deployment testing passed.
+- The unversioned formal Terraform entry must match the approved candidate byte-for-byte.
 - Credentials must not be committed or written into generated artifacts.
 - Any OBS upload must use environment variables for credentials.
+- Test releases use four-level SAC versions (`X.Y.Z.N`); formal releases use exact three-level versions (`X.Y.Z`).

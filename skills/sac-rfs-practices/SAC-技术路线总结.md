@@ -272,7 +272,7 @@ resource "huaweicloud_compute_instance" "compute_instance" {
 
 ### 5.1 两种 user_data 模式
 
-#### 模式 A：内联 user_data（推荐用于简单部署）
+#### 模式 A：内联 user_data（SAC 标准模式）
 
 整个部署脚本直接写在模板的 user_data 字段里。
 
@@ -289,12 +289,12 @@ resource "huaweicloud_compute_instance" "compute_instance" {
       USERDATA
 ```
 
-**优点：** 单文件交付、无外部依赖、RFS 一个模板搞定
+**优点：** 单文件交付、无外部脚本依赖、RFS 一个模板搞定、交付边界清晰
 **缺点：** 脚本长了难维护、改脚本要重新发布模板
 
-**适用：** 轻量应用、单机部署、脚本 < 200 行
+**适用：** SAC 标准交付。参考 LiteLLM、Supabase，将安装、配置生成、服务启动、健康检查和输出提示都内联在 `.tf` 的 user_data 中。
 
-#### 模式 B：OBS 下载（推荐用于复杂部署）
+#### 模式 B：OBS 下载（例外模式）
 
 user_data 只做两件事：下载脚本 + 执行。
 
@@ -311,11 +311,11 @@ OBS 桶
 **优点：** 脚本可独立迭代、改脚本不用动模板、支持复杂多文件
 **缺点：** 依赖 OBS 桶、需要维护两套文件
 
-**适用：** 复杂应用、多文件配置、需要频繁更新脚本
+**适用：** 仅当用户明确要求外置脚本，或存在必须热更新脚本/多文件分发的技术约束时使用。启用前必须说明原因。
 
 ### 5.2 部署脚本标准结构（4 阶段）
 
-无论是内联还是 OBS 下载，部署脚本统一采用 4 阶段模式：
+无论是内联 user_data 还是例外 OBS 下载，部署逻辑统一采用 4 阶段模式：
 
 ```bash
 #!/bin/bash
@@ -554,11 +554,10 @@ solution-practices/
 │   │   │   │   └── standard/
 │   │   │   │       ├── terraform/deploying-litellm.tf
 │   │   │   │       ├── terraform/deploying-litellm.tf.json
-│   │   │   │       ├── scripts/install_litellm.sh
 │   │   │   │       └── .extension
 │   │   │   └── docs/
-│   │   │       ├── LiteLLM-部署指南.md
-│   │   │       └── Solution-Details.md
+│   │   │       ├── LiteLLM-部署指南_zh.md
+│   │   │       └── LiteLLM-方案详情_zh.md
 │   │   └── intl/                   # 国际站
 │   │       ├── ap-southeast-1/     # 中国-香港（归属 intl 国际站）
 │   │       │   └── standard/
@@ -568,17 +567,16 @@ solution-practices/
 │   │       ├── ap-southeast-3/     # 亚太-新加坡
 │   │       │   └── standard/
 │   │       │       ├── terraform/deploying-litellm-ap-southeast-3.tf
-│   │       │       ├── scripts/
 │   │       │       └── .extension
 │   │       ├── af-south-1/
 │   │       ├── ...                 # 其他 intl 区域
 │   │       └── docs/
 │   │           ├── zh-cn/
-│   │           │   ├── LiteLLM-部署指南.md
-│   │           │   └── Solution-Details.md
+│   │           │   ├── LiteLLM-部署指南_zh.md
+│   │           │   └── LiteLLM-方案详情_zh.md
 │   │           └── en-us/
-│   │               ├── LiteLLM-Deployment-Guide.md
-│   │               └── Solution-Details.md
+│   │               ├── LiteLLM-Deployment-Guide_en.md
+│   │               └── LiteLLM-Solution-Details_en.md
 │
 └── skills/
     └── sac-rfs-practices/
@@ -596,10 +594,10 @@ solution-practices/
 | 模板（默认区域） | `deploying-{project}.tf` | `deploying-litellm.tf` |
 | 模板（非默认区域） | `deploying-{project}-{region}.tf` | `deploying-litellm-ap-southeast-1.tf` |
 | 高可用模板 | `deploying-{project}-ha[-{region}].tf` | `deploying-litellm-ha-cn-north-4.tf` |
-| 安装脚本 | `install_{project}.sh` | `install_litellm.sh` |
-| 文档（中国站） | `{Name}-部署指南.md` / `{Name}-Solution-Details.md` | `LiteLLM-部署指南.md` |
-| 文档（国际站中文） | 同上，位于 `intl/docs/zh-cn/` | `LiteLLM-部署指南.md` |
-| 文档（国际站英文） | `{Name}-Deployment-Guide.md` / `{Name}-Solution-Details.md` | `LiteLLM-Deployment-Guide.md` |
+| 安装脚本 | 非标准交付物，仅例外脚本模式使用 | `install_litellm.sh` |
+| 文档（中国站中文） | `{Name}-部署指南_zh.md` / `{Name}-方案详情_zh.md` | `LiteLLM-部署指南_zh.md` |
+| 文档（国际站中文） | `{Name}-部署指南_zh.md` / `{Name}-方案详情_zh.md`，位于 `intl/docs/zh-cn/` | `LiteLLM-部署指南_zh.md` |
+| 文档（国际站英文） | `{Name}-Deployment-Guide_en.md` / `{Name}-Solution-Details_en.md` | `LiteLLM-Deployment-Guide_en.md` |
 | OBS 归档包 | `{project}.zip` | `litellm.zip` |
 | 资源名 | `${var.solution_name}-{type}` | `litellm-vpc` |
 | 安全组规则 | `{app}_{port}` | `litellm_api` |
@@ -616,7 +614,7 @@ solution-practices/
 | 4 | Docker 镜像拉取超时 | 国内连 Docker Hub 超时 | SWR 预推送 + 镜像加速器 |
 | 5 | 容器权限拒绝 | EACCES: permission denied | `chown -R UID:GID` 数据目录 |
 | 6 | `required_providers` 格式错 | `Duplicate required providers` | 用对象 `{}` 不用数组 `[]` |
-| 7 | `random` provider 缺失 | `provider hashicorp/random was not found` | 用 `substr(uuid(), 0, 8)` 替代 |
+| 7 | `random` provider 缺失 | `provider hashicorp/random was not found` | 用稳定的 `solution_name` 或用户输入区分，禁止 `uuid()` |
 | 8 | SWR 镜像 400 | 部分镜像拉不到 | SWR 不是通用代理，需预推送 |
 | 9 | `${...}` 被 Terraform 解析 | docker-compose 变量报错 | `$${...}` 转义 |
 | 10 | `%{...}` 被 Terraform 解析 | curl 格式字符串报错 | `%%{...}` 转义 |
@@ -638,10 +636,10 @@ solution-practices/
 | # | 决策点 | 选项 | 默认 |
 |---|--------|------|------|
 | 1 | 模板格式 | `.tf` (HCL) / `.tf.json` (JSON) | 问用户 |
-| 2 | 安装策略 | 内联 user_data / OBS 下载 | 问用户 |
+| 2 | 安装策略 | 内联 user_data / OBS 下载 | 默认内联；OBS 下载为例外 |
 | 3 | 地域 | 国内 (cn-*) / 海外 (ap-*) | 问用户 |
 | 4 | 语言 | 中文 / 英文 | 跟随地域 |
-| 5 | 脚本架构 | 单文件 / 多文件 | 跟随安装策略 |
+| 5 | 脚本架构 | 单文件 / 多文件 | 默认单文件内联；多文件为例外 |
 | 6 | 部署文档 | 必须输出 README.md | 强制 |
 | 7 | 命名规范 | `{project}` / `-platform` | 跟随地域 |
 
@@ -653,7 +651,7 @@ solution-practices/
 1. 确认决策点
    ├── 格式：.tf 还是 .tf.json？
    ├── 地域：国内还是海外？
-   ├── 安装：内联还是 OBS？
+   ├── 安装：默认内联；如需 OBS 脚本需说明原因
    └── 语言：中文还是英文？
 
 2. 创建目录

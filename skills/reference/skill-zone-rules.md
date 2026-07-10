@@ -10,7 +10,7 @@
 
 ## R2: 冲突抑制
 
-查询同时命中多个技能时，优先选择 `skills-index.json` 中 `relevance` 评分最高的技能；
+查询同时命中多个技能时，优先选择 `skills-index.json` 中 `category`、`keywords`、`agents` 和 `status/scope` 最匹配当前任务的技能；
 若两个技能声明了 `conflicts_with` 关系，不得同时加载。
 
 ## R3: 递归限制

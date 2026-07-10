@@ -33,6 +33,7 @@ __pycache__/
 dist/
 build/
 .venv/
+.venv-sac/
 venv/
 
 # ============================================
@@ -72,6 +73,11 @@ web/out/
 web/.turbo/
 
 # ============================================
+# Local internal logs (NEVER commit)
+# ============================================
+.var/
+
+# ============================================
 # Claude Code (project-specific, not shared)
 # ============================================
 .claude/settings.json
@@ -87,11 +93,6 @@ scripts/obs/*
 !scripts/obs/__init__.py
 !scripts/obs/upload.py
 !scripts/obs/spec.md
-
-# ============================================
-# Internal infrastructure (contains bucket names, endpoints)
-# ============================================
-skills/reference/obs-production-buckets.md
 
 # ============================================
 # Web UI (future direction, not in formal release)

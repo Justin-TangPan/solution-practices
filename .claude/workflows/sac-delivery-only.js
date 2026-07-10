@@ -42,7 +42,7 @@ const urlResult = await agent({
 项目：${PROJECT}
 区域：${REGIONS.join(', ')}
 
-为每个区域生成 URL 清单文件 release/${PROJECT}/url.txt。
+	为每个 site/region/variant 生成 URL 清单文件，路径遵循 sac-project-rules 的 release 目录模型。
 
 区域代码映射：
 - cn → cn-north-4 (Beijing)

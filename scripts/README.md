@@ -9,6 +9,7 @@ Scripts are classified before they are used by release automation.
 ## Optional
 
 - `obs/`: OBS upload flow. Credentials must come from environment variables only.
+- `obs_upload_supabase.py` / `.bat`: compatibility wrappers for the generic OBS uploader; they contain no credentials and require an explicit test version.
 - `generate_extension.py`: RFS extension helper.
 - `validate_template.py`: template validation helper.
 
@@ -25,7 +26,6 @@ The following scripts contain hard-coded local paths, single-practice assumption
 - `gen_docx.py`
 - `gen_litellm_sac_docx.py`
 - `gen_sac_docx.py`
-- `obs_upload_supabase.py`
 - `quick_fix_titles.py`
 - `update_docx_titles.py`
 

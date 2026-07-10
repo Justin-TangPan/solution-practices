@@ -24,3 +24,10 @@ Current policy:
 - `terraform/` is required.
 - `scripts/` is optional when inline `user_data` is used.
 - `.extension` is optional unless the quality gate is tightened.
+
+Terraform lifecycle:
+
+- Test candidates use `terraform/deploying-<practice>_vN.tf` (or `_vN.tf.json`).
+- Candidate revisions are immutable and remain available for audit and rollback.
+- `terraform/deploying-<practice>.tf` is the promoted formal entry only after explicit user test approval.
+- Existing legacy names remain valid until their next functional modification; migration is incremental to avoid breaking RFS and OBS links.

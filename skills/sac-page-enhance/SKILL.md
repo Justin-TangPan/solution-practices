@@ -1,5 +1,8 @@
 ---
 name: sac-page-enhance
+status: optional
+scope: content
+owner: project
 description: |
   AI 解决方案页面增强 Skills — 平台级能力。
 

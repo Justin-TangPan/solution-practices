@@ -5,7 +5,7 @@
 | # | 决策点 | 选项 | 默认 |
 |---|--------|------|------|
 | 1 | 模板格式 | `.tf` (HCL) / `.tf.json` (JSON) | 问用户 |
-| 2 | 安装策略 | 内联 user_data / OBS 下载 | 问用户 |
+| 2 | user_data 策略 | 全内联 user_data / OBS 下载脚本 | 默认全内联；OBS 下载为例外 |
 | 3 | 地域 | 国内 (cn-*) / 海外 (ap-*, af-*) | 问用户 |
 | 4 | 语言 | 中文 / 英文 | 跟随地域 |
 | 5 | 部署架构 | 标准版 / 高可用版 | 问用户 |
@@ -20,12 +20,12 @@
 | `.tf` (HCL) | Clean syntax, heredoc support, readable | RFS may require JSON for some operations |
 | `.tf.json` (JSON) | RFS native, no HCL parsing needed | Verbose, no heredoc, hard to maintain multiline user_data |
 
-### Decision 2: 安装策略
+### Decision 2: user_data 策略
 
 | 策略 | Pros | Cons |
 |------|------|------|
-| **Inline user_data** | Single file deployment, no OBS dependency | user_data grows large, harder to iterate |
-| **OBS download** | Hot-fixable without RFS template change | Requires OBS bucket, two files to maintain |
+| **全内联 user_data** | SAC 标准模式，单文件部署，无 OBS 脚本依赖，交付边界清晰 | user_data grows large, harder to iterate |
+| **OBS 下载脚本** | Hot-fixable without RFS template change | 例外模式；requires OBS bucket, two files to maintain |
 
 ### Decision 3: 地域
 
@@ -43,8 +43,8 @@
 
 ### Decision 5: 脚本架构
 
-- **Inline user_data**：全部配置通过 heredoc 在 user_data 中生成，.tf 文件完全自包含
-- **OBS 下载**：user_data 只下载和执行脚本，配置文件上传 OBS，独立版本管理
+- **Inline user_data**：标准模式。全部配置通过 heredoc 在 user_data 中生成，.tf 文件完全自包含
+- **OBS 下载**：例外模式。user_data 只下载和执行脚本，配置文件上传 OBS，独立版本管理；启用前需要说明原因
 
 ### Decision 6: Docker vs 直接安装
 

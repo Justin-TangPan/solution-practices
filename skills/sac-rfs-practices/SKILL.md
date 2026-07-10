@@ -12,6 +12,10 @@ description: |
     "resources formation", or "一键部署" templates.
   Also triggers when the user mentions "demo patterns", "antipitfall", or references
   the n8n, Dify, or Hermes solution deployment experiences.
+metadata:
+  status: formal
+  scope: formal-delivery
+  owner: project
 ---
 
 # Huawei Cloud RFS Solution Builder
@@ -28,15 +32,19 @@ Follow standards from `assets/demo/` reference projects plus accumulated field-t
 When asked to create or fix a Huawei Cloud RFS solution directly:
 
 1. **Confirm decision points** (see Decision Points section below) — ask user for non-default choices
-2. **Write the .tf template**: Variables → locals (name_suffix) → data sources → VPC/subnet/secgroup → EIP → ECS with minimal user_data
+2. **Write the .tf template**: Variables → data sources → VPC/subnet/secgroup → EIP → ECS with the selected user_data mode
 3. **Write the install script**: Independent `.sh` file with all deployment logic
 4. **Write documentation**: Two Markdown docs per site-level directory structure
 5. **Upload to OBS**: Template + script + docs, naming per Decision 7
 6. **Test with RFS**: Deploy, SSH in, verify services
 
-### Template-Script Separation Rule
+### user_data Strategy Rule
 
-The `.tf` file's `user_data` must be **minimal** — only:
+Two user_data modes are valid. Pick one explicitly in the decision points and keep it consistent for a practice/variant.
+
+#### Mode A: OBS script bootstrap
+
+The `.tf` file's `user_data` is minimal — only:
 1. Reset ECS password
 2. Download install script from OBS
 3. Execute the script
@@ -46,7 +54,21 @@ The `.tf` file's `user_data` must be **minimal** — only:
 user_data = "#!/bin/bash\necho 'root:${var.ecs_password}' | chpasswd\nwget -P /home/ https://{bucket}.obs.{region}.myhuaweicloud.com/{project}/install_{app}.sh\nbash /home/install_{app}.sh\nrm -rf /home/install_{app}.sh"
 ```
 
-All deployment logic (package installation, configuration, service startup) belongs in the `.sh` script, NOT in the `.tf` file.
+This mode is now an exception path. Use it only when the user explicitly asks for external scripts or when a specific delivery constraint requires hot-fixable OBS-hosted scripts.
+
+#### Mode B: inline user_data
+
+The `.tf` file is self-contained and writes configuration files via heredoc before starting services.
+
+This is the SAC standard mode. Follow the LiteLLM/Supabase pattern: Terraform template contains infrastructure resources plus inline deployment logic, including package installation, configuration generation, service startup, health checks, and final outputs. `scripts/` is not a required delivery directory for standard RFS practices.
+
+Inline user_data must remain readable and auditable:
+- split logic into clear shell sections;
+- use heredoc for generated compose/config files;
+- keep health checks and final access information in the template;
+- avoid external OBS script dependencies unless the user explicitly approves an exception.
+
+Do not mix Mode A and Mode B in the same deployable instance.
 
 ## Development Workflow (SAC 标准流程)
 
@@ -56,7 +78,7 @@ All deployment logic (package installation, configuration, service startup) belo
 
 | 阶段 | 负责人 | 产出 |
 |------|--------|------|
-| 5. 开发 | AI | .tf 模板 + .sh 脚本 + Markdown 文档（部署指南+业务文档） |
+| 5. 开发 | AI | 内联 user_data 的 .tf 模板 + Markdown 文档（部署指南+方案详情） |
 | 6. 测试 OBS 上传 | AI | 上传到测试桶（桶名见本地开发记忆），用户验证 |
 | 8. 生产打包 | AI | 整理最终归档包，预置生产 OBS 路径的模板 |
 
@@ -69,7 +91,23 @@ All deployment logic (package installation, configuration, service startup) belo
 每个方案最终交付：
 1. **RFS 页面 URL** — 预置好模板和参数，用户点击即可部署
 2. **归档包** — `{project}.zip`，包含 cn/ + intl/ 全部区域
-3. **安装脚本** — `install_{app}.sh`，位于各区域 standard/scripts/ 目录
+3. **Terraform 模板** — 测试候选为 `deploying-{project}_vN.tf`，用户确认后提升为 `deploying-{project}.tf` 正式入口；部署逻辑默认内联在 user_data 中
+4. **文档双件套** — 部署指南 + 方案详情（中文内容 `_zh`，英文内容 `_en`）
+
+`manifest.json` 不是 SAC 标准交付物。只有用户明确要求、测试桶临时索引、或外部自动化工具需要时，才可作为辅助文件生成，不得写入标准交付清单。
+
+### Terraform 候选与正式入口
+
+对新建或修改中的模板使用以下流程：
+
+1. 在目标 deployable instance 的 `terraform/` 下创建 `deploying-{solution}_v1.tf`；后续修改递增为 `_v2`、`_v3`。
+2. 保持候选文件不可变；不得原地覆盖已经实际测试的 `_vN`。
+3. 上传测试桶时使用带修订号候选，并记录对应 SAC 四级测试版本。
+4. 每次产生新修订后，向用户确认实际云上测试结果。
+5. 只有用户明确确认通过后，才把候选的相同内容复制为 `deploying-{solution}.tf` 正式入口并更新生产发布对象。
+6. 保留候选文件用于审计与回滚。历史无版本模板在下一次修改时开始渐进迁移，不批量破坏现有链接。
+
+模板版本、项目版本和发布门禁的完整规则以 `sac-project-rules` Section 13 为准。
 
 ## User Constraints (用户约束)
 
@@ -81,7 +119,7 @@ All deployment logic (package installation, configuration, service startup) belo
 
 ### 2. 不硬编码凭证
 
-安装脚本中不得硬编码 AK/SK、API Key 等凭证。SWR 镜像应设为公开访问，避免 `docker login`。如必须认证，通过环境变量或参数传入。
+内联 user_data、可选安装脚本和配置文件中均不得硬编码 AK/SK、API Key 等凭证。SWR 镜像应设为公开访问，避免 `docker login`。如必须认证，通过环境变量或参数传入。
 
 ### 3. 不修改第三方源码
 
@@ -89,11 +127,13 @@ All deployment logic (package installation, configuration, service startup) belo
 
 ### 4. 文档交付规范
 
-正式交付物为 Markdown 格式（.md），按站点归类：
-- **中国站中文** → `cn/docs/{Name}-部署指南.md` + `cn/docs/{Name}-Solution-Details.md`
-- **国际站中文** → `intl/docs/zh-cn/{Name}-部署指南.md` + `intl/docs/zh-cn/{Name}-Solution-Details.md`
-- **国际站英文** → `intl/docs/en-us/{Name}-Deployment-Guide.md` + `intl/docs/en-us/{Name}-Solution-Details.md`
+正式交付文档为 Markdown 格式（.md），按站点归类，固定为部署指南 + 方案详情两类：
+- **中国站中文** → `cn/docs/{Name}-部署指南_zh.md` + `cn/docs/{Name}-方案详情_zh.md`
+- **国际站中文** → `intl/docs/zh-cn/{Name}-部署指南_zh.md` + `intl/docs/zh-cn/{Name}-方案详情_zh.md`
+- **国际站英文** → `intl/docs/en-us/{Name}-Deployment-Guide_en.md` + `intl/docs/en-us/{Name}-Solution-Details_en.md`
 - 高可用与标准版合并为一篇文档，在"快速部署"章节按子章节区分
+
+文件名语言后缀必须跟随文档正文语言，而不是站点目录名：中文正文统一 `_zh`，英文正文统一 `_en`。
 
 ### 5. 先确认再动手
 
@@ -103,9 +143,16 @@ All deployment logic (package installation, configuration, service startup) belo
 
 参见 `skills/reference/obs-conventions.md`。
 
-### 7. 模板和脚本分离
+### 7. user_data 策略
 
-`.tf` 文件的 user_data 只做：改密码 → wget 下载脚本 → 执行 → 清理。所有部署逻辑在 `.sh` 脚本中。
+标准模式为全内联 user_data：
+- `.tf` 自包含基础设施和应用部署逻辑；
+- 参考 LiteLLM、Supabase 这类实践，不做分布式脚本；
+- `scripts/` 不是标准交付目录，除非用户明确要求或存在必须外置脚本的技术约束。
+
+OBS 下载脚本仅作为例外模式：`.tf` 的 user_data 只做改密码、下载脚本、执行、清理；所有部署逻辑在 `.sh` 脚本中。启用前必须说明原因并获得用户确认。
+
+同一个 deployable instance 不得混用两种模式。
 
 ## Recent Pitfalls (近期踩坑记录)
 
@@ -270,7 +317,7 @@ provider "huaweicloud" {
 
 ### Resource Naming
 
-Use `var.solution_name` directly as the resource name prefix. Each RFS deployment creates an independent resource stack with its own state, so unique suffixes are not needed:
+Use `var.solution_name` directly as the resource name prefix. Each RFS deployment creates an independent resource stack with its own state:
 
 ```json
 "name": "${var.solution_name}-vpc"
@@ -278,6 +325,8 @@ Use `var.solution_name` directly as the resource name prefix. Each RFS deploymen
 "name": "${var.solution_name}-sg"
 "name": "${var.solution_name}-ecs"
 ```
+
+If a practice needs collision avoidance beyond `solution_name`, derive names from stable user input only. Do not generate changing names during plan/apply.
 
 **WARNING:** Do NOT use `substr(uuid(), 0, 8)` in locals. The `uuid()` function generates a new value on every `plan`/`apply`, causing ALL resources with that suffix to be **destroyed and recreated** on every deployment. This breaks idempotency and causes data loss.
 
@@ -303,13 +352,13 @@ Always include:
 ```json
 "huaweicloud_vpc": {
     "vpc": {
-        "name": "${var.vpc_name}-${local.name_suffix}",
+        "name": "${var.solution_name}-vpc",
         "cidr": "172.16.0.0/16"
     }
 },
 "huaweicloud_vpc_subnet": {
     "subnet": {
-        "name": "${var.vpc_name}-${local.name_suffix}-subnet",
+        "name": "${var.solution_name}-subnet",
         "cidr": "172.16.1.0/24",
         "gateway_ip": "172.16.1.1",
         "vpc_id": "${huaweicloud_vpc.vpc.id}"
@@ -332,7 +381,7 @@ Add app-specific rules for each port the application listens on.
 ```json
 "huaweicloud_compute_instance": {
     "compute_instance": {
-        "name": "${var.ecs_name}-${local.name_suffix}",
+        "name": "${var.solution_name}-ecs",
         "image_id": "${data.huaweicloud_images_image.Ubuntu.id}",
         "flavor_id": "${var.ecs_flavor}",
         "security_group_ids": ["${huaweicloud_networking_secgroup.secgroup.id}"],
@@ -352,9 +401,9 @@ Add app-specific rules for each port the application listens on.
 }
 ```
 
-### user_data Pattern (minimal bootstrap)
+### user_data Pattern
 
-Keep user_data to an absolute minimum. Only reset password + download + execute:
+Mode A keeps user_data to an absolute minimum. Only reset password + download + execute:
 
 ```bash
 #!/bin/bash
@@ -486,17 +535,14 @@ docker-compose ps
 
 **Symptom:** `dial tcp 173.208.182.68:443: i/o timeout` when pulling from Docker Hub
 
-**Fix:** Configure Docker daemon with domestic registry mirrors:
+**Fix:** For cn sites, keep Docker Hub image names unchanged in compose/install scripts and configure Docker daemon with the approved domestic registry mirror:
 ```json
 {
-  "registry-mirrors": [
-    "https://docker.1ms.run",
-    "https://{project-hash}.mirror.swr.myhuaweicloud.com"
-  ]
+  "registry-mirrors": ["https://docker.wangzhou3.top"]
 }
 ```
 
-The SWR mirror must be created per-project. Use `docker.1ms.run` as universal fallback.
+Do not rewrite Docker Hub image references to custom `docker.wangzhou3.top/<project>/...` paths unless those exact tags are a verified formal image repository.
 
 ### Pitfall 5: Container Permission Denied (EACCES)
 
@@ -548,8 +594,7 @@ environment:
 
 **Symptom:** Can't deploy a second instance due to name collisions.
 
-**Fix:** Append `-${local.name_suffix}` to every resource name in the tf.json.
-See section "Unique Naming" above.
+**Fix:** Use `var.solution_name` consistently as the resource name prefix. If multiple deployments must coexist under one account, require the user to provide a distinct `solution_name`; do not append `uuid()` or `random` values.
 
 ### Pitfall 10: Static OBS Script Blocks Iteration  
 
@@ -652,6 +697,30 @@ For cases where only SSH + application access is needed, just open the specific 
 
 **Fix — Option B (Quick start):** For small deployments, use a reliable domestic mirror like `docker.1ms.run` as the primary source, with explicit tag-and-retry logic in the install script (not relying solely on daemon.json mirror fallback).
 
+### Pitfall 28: Proxy Registry Is Not a Project Image Repository
+
+**Symptom:** `docker compose pull` fails with `not found` for images rewritten to paths like `docker.wangzhou3.top/sac/supabase-image/supabase-gotrue:v2.186.0`, and no containers listen on the application port.
+
+**Root cause:** `docker.wangzhou3.top` is a Docker Hub proxy/accelerator, not a guarantee that arbitrary project-specific image paths and tags exist. Rewriting official Docker Hub images into custom `sac/...` paths makes Docker query non-existent repositories.
+
+**Fix:** Keep official Docker Hub image names in compose files, for example `supabase/gotrue:v2.186.0`, `kong:3.9.1`, `postgrest/postgrest:v14.8`. Configure `/etc/docker/daemon.json` with `registry-mirrors: ["https://docker.wangzhou3.top"]` for cn sites. Only use fully qualified custom registry paths when the repository and exact tag have been pre-pushed and verified.
+
+### Pitfall 29: Do Not Escape Shell Command Substitution in Terraform user_data
+
+**Symptom:** Cloud-init reaches a shell loop or assignment and fails with `syntax error near unexpected token '('`; later containers restart because follow-up initialization never ran.
+
+**Root cause:** In Terraform heredoc user_data, shell command substitution `$()` was written as `$$()`. Terraform only needs escaping for literal `${...}` interpolation via `$${...}`. `$(` is not Terraform interpolation and must remain unchanged.
+
+**Fix:** Use `$(seq 1 30)` and `VAR=$(command ...)` in shell scripts. Use `$${POSTGRES_PASSWORD}` only when a generated compose file needs a literal `${POSTGRES_PASSWORD}` for Docker Compose variable expansion.
+
+### Pitfall 30: Stateful Compose Apps Need Complete DB Bootstrap
+
+**Symptom:** The gateway/dashboard is reachable, but Auth/Storage/Realtime containers restart or return 503. Logs show `database "supabase" does not exist`, `permission denied for database supabase`, or `no schema has been selected to create in`.
+
+**Root cause:** The DB bootstrap only set a subset of service role passwords or created the database with the wrong owner. Supabase-style images also require service schemas (`auth`, `storage`, `_realtime`, `extensions`) with matching owners/search paths. When running SQL through a shell heredoc, `docker exec` without `-i` silently does not pass the SQL into the container.
+
+**Fix:** Make DB bootstrap idempotent and complete: set the admin role password, create the application database with the real admin owner, alter existing DB owner if needed, create service schemas with correct authorization, grant database/schema privileges, then set all service role passwords. Use `docker exec -i ... psql <<SQL` for heredoc SQL and `-v ON_ERROR_STOP=1` so failed SQL stops cloud-init.
+
 ### Pitfall 15: Reserved PostgreSQL Roles Require Superuser
 
 **Symptom:** After deployment, service containers keep restarting with `password authentication failed for user "xxx"`. Running `ALTER USER` as `postgres` fails with `"xxx" is a reserved role, only superusers can modify it`.
@@ -740,7 +809,7 @@ provider "huaweicloud" {
 
 Never add `auth_url`, `cloud`, `insecure`. RFS auto-derives them. Explicit values cause `error retrieving IMS images: Authentication failed`.
 
-### Rule 2: Resource Names — Use Solution Name Directly
+### Rule 2: Resource Names — Stable and Idempotent
 
 ```hcl
 resource "huaweicloud_vpc" "vpc" {
@@ -749,15 +818,13 @@ resource "huaweicloud_vpc" "vpc" {
 }
 ```
 
-Each RFS deployment is an independent resource stack. Use `var.solution_name` as prefix — no random suffix needed.
+Each RFS deployment is an independent resource stack. Use `var.solution_name` as prefix. If additional disambiguation is required, it must come from stable user input, not from `uuid()` or the unavailable `random` provider.
 
-Apply `-${local.name_suffix}` to ALL resource names (VPC, subnet, secgroup, EIP, ECS, bandwidth). Prevents conflicts when multiple customers deploy the same solution.
+### Rule 3: user_data Mode Must Be Explicit
 
-### Rule 3: Template-Script Separation
-
-- `.tf` file: minimal user_data (password + wget + execute + cleanup)
-- `.sh` file: all deployment logic (install, configure, start)
-- Never embed long scripts in user_data heredoc
+- Standard Mode inline: `.tf` is self-contained and contains install/config/start/health-check logic in user_data.
+- Exception Mode OBS bootstrap: `.tf` contains minimal user_data; `.sh` contains install/config/start logic. Use only after user approval or explicit delivery constraints.
+- Do not mix OBS bootstrap and inline deployment logic in one deployable instance.
 
 ### Rule 4: pip Install — Always Use These Flags
 
@@ -793,9 +860,9 @@ Environment variables must be in the process environment (`.bashrc` export), not
 ### Rule 7: Markdown Docs Are the Formal Delivery
 
 Formal documentation is delivered as Markdown (.md) under site-level directories:
-- **cn site**: `cn/docs/{Name}-部署指南.md` + `cn/docs/{Name}-Solution-Details.md`
-- **intl site zh-cn**: `intl/docs/zh-cn/{Name}-部署指南.md` + `intl/docs/zh-cn/{Name}-Solution-Details.md`
-- **intl site en-us**: `intl/docs/en-us/{Name}-Deployment-Guide.md` + `intl/docs/en-us/{Name}-Solution-Details.md`
+- **cn site**: `cn/docs/{Name}-部署指南_zh.md` + `cn/docs/{Name}-方案详情_zh.md`
+- **intl site zh-cn**: `intl/docs/zh-cn/{Name}-部署指南_zh.md` + `intl/docs/zh-cn/{Name}-方案详情_zh.md`
+- **intl site en-us**: `intl/docs/en-us/{Name}-Deployment-Guide_en.md` + `intl/docs/en-us/{Name}-Solution-Details_en.md`
 - HA and Standard content merged into one doc, differentiated at sub-section level under "快速部署"
 
 ### Rule 8: No Docker for Non-Docker Apps

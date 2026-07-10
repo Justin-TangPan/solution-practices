@@ -42,9 +42,13 @@ else
 fi
 
 #CSS配置
-sed -i "s/VECTOR_STORE=weaviate/VECTOR_STORE=opensearch/" /dify/docker/.env
-sed -i "s/OPENSEARCH_HOST=opensearch/OPENSEARCH_HOST=$CSS_VPCEP_IP/" /dify/docker/.env
-sed -i "s/OPENSEARCH_SECURE=true/OPENSEARCH_SECURE=false/" /dify/docker/.env
+sed -i "s/^VECTOR_STORE=.*/VECTOR_STORE=elasticsearch/" /dify/docker/.env
+grep -q "^ELASTICSEARCH_HOST=" /dify/docker/.env && sed -i "s/^ELASTICSEARCH_HOST=.*/ELASTICSEARCH_HOST=$CSS_VPCEP_IP/" /dify/docker/.env || echo "ELASTICSEARCH_HOST=$CSS_VPCEP_IP" >> /dify/docker/.env
+grep -q "^ELASTICSEARCH_PORT=" /dify/docker/.env && sed -i "s/^ELASTICSEARCH_PORT=.*/ELASTICSEARCH_PORT=9200/" /dify/docker/.env || echo "ELASTICSEARCH_PORT=9200" >> /dify/docker/.env
+grep -q "^ELASTICSEARCH_USERNAME=" /dify/docker/.env && sed -i "s/^ELASTICSEARCH_USERNAME=.*/ELASTICSEARCH_USERNAME=/" /dify/docker/.env || echo "ELASTICSEARCH_USERNAME=" >> /dify/docker/.env
+grep -q "^ELASTICSEARCH_PASSWORD=" /dify/docker/.env && sed -i "s/^ELASTICSEARCH_PASSWORD=.*/ELASTICSEARCH_PASSWORD=/" /dify/docker/.env || echo "ELASTICSEARCH_PASSWORD=" >> /dify/docker/.env
+grep -q "^ELASTICSEARCH_USE_CLOUD=" /dify/docker/.env && sed -i "s/^ELASTICSEARCH_USE_CLOUD=.*/ELASTICSEARCH_USE_CLOUD=false/" /dify/docker/.env || echo "ELASTICSEARCH_USE_CLOUD=false" >> /dify/docker/.env
+grep -q "^ELASTICSEARCH_VERIFY_CERTS=" /dify/docker/.env && sed -i "s/^ELASTICSEARCH_VERIFY_CERTS=.*/ELASTICSEARCH_VERIFY_CERTS=false/" /dify/docker/.env || echo "ELASTICSEARCH_VERIFY_CERTS=false" >> /dify/docker/.env
 docker-compose up -d
 docker-compose ps
 

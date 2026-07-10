@@ -25,13 +25,15 @@ This file defines which parts of the repository are formal delivery assets, loca
 - `.claude/agents/`: local agent role definitions.
 - `.claude/workflows/`: local workflow orchestration.
 - `.claude/settings*.json`: local tool settings.
+- `.var/log/`: local internal change log. Each modification batch records a timestamp and four-level internal version here. `.var/` is never committed or uploaded.
 
 These files can help development, but public release correctness must not depend on them.
 
 ## User-Controlled
 
 - `reference/`: read-only reference material unless the user explicitly authorizes edits.
-- `.secrets/`, `.env`, OBS credentials, AK/SK, bucket names, and production endpoints.
+- `.secrets/`, `.env`, OBS credentials, AK/SK, and test bucket endpoints.
+- Production OBS bucket names and public production endpoints are open publication data for this project; they are not treated as security risks.
 
 ## Historical Or One-Off Scripts
 

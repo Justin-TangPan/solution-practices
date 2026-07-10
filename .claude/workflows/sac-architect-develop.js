@@ -49,7 +49,7 @@ phase('Develop')
 const devResults = await pipeline(
   REGIONS,
   async (region) => {
-    const is_cn = region === 'cn'
+    const is_cn = region === 'cn' || region.startsWith('cn/')
     return await agent({
       label: `dev:${region}`,
       agentType: 'sac-developer',
@@ -57,11 +57,11 @@ const devResults = await pipeline(
 项目：${PROJECT}，区域：${region}
 ${is_cn ? '源类型：国内（华为云镜像、PyPI镜像）' : '源类型：海外（官方源）'}
 
-在 practices/${PROJECT}/${region}/ 下创建：
-1. terraform/deploying-${PROJECT}.tf
-2. scripts/install_${PROJECT}.sh
-3. scripts/docker-compose.yaml（如适用）
-4. .extension
+	按 sac-project-rules 的 site/locale/region/variant 目录模型，在 practices/${PROJECT}/ 下创建对应文件：
+	1. <site>/<locale?>/<region>/<variant>/terraform/deploying-${PROJECT}.tf
+	2. <site>/<locale?>/<region>/<variant>/scripts/install_${PROJECT}.sh（OBS 下载模式需要；全内联模式可省略 scripts/）
+	3. <site>/<locale?>/<region>/<variant>/scripts/docker-compose.yaml（如适用）
+	4. <site>/<locale?>/<region>/<variant>/.extension（当前质量门禁可选）
 
 决策：${JSON.stringify(architectResult.decisions)}
 变量：${JSON.stringify(architectResult.variables)}`,

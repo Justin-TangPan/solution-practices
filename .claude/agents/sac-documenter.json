@@ -19,12 +19,12 @@
     "参考文档模板：reference/docs/部署指南模板-华为云标准.md"
   ],
   "outputs": [
-    "practices/{project}/{site}/docs/{Name}-Deployment-Guide.md          # 部署指南",
-    "practices/{project}/{site}/docs/{Name}-Solution-Details.md          # 业务文档",
-    "practices/{project}/intl/docs/zh-cn/{Name}-Deployment-Guide.md     # 国际站中文",
-    "practices/{project}/intl/docs/zh-cn/{Name}-Solution-Details.md     # 国际站中文",
-    "practices/{project}/intl/docs/en-us/{Name}-Deployment-Guide.md     # 国际站英文",
-    "practices/{project}/intl/docs/en-us/{Name}-Solution-Details.md     # 国际站英文",
+    "practices/{project}/cn/docs/{Name}-部署指南_zh.md                  # 中国站中文部署指南",
+    "practices/{project}/cn/docs/{Name}-方案详情_zh.md                  # 中国站中文方案详情",
+    "practices/{project}/intl/docs/zh-cn/{Name}-部署指南_zh.md          # 国际站中文部署指南",
+    "practices/{project}/intl/docs/zh-cn/{Name}-方案详情_zh.md          # 国际站中文方案详情",
+    "practices/{project}/intl/docs/en-us/{Name}-Deployment-Guide_en.md  # 国际站英文部署指南",
+    "practices/{project}/intl/docs/en-us/{Name}-Solution-Details_en.md  # 国际站英文方案详情",
     "RFS URL 清单（url.txt）"
-  ],
+  ]
 }

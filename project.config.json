@@ -2,7 +2,8 @@
   "formal": {
     "practices": [
       "litellm",
-      "supabase"
+      "supabase",
+      "openjiuwen"
     ],
     "exclude": [
       "web",

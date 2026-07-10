@@ -1,31 +1,31 @@
-# Docker 镜像站规范（双策略：cn 镜像站 / intl 官方源）
+# Docker 镜像站规范（双策略：cn daemon 代理 / intl 官方源）
 
 > 本文档是 SAC 项目的 Docker 镜像 registry 权威来源。各 Skill 通过引用本文档避免重复。
 >
-> **cn 站点**走 `docker.wangzhou3.top` 镜像站中转；**intl 站点**直拉官方 Docker Hub / ghcr.io，不加任何前缀。
+> **cn 站点**保留官方 Docker Hub 镜像名，并通过 Docker daemon `registry-mirrors` 走 `docker.wangzhou3.top` 代理；**intl 站点**直拉官方 Docker Hub / ghcr.io，不加任何前缀。
 
 ---
 
-## cn 站点 — 统一镜像站
+## cn 站点 — daemon registry mirror
 
-**所有 Docker 镜像统一通过中转站 `docker.wangzhou3.top` 拉取，直接 pull，不走 SWR / ghcr.io / docker.litellm.ai / Docker Hub 直拉。**
+**Docker Hub 镜像在 compose/install/user_data 中保留官方镜像名，不直接改写为 `docker.wangzhou3.top/...`。** 国内加速通过 Docker daemon mirror 完成。
 
+```json
+{ "registry-mirrors": ["https://docker.wangzhou3.top"] }
 ```
-docker pull docker.wangzhou3.top/<image>
-```
 
-适用范围：**cn 站点全部 install 脚本、docker-compose、TF 内联 user_data、daemon.json registry-mirrors**。
+适用范围：**cn 站点全部 install 脚本、docker-compose、TF 内联 user_data 中的 Docker Hub 镜像**。
 
 ### cn 路径映射约定
 
-| 原镜像 | 统一写法 |
+| 原镜像 | cn compose/install/user_data 写法 |
 |---|---|
-| SWR `swr.*.myhuaweicloud.com/sac/X` | `docker.wangzhou3.top/sac/X`（保留 sac/ 路径） |
-| `ghcr.io/X` | `docker.wangzhou3.top/X` |
-| `docker.litellm.ai/X` | `docker.wangzhou3.top/X` |
-| `docker.openhands.dev/X` | `docker.wangzhou3.top/X` |
-| 裸 Docker Hub `postgres:16` | `docker.wangzhou3.top/library/postgres:16` |
-| 带命名空间 `prom/prometheus`、`n8nio/n8n`、`berriai/litellm` 等 | `docker.wangzhou3.top/<ns>/<img>` |
+| 裸 Docker Hub `postgres:16`、`kong:3.9.1` | `postgres:16`、`kong:3.9.1` |
+| 带命名空间 `prom/prometheus`、`n8nio/n8n`、`supabase/gotrue` 等 | `prom/prometheus`、`n8nio/n8n`、`supabase/gotrue` |
+| `ghcr.io/X` | 原样保留或改为明确可用的正式镜像仓，不能假定 `docker.wangzhou3.top` 可代理 ghcr.io |
+| SWR `swr.*.myhuaweicloud.com/sac/X` | 原样保留，除非已确认目标仓库公开且可拉取 |
+
+禁止把 Docker Hub 镜像改写到项目自定义路径，例如 `docker.wangzhou3.top/sac/supabase-image/supabase-gotrue:v2.186.0`。`docker.wangzhou3.top` 是代理站点，不是保证完整 tag 存在的项目镜像仓。
 
 ### cn daemon.json
 
@@ -62,7 +62,7 @@ docker pull <image>
 
 ## 不动的部分
 
-- **Docker CE apt 源**（`mirrors.huaweicloud.com/docker-ce`、`download.docker.com/linux/ubuntu`）是 apt 软件源，不是镜像站，除非用户明确要求否则不改。
+- **Docker CE apt 源**（`mirrors.huaweicloud.com/docker-ce`、`download.docker.com/linux/ubuntu`）是 apt 软件源，不是容器镜像代理，除非用户明确要求否则不改。
 - **SWR 登录凭证**（`SWR_USERNAME` / `SWR_PASSWORD` / `docker login`）若仅用于认证、不参与镜像引用拼接，属冗余但不破坏部署，清理时删 login 块即可。
 
 ## 相关
