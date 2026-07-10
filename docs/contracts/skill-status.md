@@ -16,6 +16,10 @@ Current classification:
 |---|---|---|
 | `sac-project-rules` | formal | formal-delivery |
 | `sac-rfs-practices` | formal | formal-delivery |
+| `sac-testing` | formal | formal-delivery |
+| `sac-security` | formal | formal-delivery |
+| `sac-documentation` | formal | formal-delivery |
+| `sac-delivery` | formal | formal-delivery |
 | `sac-business-evaluator` | optional | research |
 | `sac-technical-evaluator` | optional | research |
 | `sac-page-enhance` | optional | content |

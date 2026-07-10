@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.9.0 (2026-07-10) — npm CLI 与 Codex 原生多 Agent 分发
+
+### 新功能
+
+- **npm CLI** — 新增 `solution-practices` 包和 `sac` 命令，支持 `init`、组件/方案安装、更新预览、健康检查和内容列表。
+- **安全升级** — 使用 `.sac/manifest.json` 跟踪 schema、版本和文件哈希；用户修改的受管文件输出 `.sac-new`，不静默覆盖。
+- **Codex 原生编排** — 新增项目级 `AGENTS.md`、六个 TOML 自定义 Agent 和四个 Codex 工作流，并保留 Claude Code 兼容层。
+- **正式工作流 Skills** — 新增测试、安全、文档和交付四个 Skill，并绑定对应 Codex Agent。
+
+### 治理与验证
+
+- 新增 npm 分发契约、公共接口稳定性、manifest migration、文件所有权和发布授权边界。
+- npm tarball 仅包含 `litellm`、`supabase`、`openjiuwen` 三个正式 practice，排除历史方案、缓存和内部产物。
+- Node CLI 测试、四个 Skill 格式验证、SAC 全量质量门禁和真实 tarball 安装链均通过。
+- 本版本仅完成本地可发布包；未执行 npm 发布、OBS 上传、Git 提交或云资源变更。
+
 ## v0.8.5 (2026-07-10) — Supabase 部署修复验证发布
 
 ### 修复验证

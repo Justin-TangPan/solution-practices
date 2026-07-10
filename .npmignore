@@ -1,0 +1,22 @@
+# Only formal practices are published.
+practices/*
+!practices/litellm/
+!practices/litellm/**
+!practices/supabase/
+!practices/supabase/**
+!practices/openjiuwen/
+!practices/openjiuwen/**
+
+# Runtime and local artifacts.
+**/__pycache__/
+**/*.py[cod]
+**/skill-report.json
+.var/
+.secrets/
+.env
+*.log
+*.tmp
+*.bak
+*.sac-new
+node_modules/
+test/

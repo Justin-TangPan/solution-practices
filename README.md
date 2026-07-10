@@ -4,7 +4,7 @@
 
 ### 解决方案实践 · 让 AI 替你写完从架构到交付的全部代码
 
-**v0.8.5** · 华为云解决方案实践仓库
+**v0.9.0** · 华为云解决方案实践仓库
 
 </div>
 
@@ -15,13 +15,14 @@
 <div align="center">
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.8.5-blue.svg?style=flat-square&label=SAC)](CHANGELOG.md)
-[![Practices](https://img.shields.io/badge/Practices-2-blue.svg?style=flat-square)](#-已有方案)
-[![Skills](https://img.shields.io/badge/Skills-6-green.svg?style=flat-square)](#-skills-架构)
+[![Version](https://img.shields.io/badge/version-v0.9.0-blue.svg?style=flat-square&label=SAC)](CHANGELOG.md)
+[![Practices](https://img.shields.io/badge/Practices-3-blue.svg?style=flat-square)](#-已有方案)
+[![Skills](https://img.shields.io/badge/Skills-10-green.svg?style=flat-square)](#-skills-架构)
 [![Agents](https://img.shields.io/badge/Agents-6-purple.svg?style=flat-square)](#-skills-架构)
 [![Workflows](https://img.shields.io/badge/Workflows-4-orange.svg?style=flat-square)](#-skills-架构)
 [![Platform](https://img.shields.io/badge/华为云-HWC%20Cloud-red.svg?style=flat-square&logo=hua&logoColor=white)](https://www.huaweicloud.com/)
-[![Made with Claude Code](https://img.shields.io/badge/Made%20with-Claude%20Code-blueviolet.svg?style=flat-square&logo=anthropic&logoColor=white)](https://claude.com/claude-code)
+[![Codex](https://img.shields.io/badge/Codex-multi--agent-black.svg?style=flat-square)](https://developers.openai.com/codex/)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-compatible-blueviolet.svg?style=flat-square&logo=anthropic&logoColor=white)](https://claude.com/claude-code)
 
 </div>
 
@@ -67,7 +68,7 @@
 
 ## 🧊 这是什么
 
-这是一个华为云解决方案实践仓库。本仓库内置一套 Skills 系统（**6 个技能 + 6 个 AI Agent + 4 个工作流**），覆盖从架构设计到交付打包的完整链路，并配有自动化测试框架对全部实践做静态校验。
+这是一个华为云解决方案实践仓库。本仓库内置一套 Skills 系统（**10 个技能 + 6 个 AI Agent + 4 个工作流**），覆盖从架构设计到交付打包的完整链路，并配有自动化测试框架对全部实践做静态校验。
 
 ### 核心工作流
 
@@ -176,22 +177,64 @@ AI：启动业务评估...
 
 ### 前提
 
-- Claude Code 已安装
-- 本仓库已 clone 到本地
+- Node.js 20 或更高版本
+- Codex（推荐）或 Claude Code
 
-### 使用
+### npm 安装（Codex）
 
-直接和 AI 对话，描述你的需求：
+发布到 npm 后，可全局安装：
 
 ```bash
-# 在仓库根目录启动
-claude
+npm install --global solution-practices
+cd your-project
+sac init
+sac doctor
+```
 
-# 然后直接说你的需求，例如：
+也可不全局安装：
+
+```bash
+cd your-project
+npx solution-practices init
+```
+
+`sac init` 会安装 Codex Agent、工作流和 `.codex/skills/` 下可直接发现的 SAC Skills，同时保留
+根 `skills/` 兼容镜像，并使用 `.sac/manifest.json` 跟踪版本与
+文件哈希。它不会通过 npm `postinstall` 自动修改工作区。已有用户文件不会被静默覆盖；冲突内容
+写入相邻的 `.sac-new` 文件。
+
+常用命令：
+
+```bash
+sac list
+sac install practice litellm
+sac update --dry-run
+sac update
+sac doctor
+```
+
+然后启动 Codex 并直接描述任务：
+
+```bash
+codex
+# “用 SAC Codex 全流程做一个方案”
+```
+
+### 从源码使用
+
+开发本项目本身时，clone 仓库后直接启动 Codex 或 Claude Code：
+
+```bash
+git clone https://github.com/Justin-TangPan/solution-practices.git
+cd solution-practices
+npm test
+codex
+
+# 然后描述需求，例如：
 "帮我部署 LiteLLM 到华为云香港区域"
 ```
 
-也可以直接触发预定义的工作流（可选，不熟悉时直接对话即可）：
+Claude Code 兼容层仍保留在 `.claude/`，可使用原工作流入口：
 
 ```bash
 # 全流程交付
@@ -234,6 +277,7 @@ python -m scripts.tests.runner --practice litellm   # 单方案
 |------|------|---------|-----------|
 | **LiteLLM** | 多模型 API 统一管理网关 | cn-north-4 | ap-southeast-1/2/3, af-north/south-1, la-north-2, sa-brazil-1, tr-west-1 |
 | **Supabase** | 开源后端即服务 | cn-north-4 | ap-southeast-1 |
+| **openJiuwen** | 智能体开发与工作流平台 | cn-north-4 | — |
 
 > 每个方案均提供 `standard`（单机）与 `ha`（高可用）两种部署形态（部分方案）。需要新方案？直接告诉 AI 应用名称和目标区域即可。
 
@@ -241,9 +285,9 @@ python -m scripts.tests.runner --practice litellm   # 单方案
 
 ## 🛠️ Skills 架构
 
-系统内置 **6 个技能 + 6 个 Agent + 4 个工作流**，自动按需加载。
+系统内置 **10 个技能 + 6 个 Agent + 4 个工作流**，自动按需加载。
 
-### 技能（6）
+### 技能（10）
 
 | 技能 | 职责 |
 |------|------|
@@ -253,6 +297,10 @@ python -m scripts.tests.runner --practice litellm   # 单方案
 | `sac-technical-evaluator` | 技术可行性评估 |
 | `sac-page-enhance` | 页面文案增强与商品化 |
 | `sac-deep-search` | 深度搜索与调研 |
+| `sac-testing` | 模板、目录、脚本和正式质量门禁验证 |
+| `sac-security` | 凭证、网络、容器、数据和供应链审计 |
+| `sac-documentation` | 部署指南、方案详情和国际站双语一致性 |
+| `sac-delivery` | 发布门禁、URL 清单、归档和校验和 |
 
 ### Agent（6）
 
@@ -260,10 +308,10 @@ python -m scripts.tests.runner --practice litellm   # 单方案
 |-------|------|--------|
 | 🏗️ 架构师 | 方案设计、技术评估、决策点确认 | deep-search |
 | 👨‍💻 开发 | 写 Terraform 模板、Shell 脚本 | rfs-practices |
-| 🧪 测试 | 模板验证、语法检查 | — |
-| 🔒 安全 | 安全审计、合规检查 | — |
-| 📝 文档 | 生成部署指南、方案详情 | page-enhance |
-| 📦 交付 | 打包归档、生成 URL 清单 | — |
+| 🧪 测试 | 模板验证、语法检查 | sac-testing |
+| 🔒 安全 | 安全审计、合规检查 | sac-security |
+| 📝 文档 | 生成部署指南、方案详情 | sac-documentation |
+| 📦 交付 | 打包归档、生成 URL 清单 | sac-delivery |
 
 ### 工作流（4）
 
@@ -281,9 +329,9 @@ python -m scripts.tests.runner --practice litellm   # 单方案
 │       └── .extension   # RFS 界面配置（可选）
 ├── skills/          # AI 技能定义（索引 + 嵌入 + 参考文档）
 ├── scripts/tests/   # 自动化测试框架
-└── .claude/
-    ├── agents/      # 6 个 Agent 角色配置
-    └── workflows/   # 4 个多 Agent 工作流编排
+├── bin/ + src/      # npm CLI、manifest、升级和诊断
+├── .codex/          # Codex 原生 Agent 与工作流
+└── .claude/         # Claude Code 兼容层
 ```
 
 ---

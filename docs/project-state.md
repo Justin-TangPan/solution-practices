@@ -7,12 +7,14 @@ This document records the current repository scope. It should be updated when a 
 - Formal practices: `litellm`, `supabase`, `openjiuwen`
 - Formal quality gate: `scripts/tests/`
 - Formal rules: `skills/sac-project-rules/`, `skills/sac-rfs-practices/`
+- Formal workflow skills: `skills/sac-testing/`, `skills/sac-security/`, `skills/sac-documentation/`, `skills/sac-delivery/`
+- Formal npm distribution: `package.json`, `bin/sac.js`, `src/`, and `templates/`
 - Scope config: `project.config.json`
 
 ## Explicitly Out Of Formal Scope
 
 - `web/` is a future visualization prototype and is not part of the formal release gate.
-- `.claude/agents/` and `.claude/workflows/` are local collaboration assets.
+- `.claude/agents/`, `.claude/workflows/`, `AGENTS.md`, and `.codex/` are local collaboration assets.
 - Historical half-finished practices may still be referenced by old documents, scripts, or catalog data. Those references are not formal unless the practice is listed in `project.config.json`.
 
 ## Source-Of-Truth Order
@@ -22,6 +24,12 @@ This document records the current repository scope. It should be updated when a 
 3. `skills/` contains rules and reusable project knowledge.
 4. `scripts/tests/` validates formal practice assets.
 5. `web/` may visualize or experiment with catalog data, but it does not define formal delivery state.
+
+## npm Distribution
+
+The package name is `solution-practices`, the executable is `sac`, and Node.js 20 or newer is required.
+Installed state is recorded in `.sac/manifest.json`. Distribution compatibility and file-ownership rules are
+defined in `docs/contracts/npm-distribution.md`.
 
 ## Data-Source Policy
 

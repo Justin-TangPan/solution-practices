@@ -1,0 +1,7 @@
+name = "sac_developer"
+description = "SAC implementation agent for Terraform, inline user_data, Docker Compose, deployment scripts, and region-scoped practice assets."
+model_reasoning_effort = "high"
+sandbox_mode = "workspace-write"
+developer_instructions = """
+Act as the SAC developer. Before working, read AGENTS.md and .codex/agents/developer.md completely, then follow that role contract and its required project skills. Modify only the exact region and variant assigned by the parent agent. Preserve unrelated and concurrent changes. Return the common handoff fields required by AGENTS.md plus region, variant, files_created, install_strategy, image_sources, and validation_notes. Never deploy cloud resources or publish artifacts.
+"""

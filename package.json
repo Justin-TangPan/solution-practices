@@ -1,0 +1,61 @@
+{
+  "name": "solution-practices",
+  "version": "0.9.0",
+  "description": "SAC multi-agent toolkit and Huawei Cloud Solution Practices for Codex",
+  "type": "module",
+  "bin": {
+    "sac": "bin/sac.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "templates/",
+    ".codex/config.toml",
+    ".codex/agents/*.md",
+    ".codex/agents/*.toml",
+    ".codex/workflows/*.md",
+    "skills/**/SKILL.md",
+    "skills/**/agents/openai.yaml",
+    "skills/reference/*.md",
+    "skills/sac-rfs-practices/SAC-技术路线总结.md",
+    "practices/litellm/**/*",
+    "practices/supabase/**/*",
+    "practices/openjiuwen/**/*",
+    "scripts/tests/**/*.py",
+    "docs/contracts/*.md",
+    "reference/docs/*.md",
+    "project.config.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "test:project": ".venv-sac/bin/python -m scripts.tests.runner",
+    "pack:check": "npm pack --dry-run",
+    "prepublishOnly": "npm test && npm run pack:check"
+  },
+  "keywords": [
+    "codex",
+    "multi-agent",
+    "terraform",
+    "huawei-cloud",
+    "rfs",
+    "solution-practices"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Justin-TangPan/solution-practices.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Justin-TangPan/solution-practices/issues"
+  },
+  "homepage": "https://github.com/Justin-TangPan/solution-practices#readme",
+  "license": "MIT",
+  "sac": {
+    "manifestSchemaVersion": 1,
+    "contentVersion": "2026.07"
+  }
+}

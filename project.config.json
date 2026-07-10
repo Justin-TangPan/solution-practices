@@ -18,11 +18,31 @@
     "require_extension": false,
     "allow_inline_install_script": true
   },
+  "distribution": {
+    "npm_package": "solution-practices",
+    "node_minimum": "20",
+    "manifest_schema_version": 1,
+    "content_version": "2026.07",
+    "managed_file_policies": {
+      "AGENTS.md": "merge-block",
+      ".codex/agents/sac-*": "managed",
+      ".codex/workflows/*": "managed",
+      ".codex/skills/sac-*": "managed",
+      "skills/sac-*": "managed",
+      "practices/*": "managed-unless-modified"
+    }
+  },
   "asset_status": {
     "practices": "formal",
     "skills": "formal",
     "scripts/tests": "formal",
+    "package.json": "formal",
+    "bin/sac.js": "formal",
+    "src": "formal",
+    "templates": "formal",
     "scripts/obs": "optional",
+    ".codex/agents": "local",
+    ".codex/workflows": "local",
     ".claude/agents": "local",
     ".claude/workflows": "local",
     "web": "experimental"
