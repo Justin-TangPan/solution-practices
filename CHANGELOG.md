@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.8.5 (2026-07-10) — Supabase 部署修复验证发布
+
+### 修复验证
+- **cloud-init 脚本修复** — 修正 Terraform 内联 `user_data` 的外层缩进，确保 shebang 位于首字节且所有内层 heredoc 正确闭合
+- **实际云测通过** — `0.8.4.1` Supabase 整体测试包经用户确认部署测试通过
+- **完整归档** — CN、INTL 中英文模板、`.extension` 和文档已组成整体包并完成远端大小与 SHA-256 校验
+
+### 发布信息
+- **测试版本**：`0.8.4.1`
+- **正式版本**：`0.8.5`
+- **发布范围**：Supabase CN + INTL zh-cn/en-us
+
+### 关键文件
+- `practices/supabase/cn/cn-north-4/standard/terraform/deploying-supabase.tf`
+- `practices/supabase/intl/zh-cn/ap-southeast-1/standard/terraform/deploying-supabase-ap-southeast-1.tf`
+- `practices/supabase/intl/en-us/ap-southeast-1/standard/terraform/deploying-supabase-ap-southeast-1.tf`
+
 ## v0.8.4 (2026-07-10) — 模板版本治理与发布门禁
 
 ### 规则更新
