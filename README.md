@@ -290,9 +290,7 @@ python -m scripts.tests.runner --practice litellm   # 单方案
 ## 🔗 集成与生态
 
 - **华为云 RFS** — 一键部署链接自动生成，粘贴到控制台即用
-- **OBS 私有桶** — 交付产物归档，凭证只走环境变量
 - **Claude Code / OpenCode** — 原生 Skills 标准，对话即触发
-- **Docker 镜像站** — 统一 `docker.wangzhou3.top` 加速
 - **多区域** — CN（cn-north-4）+ INTL（ap-southeast-1/2/3、af、la、sa、tr）多区覆盖
 
 ---
