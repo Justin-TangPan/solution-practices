@@ -175,7 +175,7 @@ AI：启动业务评估...
 
 ### 前提
 
-- Claude Code 已安装
+- Claude Code / Codex / Hermes Agent / 任意AI Agent 已安装
 - 本仓库已 clone 到本地
 
 ### 使用
