@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🧊 SAC — Solution Practices
+<img src="assets/branding/sac-logo.png" alt="SAC — Solution Practices" width="720">
 
 ### 解决方案实践 · 让 AI 替你写完从架构到交付的全部代码
 
