@@ -7,7 +7,7 @@
 // 本脚本只产结构化字段（slug/title/sites/regions/hasHA/docsPath），由 catalog.ts 合并。
 
 import { readdirSync, readFileSync, statSync, writeFileSync, existsSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { join, dirname, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -28,18 +28,40 @@ function readH1(filePath) {
   return m[1].replace(/\s*Solution Details\s*$/i, "").trim();
 }
 
-function firstDocH1(slug) {
-  // 优先 cn/docs/Solution-Details.md，回退 intl/docs/zh-cn/ 或 intl/docs/
-  const candidates = [
-    join(PRACTICES_DIR, slug, "cn", "docs", "Solution-Details.md"),
-    join(PRACTICES_DIR, slug, "intl", "docs", "zh-cn", "Solution-Details.md"),
-    join(PRACTICES_DIR, slug, "intl", "docs", "Solution-Details.md"),
+function findDocFile(slug) {
+  // 支持两种命名：Solution-Details.md（旧）和 *-方案详情_zh.md（新标准）
+  const patterns = [
+    "Solution-Details.md",
+    "Solution-Details_en.md",
   ];
-  for (const c of candidates) {
-    const h1 = readH1(c);
-    if (h1) return { title: h1, docsPath: c.replace(/\\/g, "/").replace(ROOT + "/", "") };
+  const baseDirs = [
+    join(PRACTICES_DIR, slug, "cn", "docs"),
+    join(PRACTICES_DIR, slug, "intl", "docs", "zh-cn"),
+    join(PRACTICES_DIR, slug, "intl", "docs", "en-us"),
+    join(PRACTICES_DIR, slug, "intl", "docs"),
+  ];
+  for (const dir of baseDirs) {
+    if (!existsSync(dir)) continue;
+    const files = readdirSync(dir);
+    // 先尝试精确匹配
+    for (const p of patterns) {
+      if (files.includes(p)) return join(dir, p);
+    }
+    // 再尝试通配匹配：*-方案详情_zh.md
+    const zhMatch = files.find(f => /方案详情_zh\.md$/.test(f));
+    if (zhMatch) return join(dir, zhMatch);
+    // 最后尝试 Solution-Details*.md 变体
+    const sdMatch = files.find(f => /^Solution-Details/i.test(f));
+    if (sdMatch) return join(dir, sdMatch);
   }
-  return { title: null, docsPath: null };
+  return null;
+}
+
+function firstDocH1(slug) {
+  const docFile = findDocFile(slug);
+  if (!docFile) return { title: null, docsPath: null };
+  const h1 = readH1(docFile);
+  return { title: h1 ?? null, docsPath: relative(ROOT, docFile) };
 }
 
 const slugs = dirs(PRACTICES_DIR).sort();
@@ -48,11 +70,24 @@ const practices = slugs.map(slug => {
   const regions = new Set();
   let hasHA = false;
   for (const site of sites) {
-    const siteRegions = dirs(join(PRACTICES_DIR, slug, site)).filter(r => r !== "docs");
-    for (const r of siteRegions) {
-      regions.add(r);
-      const variants = dirs(join(PRACTICES_DIR, slug, site, r));
-      if (variants.includes("ha")) hasHA = true;
+    const sitePath = join(PRACTICES_DIR, slug, site);
+    const siteEntries = dirs(sitePath).filter(r => r !== "docs");
+    for (const entry of siteEntries) {
+      // intl 站点有 locale 层 (en-us/zh-cn)，需要再下一层才是真实 region
+      const entryPath = join(sitePath, entry);
+      const isLocale = entry === "en-us" || entry === "zh-cn";
+      if (isLocale) {
+        const localeRegions = dirs(entryPath).filter(r => r !== "docs");
+        for (const r of localeRegions) {
+          regions.add(r);
+          const variants = dirs(join(entryPath, r));
+          if (variants.includes("ha")) hasHA = true;
+        }
+      } else {
+        regions.add(entry);
+        const variants = dirs(entryPath);
+        if (variants.includes("ha")) hasHA = true;
+      }
     }
   }
   const { title, docsPath } = firstDocH1(slug);
