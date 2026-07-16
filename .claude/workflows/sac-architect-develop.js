@@ -27,7 +27,8 @@ const architectResult = await agent({
 1. 技术可行性分析
 2. 架构设计方案（ASCII 图 + 资源清单）
 3. 决策点确认（格式/地域/语言/安装策略/容器化）
-4. 变量设计表（7 标准变量 + 应用专属变量）`,
+4. 冻结参数合同（只保留有规则、官方或用户依据的变量）
+5. 返回规则、精确参考模板、固定值、公网入口、允许文件和偏差`,
   schema: {
     type: 'object',
     properties: {
@@ -39,10 +40,20 @@ const architectResult = await agent({
         containerization: { type: 'string' },
       }, required: ['template_format', 'install_strategy', 'language', 'containerization'] },
       variables: { type: 'array' },
+      rules_read: { type: 'array' },
+      reference_templates: { type: 'array' },
+      fixed_values: { type: 'object' },
+      public_endpoints: { type: 'array' },
+      allowed_artifacts: { type: 'array' },
+      deviations: { type: 'array' },
     },
-    required: ['architecture', 'decisions', 'variables'],
+    required: ['architecture', 'decisions', 'variables', 'rules_read', 'reference_templates', 'fixed_values', 'public_endpoints', 'allowed_artifacts', 'deviations'],
   },
 })
+
+if (architectResult.deviations.some(item => item.requires_user_confirmation && !item.confirmed_by_user)) {
+  throw new Error('Prototype development blocked by unapproved architecture deviations')
+}
 
 // Phase 2: 开发（按区域并行）
 phase('Develop')
@@ -64,7 +75,11 @@ ${is_cn ? '源类型：国内（华为云镜像、PyPI镜像）' : '源类型：
 	4. <site>/<locale?>/<region>/<variant>/.extension（当前质量门禁可选）
 
 决策：${JSON.stringify(architectResult.decisions)}
-变量：${JSON.stringify(architectResult.variables)}`,
+变量：${JSON.stringify(architectResult.variables)}
+固定值：${JSON.stringify(architectResult.fixed_values)}
+公网入口：${JSON.stringify(architectResult.public_endpoints)}
+允许文件：${JSON.stringify(architectResult.allowed_artifacts)}
+禁止增加合同外变量、端口、代理层、requirements/lock 或外部下载。`,
       schema: {
         type: 'object',
         properties: { files_created: { type: 'array', items: { type: 'string' } } },

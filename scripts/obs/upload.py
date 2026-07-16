@@ -160,9 +160,10 @@ def git_commit() -> str:
         return "unknown"
 
 
-def build_manifest(practice, region, deploy_type, version, files, src):
-    return {
+def build_manifest(practice, region, deploy_type, version, files, src, site="", locale=""):
+    manifest = {
         "practice": practice,
+        "site": site,
         "region": region,
         "deploy_type": deploy_type,
         "version": version,
@@ -178,6 +179,9 @@ def build_manifest(practice, region, deploy_type, version, files, src):
             for p in files
         ],
     }
+    if locale:
+        manifest["locale"] = locale
+    return manifest
 
 
 def make_zip(zip_name: str, files, src: Path, manifest: dict) -> bytes:
@@ -193,12 +197,29 @@ def make_zip(zip_name: str, files, src: Path, manifest: dict) -> bytes:
 
 # ── OBS 操作 ─────────────────────────────────────────────────────────────────
 
-def obs_key(practice, region, deploy_type, version, filename):
-    return f"{OBS_PREFIX}/{practice}/{region}/{deploy_type}/{version}/{filename}"
+def obs_prefix(practice, region, deploy_type, version, site="", locale=""):
+    """Return a site/locale-aware prefix so intl variants never collide."""
+    parts = [OBS_PREFIX, practice]
+    if site:
+        parts.append(site)
+    if locale:
+        parts.append(locale)
+    parts.extend([region, deploy_type, version])
+    return "/".join(parts)
 
 
-def obs_url(bucket, key):
-    return f"obs://{bucket}/{key}"
+def obs_key(practice, region, deploy_type, version, filename, site="", locale=""):
+    return f"{obs_prefix(practice, region, deploy_type, version, site, locale)}/{filename}"
+
+
+def archive_name(practice, version, region, deploy_type, site="", locale=""):
+    parts = [practice, version]
+    if site:
+        parts.append(site)
+    if locale:
+        parts.append(locale)
+    parts.extend([region, deploy_type])
+    return "-".join(parts) + ".zip"
 
 
 def connect_obs(creds):
@@ -216,11 +237,26 @@ def object_exists(client, bucket, key) -> bool:
     return resp.status < 300
 
 
-def download_text(client, bucket, key) -> str:
-    resp = client.getObject(bucket, key, loadStreamInMS=False)
+def download_bytes(client, bucket, key):
+    """Download an object across old and current huaweicloud OBS SDKs."""
+    try:
+        resp = client.getObject(bucket, key, loadStreamInMemory=True)
+    except TypeError:
+        # Older SDK releases used the non-standard loadStreamInMS argument.
+        resp = client.getObject(bucket, key, loadStreamInMS=True)
     if resp.status < 300:
-        return resp.body.response.read().decode("utf-8")
+        buffer = getattr(resp.body, "buffer", None)
+        if buffer is not None:
+            return bytes(buffer)
+        response = getattr(resp.body, "response", None)
+        if response is not None:
+            return response.read()
     return None
+
+
+def download_text(client, bucket, key) -> str:
+    data = download_bytes(client, bucket, key)
+    return data.decode("utf-8") if data is not None else None
 
 
 def upload_bytes(client, bucket, key, data: bytes, content_type: str = "application/octet-stream"):
@@ -230,6 +266,14 @@ def upload_bytes(client, bucket, key, data: bytes, content_type: str = "applicat
     resp = client.putObject(bucket, key, content=data, headers=headers)
     if resp.status >= 300:
         raise RuntimeError(f"OBS 上传失败 status={resp.status} reason={resp.reason}")
+
+
+def verify_uploaded_bytes(client, bucket, key, expected: bytes):
+    actual = download_bytes(client, bucket, key)
+    if actual is None:
+        raise RuntimeError(f"OBS 回读失败: {key}")
+    if hashlib.sha256(actual).digest() != hashlib.sha256(expected).digest():
+        raise RuntimeError(f"OBS SHA-256 校验失败: {key}")
 
 
 # ── 差异对比 ─────────────────────────────────────────────────────────────────
@@ -274,10 +318,44 @@ def main():
 
     # 3. 打包
     files = collect_files(src)
-    manifest = build_manifest(args.practice, args.region, args.deploy_type, args.version, files, src)
-    zip_name = f"{args.practice}-{args.version}-{args.region}-{args.deploy_type}.zip"
-    zip_key = obs_key(args.practice, args.region, args.deploy_type, args.version, zip_name)
-    manifest_key = obs_key(args.practice, args.region, args.deploy_type, args.version, "manifest.json")
+    site = entry.get("site", "")
+    locale = entry.get("locale", "")
+    manifest = build_manifest(
+        args.practice,
+        args.region,
+        args.deploy_type,
+        args.version,
+        files,
+        src,
+        site=site,
+        locale=locale,
+    )
+    zip_name = archive_name(
+        args.practice,
+        args.version,
+        args.region,
+        args.deploy_type,
+        site=site,
+        locale=locale,
+    )
+    zip_key = obs_key(
+        args.practice,
+        args.region,
+        args.deploy_type,
+        args.version,
+        zip_name,
+        site=site,
+        locale=locale,
+    )
+    manifest_key = obs_key(
+        args.practice,
+        args.region,
+        args.deploy_type,
+        args.version,
+        "manifest.json",
+        site=site,
+        locale=locale,
+    )
     print(f"[3/5] 打包: {len(files)} 个文件 → {zip_name}")
 
     if args.dry_run:
@@ -300,42 +378,47 @@ def main():
     bucket = creds["OBS_BUCKET"]
     print("[4/5] 连接 OBS...")
     client = connect_obs(creds)
+    try:
+        if object_exists(client, bucket, manifest_key):
+            print("      远端已存在同版本 manifest")
+            if not args.force:
+                try:
+                    remote_manifest_text = download_text(client, bucket, manifest_key)
+                    remote_manifest = json.loads(remote_manifest_text) if remote_manifest_text else {}
+                    added, removed, modified, unchanged = diff_manifests(manifest, remote_manifest)
+                    print(f"\n      与远端差异: 新增 {len(added)} / 删除 {len(removed)} / 修改 {len(modified)} / 未变 {len(unchanged)}")
+                    if added:
+                        print(f"      新增: {added[:5]}")
+                    if modified:
+                        print(f"      修改: {modified[:5]}")
+                except Exception as e:
+                    print(f"      (无法读取远端 manifest: {e})")
+                ans = input("\n      远端已存在，确认覆盖? 输入 yes 继续: ").strip()
+                if ans != "yes":
+                    print("      已取消。")
+                    return
+                print("      确认覆盖，继续上传...")
+            else:
+                print("      --force 已指定，直接覆盖")
 
-    if object_exists(client, bucket, manifest_key):
-        print("      远端已存在同版本 manifest")
-        if not args.force:
-            try:
-                remote_manifest_text = download_text(client, bucket, manifest_key)
-                remote_manifest = json.loads(remote_manifest_text) if remote_manifest_text else {}
-                added, removed, modified, unchanged = diff_manifests(manifest, remote_manifest)
-                print(f"\n      与远端差异: 新增 {len(added)} / 删除 {len(removed)} / 修改 {len(modified)} / 未变 {len(unchanged)}")
-                if added:
-                    print(f"      新增: {added[:5]}")
-                if modified:
-                    print(f"      修改: {modified[:5]}")
-            except Exception as e:
-                print(f"      (无法读取远端 manifest: {e})")
-            ans = input("\n      远端已存在，确认覆盖? 输入 yes 继续: ").strip()
-            if ans != "yes":
-                print("      已取消。")
-                return
-            print("      确认覆盖，继续上传...")
-        else:
-            print("      --force 已指定，直接覆盖")
+        # 5. 上传 + 回读校验
+        print("[5/5] 上传...")
+        zip_data = make_zip(zip_name, files, src, manifest)
+        upload_bytes(client, bucket, zip_key, zip_data, content_type="application/zip")
+        print(f"      ✓ {zip_name} ({len(zip_data)/1024:.1f} KB)")
+        manifest_bytes = json.dumps(manifest, ensure_ascii=False, indent=2).encode("utf-8")
+        upload_bytes(client, bucket, manifest_key, manifest_bytes, content_type="application/json")
+        print("      ✓ manifest.json")
+        verify_uploaded_bytes(client, bucket, zip_key, zip_data)
+        verify_uploaded_bytes(client, bucket, manifest_key, manifest_bytes)
+        print("      ✓ 回读 SHA-256 校验通过")
 
-    # 5. 上传
-    print("[5/5] 上传...")
-    zip_data = make_zip(zip_name, files, src, manifest)
-    upload_bytes(client, bucket, zip_key, zip_data, content_type="application/zip")
-    print(f"      ✓ {zip_name} ({len(zip_data)/1024:.1f} KB)")
-    manifest_bytes = json.dumps(manifest, ensure_ascii=False, indent=2).encode("utf-8")
-    upload_bytes(client, bucket, manifest_key, manifest_bytes, content_type="application/json")
-    print(f"      ✓ manifest.json")
-
-    print("\n=== 上传完成 ===")
-    print(f"  zip:      {obs_url(bucket, zip_key)}")
-    print(f"  manifest: {obs_url(bucket, manifest_key)}")
-    print("  (私有桶，需凭证访问)")
+        print("\n=== 上传完成 ===")
+        print(f"  zip key:      {zip_key}")
+        print(f"  manifest key: {manifest_key}")
+        print("  (私有桶，需凭证访问)")
+    finally:
+        client.close()
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ terraform {
   required_providers {
     huaweicloud = {
       source  = "huawei.com/provider/huaweicloud"
-      version = ">= 1.20.0"
+      version = ">= 1.20.0, < 2.0.0"
     }
   }
 }
@@ -66,11 +66,15 @@ variable "bandwidth_size" {
   }
 }
 
-variable "deploy_package_url" {
-  default     = "https://openjiuwen-ci.obs.cn-north-4.myhuaweicloud.com/agentstudio/deployTool_0.1.5_amd64.zip"
-  description = "openJiuwen Agent Studio 官方 Docker 部署工具包下载地址。默认使用 0.1.5 amd64 版本包。"
+variable "web_access_cidr" {
+  default     = "121.36.59.153/32"
+  description = "允许访问 openJiuwen Studio 前端的公网 IPv4 地址，必须使用 /32。默认仅允许 Cloud Shell 出口地址。"
   type        = string
   nullable    = false
+  validation {
+    condition     = can(cidrhost(var.web_access_cidr, 0)) && can(regex("^[0-9]{1,3}(\\.[0-9]{1,3}){3}/32$", var.web_access_cidr))
+    error_message = "必须为有效的公网 IPv4 /32 CIDR，例如 203.0.113.10/32。"
+  }
 }
 
 variable "frontend_port" {
@@ -82,50 +86,6 @@ variable "frontend_port" {
     condition     = var.frontend_port >= 1024 && var.frontend_port <= 65535
     error_message = "前端端口必须在1024到65535之间。"
   }
-}
-
-variable "backend_port" {
-  default     = 8000
-  description = "openJiuwen 后端 API 主机端口，仅用于运维和健康检查。默认：8000。"
-  type        = number
-  nullable    = false
-  validation {
-    condition     = var.backend_port >= 1024 && var.backend_port <= 65535
-    error_message = "后端端口必须在1024到65535之间。"
-  }
-}
-
-variable "runtime_port" {
-  default     = 8186
-  description = "openJiuwen Agent Runtime 主机端口，用于 Agent 发布和运行态管理。默认：8186。"
-  type        = number
-  nullable    = false
-  validation {
-    condition     = var.runtime_port >= 1024 && var.runtime_port <= 65535
-    error_message = "Runtime端口必须在1024到65535之间。"
-  }
-}
-
-variable "embedding_api_base" {
-  default     = ""
-  description = "Embedding 模型 API Base，用于启用记忆/知识相关能力。留空时可部署后在 openJiuwen 界面配置。"
-  type        = string
-  nullable    = false
-}
-
-variable "embedding_model_name" {
-  default     = ""
-  description = "Embedding 模型名称。留空时可部署后在 openJiuwen 界面配置。"
-  type        = string
-  nullable    = false
-}
-
-variable "embedding_api_key" {
-  default     = ""
-  description = "Embedding 模型 API Key。留空时可部署后在 openJiuwen 界面配置。"
-  type        = string
-  sensitive   = true
-  nullable    = false
 }
 
 variable "charging_mode" {
@@ -183,15 +143,6 @@ resource "huaweicloud_networking_secgroup" "secgroup" {
   name = "${var.solution_name}-sg"
 }
 
-resource "huaweicloud_networking_secgroup_rule" "allow_ping" {
-  security_group_id = huaweicloud_networking_secgroup.secgroup.id
-  description       = "允许 ping 测试连通性"
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "icmp"
-  remote_ip_prefix  = "0.0.0.0/0"
-}
-
 resource "huaweicloud_networking_secgroup_rule" "openjiuwen_frontend" {
   security_group_id = huaweicloud_networking_secgroup.secgroup.id
   description       = "openJiuwen Studio 前端 HTTPS 访问"
@@ -199,27 +150,7 @@ resource "huaweicloud_networking_secgroup_rule" "openjiuwen_frontend" {
   ethertype         = "IPv4"
   protocol          = "tcp"
   ports             = var.frontend_port
-  remote_ip_prefix  = "0.0.0.0/0"
-}
-
-resource "huaweicloud_networking_secgroup_rule" "openjiuwen_backend" {
-  security_group_id = huaweicloud_networking_secgroup.secgroup.id
-  description       = "openJiuwen 后端 API 运维访问"
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  ports             = var.backend_port
-  remote_ip_prefix  = "0.0.0.0/0"
-}
-
-resource "huaweicloud_networking_secgroup_rule" "openjiuwen_runtime" {
-  security_group_id = huaweicloud_networking_secgroup.secgroup.id
-  description       = "openJiuwen Agent Runtime 运维访问"
-  direction         = "ingress"
-  ethertype         = "IPv4"
-  protocol          = "tcp"
-  ports             = var.runtime_port
-  remote_ip_prefix  = "0.0.0.0/0"
+  remote_ip_prefix  = var.web_access_cidr
 }
 
 resource "huaweicloud_networking_secgroup_rule" "cloud_shell" {
@@ -271,7 +202,9 @@ resource "huaweicloud_compute_instance" "ecs" {
   #!/bin/bash
   set -e
 
-  echo 'root:${var.ecs_password}' | chpasswd
+  ROOT_PASSWORD="$(printf '%s' '${base64encode(var.ecs_password)}' | base64 -d)"
+  printf 'root:%s\n' "$ROOT_PASSWORD" | chpasswd
+  unset ROOT_PASSWORD
 
   LOG="/var/log/openjiuwen-bootstrap.log"
   exec > >(tee -a "$LOG") 2>&1
@@ -289,7 +222,11 @@ resource "huaweicloud_compute_instance" "ecs" {
   chmod a+r /etc/apt/keyrings/docker.gpg
   echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://mirrors.huaweicloud.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
   apt-get update -y
-  apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+  DOCKER_CE_VERSION="$(apt-cache policy docker-ce | awk '/Candidate:/ {print $2}')"
+  DOCKER_CLI_VERSION="$(apt-cache policy docker-ce-cli | awk '/Candidate:/ {print $2}')"
+  test -n "$DOCKER_CE_VERSION" && test "$DOCKER_CE_VERSION" != "(none)"
+  test -n "$DOCKER_CLI_VERSION" && test "$DOCKER_CLI_VERSION" != "(none)"
+  apt-get install -y "docker-ce=$DOCKER_CE_VERSION" "docker-ce-cli=$DOCKER_CLI_VERSION" containerd.io docker-buildx-plugin docker-compose-plugin
   mkdir -p /etc/docker
   cat > /etc/docker/daemon.json << 'DOCKERDAEMON'
   {
@@ -303,17 +240,21 @@ resource "huaweicloud_compute_instance" "ecs" {
   echo "[$(date)] 下载 openJiuwen Agent Studio 官方部署工具..."
   INSTALL_DIR="/opt/openjiuwen"
   TOOL_ZIP="/opt/openjiuwen-deploytool.zip"
+  TOOL_URL="https://openjiuwen-ci.obs.cn-north-4.myhuaweicloud.com/agentstudio/deployTool_0.1.5_amd64.zip"
+  TOOL_SHA256="fb6df7f006660d4c1e1b6e800e83c14d6c806f84236fb46452af38ba946ff783"
   rm -rf "$INSTALL_DIR" "$TOOL_ZIP"
   mkdir -p "$INSTALL_DIR"
-  curl -fL --retry 5 --retry-delay 10 -o "$TOOL_ZIP" "${var.deploy_package_url}"
+  curl -fL --retry 5 --retry-delay 10 -o "$TOOL_ZIP" "$TOOL_URL"
+  printf '%s  %s\n' "$TOOL_SHA256" "$TOOL_ZIP" | sha256sum --check --strict -
   unzip -q "$TOOL_ZIP" -d /opt
-  TOOL_DIR="$(find /opt -maxdepth 1 -type d -name 'deployTool_*_amd64' | sort | tail -n 1)"
-  if [ -z "$TOOL_DIR" ]; then
+  TOOL_DIR="/opt/deployTool_0.1.5_amd64"
+  if [ ! -d "$TOOL_DIR" ]; then
     echo "[$(date)] 未找到 deployTool 解压目录"
     exit 1
   fi
   mv "$TOOL_DIR" "$INSTALL_DIR/deployTool"
   cd "$INSTALL_DIR/deployTool"
+  umask 077
 
   SECRET_KEY="$(openssl rand -base64 32 | tr -d '\n')"
   AES_KEY="$(openssl rand -base64 32 | tr -d '\n')"
@@ -321,14 +262,15 @@ resource "huaweicloud_compute_instance" "ecs" {
   cat > .env.custom << CUSTOMENV
   IP=${huaweicloud_vpc_eip.eip.address}
   FRONTEND_HOST_PORT=${var.frontend_port}
-  BACKEND_HOST_PORT=${var.backend_port}
-  RUNTIME_HOST_PORT=${var.runtime_port}
+  BACKEND_HOST_PORT=8000
+  RUNTIME_HOST_PORT=8186
   SECRET_KEY=$SECRET_KEY
   SERVER_AES_MASTER_KEY_ENV=$AES_KEY
-  EMBED_API_BASE=${var.embedding_api_base}
-  EMBED_MODEL_NAME=${var.embedding_model_name}
-  EMBED_API_KEY=${var.embedding_api_key}
+  EMBED_API_BASE=
+  EMBED_MODEL_NAME=
+  EMBED_API_KEY=
   CUSTOMENV
+  chmod 0600 .env.custom
 
   chmod +x ./*.sh
 
@@ -340,17 +282,17 @@ resource "huaweicloud_compute_instance" "ecs" {
   }
 
   echo "[$(date)] 等待前端服务就绪..."
-  for i in $(seq 1 60); do
+  for i in $(seq 1 24); do
     if curl -k -fsS "https://localhost:${var.frontend_port}/" >/dev/null 2>&1; then
       echo "[$(date)] openJiuwen 前端服务已就绪"
       break
     fi
-    if [ "$i" = "60" ]; then
+    if [ "$i" = "24" ]; then
       echo "[$(date)] 前端服务仍未就绪，请查看 $LOG 和 $INSTALL_DIR/deployTool/log-dirs"
       docker ps
       exit 1
     fi
-    sleep 10
+    sleep 5
   done
 
   echo "[$(date)] openJiuwen bootstrap: done"
@@ -359,7 +301,7 @@ resource "huaweicloud_compute_instance" "ecs" {
 
 output "access_info" {
   description = "openJiuwen Agent Studio 访问信息"
-  value       = "openJiuwen Studio: https://${huaweicloud_vpc_eip.eip.address}:${var.frontend_port} | 后端健康检查: http://${huaweicloud_vpc_eip.eip.address}:${var.backend_port}/api/health | Runtime健康检查: http://${huaweicloud_vpc_eip.eip.address}:${var.runtime_port}/health | ECS: ${huaweicloud_vpc_eip.eip.address} | 安装目录: /opt/openjiuwen/deployTool | 日志: /var/log/openjiuwen-bootstrap.log"
+  value       = "openJiuwen Studio: https://${huaweicloud_vpc_eip.eip.address}:${var.frontend_port} | ECS: ${huaweicloud_vpc_eip.eip.address} | 后端和 Runtime 仅限主机本地健康检查 | 安装目录: /opt/openjiuwen/deployTool | 日志: /var/log/openjiuwen-bootstrap.log"
 }
 
 output "studio_url" {

@@ -17,6 +17,7 @@
 ## 门禁
 
 测试存在 error、安全存在 critical/high、所需语言文档缺失时不得正式交付；返回阻塞原因。
+生产 URL、OBS 上传、云资源、Git commit/push 均需动作级明确授权；没有授权时只允许本地候选打包。
 
 ## handoff
 

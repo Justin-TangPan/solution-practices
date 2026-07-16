@@ -48,15 +48,15 @@ def run(practice_path: Path, entry: dict) -> list:
 
         # 安全组过宽检测 (SSH/3389 对 0.0.0.0/0)
         for block in re.findall(r'resource\s+"huaweicloud_networking_secgroup_rule"[^}]+}', content, re.DOTALL):
-            cidr = re.search(r'cidr\s*=\s*"([^"]+)"', block)
-            port = re.search(r'port\s*=\s*(\d+)', block)
+            cidr = re.search(r'(?:remote_ip_prefix|cidr)\s*=\s*"([^"]+)"', block)
+            port = re.search(r'ports?\s*=\s*(\d+)', block)
             if cidr and cidr.group(1) == "0.0.0.0/0" and port and port.group(1) in ["22", "3389"]:
                 results.append(CheckResult("tf_syntax", False, "ERROR",
                     f"{f.name}: 端口 {port.group(1)} 对 0.0.0.0/0 开放 (高危)"))
 
         # EIP 带宽预警
-        for block in re.findall(r'resource\s+"huaweicloud_vpc_eip"[^}]+}', content, re.DOTALL):
-            bw = re.search(r'bandwidth\s*=\s*(\d+)', block)
+        for block in re.findall(r'resource\s+"huaweicloud_vpc_eip".*?\n}', content, re.DOTALL):
+            bw = re.search(r'bandwidth\s*\{.*?size\s*=\s*(\d+)', block, re.DOTALL)
             if bw and int(bw.group(1)) > 100:
                 results.append(CheckResult("tf_syntax", True, "WARN",
                     f"{f.name}: EIP 带宽 {bw.group(1)}Mbps 较大，请确认成本"))

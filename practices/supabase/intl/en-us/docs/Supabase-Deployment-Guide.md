@@ -1,8 +1,10 @@
 # Deploy Supabase — Open-Source Firebase Alternative Deployment Guide
 
 > **Document Type:** Huawei Cloud Solution Practice Deployment Guide
-> **Document Version:** 01
-> **Release Date:** 2026-07-07
+> **Document Version:** 02 (candidate)
+> **Updated:** 2026-07-14
+
+> **Validation status:** This guide is aligned with the `deploying-supabase_v6.tf` candidate. Its revision number is synchronized with the CN candidate, while the international template continues to use official upstream networking. Real Huawei Cloud deployment, cloud-init, and application verification are still pending; do not treat this candidate as production-validated.
 
 ---
 
@@ -10,7 +12,7 @@
 
 ### 1.1 Use Cases
 
-This solution deploys Supabase — the open-source Firebase alternative (GitHub 103k+ Stars) — on a Huawei Cloud ECS instance via Docker Compose. It provides managed PostgreSQL database, user authentication, auto-generated REST/GraphQL APIs, real-time data subscriptions, file storage, and a complete Backend-as-a-Service (BaaS) capability.
+This solution deploys Supabase — the open-source Firebase alternative — on a Huawei Cloud ECS instance. The candidate checks out the complete official `docker/` directory at commit `00ecb5305965ff85e1b5757e34a8eb5eb787f6f6`, then uses the official `docker-compose.yml` and `run.sh`. It provides PostgreSQL, authentication, REST/GraphQL APIs, real-time subscriptions, file storage, Edge Functions, and a web Dashboard.
 
 Typical use cases:
 
@@ -27,7 +29,7 @@ Figure 1-1 Single-instance deployment architecture
 
 This solution deploys the following resources:
 
-- 1 x Huawei Cloud ECS instance (recommended 8vCPUs 16GiB), running ~10 Docker containers
+- 1 x Huawei Cloud ECS instance (recommended 8vCPUs 16GiB), running the 11 official default services
 - 1 x Elastic Public IP (EIP) associated to ECS, providing public Dashboard and API access
 - 1 x VPC and subnet for network isolation
 
@@ -35,15 +37,35 @@ This solution deploys the following resources:
 
 ```
 Kong (API Gateway) ← Unified entry point :8000
-├── GoTrue (Authentication)
-├── PostgREST (REST API)
+├── Studio (Web management Dashboard, protected by HTTP Basic Auth)
+├── GoTrue / auth (Authentication)
+├── PostgREST / rest (REST API)
 ├── Realtime (WebSocket real-time subscriptions)
 ├── Storage (File storage)
 ├── imgproxy (Image processing)
-├── postgres-meta (Database management API)
-├── Studio (Web management dashboard)
-└── PostgreSQL 15 + Supavisor (Connection pooler)
+├── postgres-meta / meta (Database management API)
+├── Edge Runtime / functions (Edge Functions)
+├── PostgreSQL / db
+└── Supavisor (Connection pooler)
 ```
+
+The candidate uses the fixed image tags from the pinned official Compose file:
+
+| Service | Fixed image |
+|---------|-------------|
+| Studio | `supabase/studio:2026.07.07-sha-a6a04f2` |
+| Kong | `kong/kong:3.9.1` |
+| Auth | `supabase/gotrue:v2.189.0` |
+| REST | `postgrest/postgrest:v14.12` |
+| Realtime | `supabase/realtime:v2.102.3` |
+| Storage | `supabase/storage-api:v1.60.4` |
+| imgproxy | `darthsim/imgproxy:v3.30.1` |
+| Meta | `supabase/postgres-meta:v0.96.6` |
+| Functions | `supabase/edge-runtime:v1.74.0` |
+| Database | `supabase/postgres:17.6.1.136` |
+| Supavisor | `supabase/supavisor:2.9.5` |
+
+Optional Analytics and Vector logging services are not enabled by default. The PostgreSQL `pgvector` extension is separate from the optional Vector logging service.
 
 #### Data Flow
 
@@ -52,24 +74,27 @@ Kong (API Gateway) ← Unified entry point :8000
 3. Data requests are automatically converted to PostgreSQL queries via PostgREST
 4. Real-time subscriptions push database changes via WebSocket
 5. File storage is persisted to local volumes via the Storage service
+6. Edge Functions execute through the official Edge Runtime service
 
 ### 1.3 Key Benefits
 
-- **103k+ Stars open-source project** — Apache-2.0 license, active community, continuous updates
-- **Docker Compose one-click deployment** — ~10 containers auto-orchestrated, 10-15 minutes to complete
-- **Official Docker Hub images** — No mirror dependency, stable pulls from official registry
+- **Upstream-aligned deployment** — Uses the complete official Docker directory at an immutable commit
+- **Official lifecycle commands** — Image pull, startup, shutdown, status, logs, and secret display are handled by the bundled `run.sh`
+- **Fixed images and service set** — Runs 11 default services with explicit image tags; optional Analytics/Vector services remain disabled
 - **Built-in PostgreSQL extensions** — pgvector vector search, pgjwt auth, PostGIS geospatial, etc.
-- **Complete backend capability** — Database + REST API + GraphQL + Auth + Real-time + Storage + Dashboard
-- **Auto-retry mechanism** — 5 retries ensure image pull success rate
+- **Complete backend capability** — Database + REST API + GraphQL + Auth + Real-time + Storage + Edge Functions + Dashboard
+- **Protected Dashboard and persistent snippets** — Kong enforces HTTP Basic Auth, while Studio SQL snippets persist in a host-mounted directory
 
 ### 1.4 Constraints and Limitations
 
 - A Huawei Cloud account with real-name authentication and sufficient balance is required before deployment.
 - For subscription billing, ensure sufficient balance for auto-deduction, or manually pay at "Billing Center > Unpaid Orders".
-- Wait ~10-15 minutes after deployment for Docker image pulls and container startup to complete.
-- Recommended ECS flavor is c7n.2xlarge.2 (8vCPUs 16GiB) or above to support ~10 containers running simultaneously.
+- Wait approximately 10-20 minutes for cloud-init, Docker image pulls, and service health checks to complete.
+- Recommended ECS flavor is c7n.2xlarge.2 (8vCPUs 16GiB) or above to support all 11 services.
 - System disk should be at least 100GB for Docker images and database data.
-- Modify the default JWT secret and database password immediately after first deployment.
+- The candidate exposes port 8000 over plain HTTP. HTTP Basic Auth protects the Dashboard from unauthenticated access, but it does not encrypt credentials or traffic. Restrict source IPs during evaluation; for production, place the service behind HTTPS/TLS and apply appropriate network access controls before use.
+- This is a single-ECS deployment. Database, Storage, and SQL snippets are stored on the ECS system disk and are not highly available.
+- Optional Analytics and Vector logging services are not part of the default deployment.
 
 ---
 
@@ -138,7 +163,7 @@ Step 2 Click "Next", confirm the basic configuration, and set the ECS password a
 | solution_name | Solution name, 4-24 chars, lowercase letters/digits/hyphens, must start with a lowercase letter | supabase |
 | ecs_flavor | ECS flavor, c7n.2xlarge.2 (8vCPUs 16GiB) or above recommended. Change to match available flavors in target region | c7n.2xlarge.2 |
 | ecs_password | ECS root password, 8-26 chars, at least 3 of: uppercase, lowercase, digits, special characters | / |
-| db_password | PostgreSQL password, 8-26 chars, used as the password for all database roles | / |
+| db_password | PostgreSQL password with no template-side character whitelist; special characters are supported. Use a strong password | / |
 | system_disk_size | System disk size (GB), high-IO type, range: 40-1024, 100GB recommended for Supabase | 100 |
 | bandwidth_size | EIP bandwidth (Mbit/s), traffic billing, range: 1-300 | 300 |
 | charging_mode | Billing mode: postPaid (pay-per-use) or prePaid (subscription) | postPaid |
@@ -149,7 +174,7 @@ Step 3 Configure encryption and permissions as needed, then click "Next".
 
 Step 4 Review the stack content. Optionally click "Create Execution Plan" to preview estimated costs, then click "Deploy Stack Directly".
 
-Step 5 Wait for `Apply required resource success`, then check the "Outputs" tab for connection information. Wait ~10-15 minutes before using the services (Docker image pulls and container startup take time).
+Step 5 Wait for `Apply required resource success`, then check the "Outputs" tab for the Dashboard URL and deployment log path. Allow approximately 10-20 minutes for cloud-init, image pulls, and health checks. RFS resource creation success does not by itself prove that application initialization has completed.
 
 > **Note:**
 > - If account balance is insufficient, go to "Billing Center > Top Up" to recharge.
@@ -164,101 +189,109 @@ Step 5 Wait for `Apply required resource success`, then check the "Outputs" tab 
 Step 1 Open the Dashboard URL from the deployment output in your browser:
 
 ```
-http://<EIP>:8000/project/default
+http://<EIP>:8000/
 ```
 
-> **Note:** Replace `<EIP>` with the elastic public IP address from the RFS output.
+> **Note:** Replace `<EIP>` with the elastic public IP address from the RFS output. This URL uses unencrypted HTTP; use it only in a controlled evaluation environment. Configure HTTPS before production use.
 
-Step 2 On first access, the Supabase Studio management dashboard will load. You can:
+Step 2 The browser must show an HTTP Basic Auth login dialog before Studio loads. The Dashboard username remains the upstream default `supabase`; the password is randomly generated during bootstrap and is intentionally not included in the RFS output. Retrieve it only after connecting over SSH:
+
+```bash
+ssh root@<EIP>
+cd /opt/supabase
+sh run.sh secrets
+```
+
+Use the displayed `DASHBOARD_PASSWORD` with username `supabase`. Do not send the command output to logs, tickets, or chat messages.
+
+Step 3 After authentication, you can:
 
 - View and manage database tables
 - Configure user authentication (email, OAuth, phone, etc.)
 - Manage file storage buckets
 - View real-time subscription status
 - Execute SQL queries
+- Create and manage Edge Functions
 
-Step 3 Verify Supabase running status:
+Step 4 Verify Supabase running status with the official lifecycle helper:
 
 ```bash
 # SSH into ECS
 ssh root@<EIP>
 
-# Check container status
-docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+# Enter the official Docker deployment directory
+cd /opt/supabase
 
-# Check container logs
-docker compose -f /opt/supabase/docker-compose.yaml logs --tail 50
+# Check service status or follow logs
+sh run.sh status
+sh run.sh logs
+
+# Check cloud-init/bootstrap progress if services are not ready
+tail -n 200 /var/log/supabase-bootstrap.log
 ```
 
 ----End
 
 #### 3.3.2 Get API Keys
 
-Supabase uses JWT for API authentication. View and safeguard the following keys after deployment:
+Use the official helper to display generated passwords and API keys. Do not print the complete `.env` file:
 
 ```bash
-# SSH in and view
 ssh root@<EIP>
-cat /opt/supabase/.env
+cd /opt/supabase
+sh run.sh secrets
 ```
 
 **Table 3-2 API Keys**
 
 | Key | Description | Usage |
 |-----|-------------|-------|
-| `ANON_KEY` | Public access key (anonymous role) | Client-side apps, restricted permissions |
-| `SERVICE_ROLE_KEY` | Admin key | Server-side use, full permissions, **never expose to client** |
+| `SUPABASE_PUBLISHABLE_KEY` | Publishable client key | Client-side apps, subject to database authorization policies |
+| `SUPABASE_SECRET_KEY` | Secret server key | Trusted server-side components only, **never expose to clients** |
 | `POSTGRES_PASSWORD` | PostgreSQL database password | Database connections |
+| `DASHBOARD_PASSWORD` | Random Dashboard Basic Auth password | Browser login with username `supabase` |
+| `S3_PROTOCOL_ACCESS_KEY_ID` / `S3_PROTOCOL_ACCESS_KEY_SECRET` | S3-compatible Storage credentials | Trusted server-side S3 clients only |
 
-> **Security Note:** `JWT_SECRET` and `SECRET_KEY_BASE` are randomly generated during deployment. `ANON_KEY`/`SERVICE_ROLE_KEY` are derived and signed from `JWT_SECRET`. Safeguard all keys in `.env` — never expose `SERVICE_ROLE_KEY` to the client.
+> **Security Note:** Bootstrap uses the official `utils/generate-keys.sh --update-env` and `utils/add-new-auth-keys.sh --update-env` tools with output suppressed, then stores `.env` with mode `0600` under `/opt/supabase` (mode `0700`). `run.sh secrets` is the supported retrieval path in this solution. Never expose secret keys or database/S3 passwords to clients.
 
 ----End
 
-#### 3.3.3 Rotate Security Keys (If Needed)
+#### 3.3.3 Official Operations and Credential Changes
 
-`JWT_SECRET`, `SECRET_KEY_BASE` are randomly generated during deployment. `ANON_KEY`/`SERVICE_ROLE_KEY` are signed from `JWT_SECRET`. To rotate:
+Run lifecycle operations from `/opt/supabase` through the pinned official `run.sh`:
 
 ```bash
-ssh root@<EIP>
 cd /opt/supabase
-
-# 1. Generate new JWT_SECRET
-NEW_JWT=$(openssl rand -base64 32)
-
-# 2. Re-sign ANON_KEY / SERVICE_ROLE_KEY with new JWT_SECRET
-gen_jwt() {
-  local secret="$1" role="$2"
-  local h p sig
-  h=$(printf '%s' '{"alg":"HS256","typ":"JWT"}' | openssl base64 -A | tr '/+' '_-' | tr -d '=')
-  p=$(printf '%s' "{\"iss\":\"supabase\",\"role\":\"$role\",\"exp\":1983810273,\"ref\":\"default\"}" | openssl base64 -A | tr '/+' '_-' | tr -d '=')
-  sig=$(printf '%s' "$h.$p" | openssl dgst -sha256 -hmac "$secret" -binary | openssl base64 -A | tr '/+' '_-' | tr -d '=')
-  printf '%s' "$h.$p.$sig"
-}
-
-# 3. Write back to .env and restart
-sed -i "s|^JWT_SECRET=.*|JWT_SECRET=$NEW_JWT|" .env
-sed -i "s|^ANON_KEY=.*|ANON_KEY=$(gen_jwt "$NEW_JWT" anon)|" .env
-sed -i "s|^SERVICE_ROLE_KEY=.*|SERVICE_ROLE_KEY=$(gen_jwt "$NEW_JWT" service_role)|" .env
-docker compose restart
+sh run.sh status
+sh run.sh restart
+sh run.sh stop
+sh run.sh start
 ```
 
-> **Note:** Changing `JWT_SECRET` without re-signing `ANON_KEY`/`SERVICE_ROLE_KEY` will cause REST/Auth/Storage signature verification to fail. `POSTGRES_PASSWORD` rotation requires `ALTER USER` for all database roles — recommend rebuilding the stack instead.
+Do not hand-build JWTs or directly edit individual values in `.env`. JWT/API-key and PostgreSQL password changes affect multiple services and database roles. Back up data first, then rebuild the stack or follow the coordinated credential-rotation procedure for the exact pinned upstream release. The official key-generation scripts in this candidate are intended for initial bootstrap and are not a standalone post-deployment database-password rotation procedure.
 
 ----End
 
-#### 3.3.4 Common Service Endpoints
+#### 3.3.4 SQL Snippets Persistence
+
+The pinned official Compose file sets `SNIPPETS_MANAGEMENT_FOLDER=/app/snippets` for Studio and mounts `./volumes/snippets:/app/snippets:z`. SQL snippets saved in Studio therefore persist across container restarts in `/opt/supabase/volumes/snippets`. They remain on the single ECS system disk and must be backed up before deleting or rebuilding the ECS.
+
+#### 3.3.5 Common Service Endpoints
 
 **Table 3-3 Supabase Service Endpoints**
 
 | Endpoint | Description | Example |
 |----------|-------------|---------|
-| Dashboard | Web management dashboard | `http://<EIP>:8000/project/default` |
+| Dashboard | Web management dashboard | `http://<EIP>:8000/` |
 | REST API | Auto-generated RESTful API | `http://<EIP>:8000/rest/v1/` |
 | Auth API | User authentication API | `http://<EIP>:8000/auth/v1/` |
 | Storage | File storage API | `http://<EIP>:8000/storage/v1/` |
 | Realtime | WebSocket real-time subscriptions | `http://<EIP>:8000/realtime/v1/` |
+| Edge Functions | Edge Functions endpoint | `http://<EIP>:8000/functions/v1/` |
 
 ----End
+
+> **Security Note:** All examples above use the candidate's current plain-HTTP endpoint. API keys and payloads are not protected by transport encryption. Configure HTTPS/TLS before production use. The optional Analytics endpoint is unavailable because Analytics/Vector services are disabled by default.
 
 ### 3.4 Uninstall
 
@@ -268,7 +301,7 @@ Step 2 In the confirmation dialog, select "Delete Resources", enter `Delete`, an
 
 > **Note:**
 > - Uninstalling releases all resources (ECS, EIP, VPC, security group).
-> - **Back up `/opt/supabase/volumes/db/data` before deletion** — data is unrecoverable after uninstall.
+> - **Back up `/opt/supabase/volumes/db/data`, Storage data, and `/opt/supabase/volumes/snippets` before deletion** — local data is unrecoverable after uninstall.
 
 ----End
 
@@ -293,6 +326,7 @@ Step 2 In the confirmation dialog, select "Delete Resources", enter `Delete`, an
 
 - [Supabase Documentation](https://supabase.com/docs)
 - [Supabase GitHub](https://github.com/supabase/supabase)
+- [Pinned official Docker deployment directory](https://github.com/supabase/supabase/tree/00ecb5305965ff85e1b5757e34a8eb5eb787f6f6/docker)
 - [Supabase Self-Hosting Guide](https://supabase.com/docs/guides/self-hosting/docker)
 - [Huawei Cloud RFS](https://support.huaweicloud.com/intl/en-us/rfs/)
 
@@ -302,4 +336,10 @@ Step 2 In the confirmation dialog, select "Delete Resources", enter `Delete`, an
 
 | Date | Revision |
 |------|----------|
+| 2026-07-14 | Added `_v6` to synchronize the candidate revision with the CN template; removed the `_v5` candidate. |
+| 2026-07-14 | Added `_v5` to synchronize the candidate revision with the CN template; removed the `_v4` candidate. |
 | 2026-07-07 | Initial release for intl ap-southeast-1 (Hong Kong). |
+| 2026-07-14 | Candidate guide aligned to the pinned official Docker Compose deployment: 11 fixed-image services, Basic Auth, official `run.sh`, persistent snippets, and pending cloud validation. |
+| 2026-07-14 | Added the `_v2` candidate with a self-only `charging_period` validation for RFS compatibility; deleted the failed `_v1` candidate files. |
+| 2026-07-14 | Added `_v3`: removed the database-password and CN flavor format regexes, added Base64 and dotenv literal-safe password handling, and deleted the failed `_v2` candidates. |
+| 2026-07-14 | Added `_v4`: set Docker APT key/source files to mode `0644` to fix `_apt` `NO_PUBKEY` failures caused by restrictive umask; deleted the failed `_v3` candidates. |

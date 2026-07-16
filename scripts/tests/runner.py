@@ -114,7 +114,7 @@ def load_project_config():
 
 
 def run_checks(entries, check_filter=None):
-    from scripts.tests.checks import tf_syntax, scripts_audit, network_audit, consistency, documentation
+    from scripts.tests.checks import tf_syntax, scripts_audit, network_audit, consistency, documentation, rfs_policy
 
     all_reports = []
     for entry in entries:
@@ -125,6 +125,7 @@ def run_checks(entries, check_filter=None):
 
         specs = [
             ("tf_syntax",   tf_syntax.run),
+            ("rfs_policy",  rfs_policy.run),
             ("scripts",     scripts_audit.run),
             ("network",     network_audit.run),
             ("consistency", consistency.run),

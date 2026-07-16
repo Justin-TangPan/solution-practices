@@ -1,6 +1,6 @@
 {
   "name": "solution-practices",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "SAC multi-agent toolkit and Huawei Cloud Solution Practices for Codex",
   "type": "module",
   "bin": {
@@ -22,6 +22,10 @@
     "practices/supabase/**/*",
     "practices/openjiuwen/**/*",
     "scripts/tests/**/*.py",
+    "scripts/document_pipeline/**/*.py",
+    "scripts/document_pipeline/config/*.json",
+    "scripts/document_pipeline/templates/*.docx",
+    "requirements-document-pipeline.txt",
     "docs/contracts/*.md",
     "reference/docs/*.md",
     "project.config.json",

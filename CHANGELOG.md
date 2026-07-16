@@ -1,5 +1,37 @@
 # Changelog
 
+## v0.9.1 (2026-07-16) — 文档流水线与 Practice 候选更新
+
+### 新功能
+
+- **文档生产流水线** — 新增可追溯标准稿、翻译保护、双语 Markdown、IDP Word 渲染、质量检查和文档专用工作流。
+- **OpenJiuwen 双候选** — 将 Agent Studio 与 JiuwenSwarm 拆分为独立候选变体，补齐 JiuwenSwarm 部署指南和方案详情。
+- **Practice 候选升级** — 新增 Supabase `v6` 三站点候选和 LiteLLM 多区域 HA 候选。
+
+### 质量与治理
+
+- 新增 RFS Practice 策略检查，并扩展 Terraform、网络、文档及双语一致性门禁。
+- 同步 Codex/Claude Agent 契约、工作流、Skill 索引与 npm 分发范围。
+
+### 修复
+
+- **国际站路径隔离** — OBS 对象前缀和归档名加入 `site/locale`，避免同一区域的 `en-us` 与 `zh-cn` 测试产物互相覆盖。
+- **OBS SDK 兼容** — 回读优先使用当前 SDK 的 `loadStreamInMemory`，并兼容旧 SDK 的 `loadStreamInMS` 参数。
+- **上传后校验** — zip 和 manifest 上传后立即回读并比较 SHA-256，校验失败时不再宣告上传完成。
+
+### 验证
+
+- 新增 locale 路径、归档命名及新旧 OBS SDK 回读的单元测试。
+- 保持凭证仅从环境变量读取，不写入 manifest、归档或日志。
+
+### 关键文件
+
+- `scripts/obs/upload.py`
+- `scripts/obs/test_upload.py`
+- `scripts/obs/spec.md`
+- `scripts/README.md`
+- `.gitignore`
+
 ## v0.9.0 (2026-07-10) — npm CLI 与 Codex 原生多 Agent 分发
 
 ### 新功能

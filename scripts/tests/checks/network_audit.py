@@ -47,12 +47,14 @@ def classify(url: str):
 def run(practice_path: Path, entry: dict) -> list:
     results = []
     deps = {}  # url -> [file refs]
+    sources = []
 
     # 扫描 install 脚本
     scripts_dir = practice_path / "scripts"
     if scripts_dir.exists():
         for sh in sorted(scripts_dir.glob("**/*.sh")):
             content = sh.read_text(encoding="utf-8-sig", errors="replace")
+            sources.append((sh.name, content))
             for url in extract_urls(content):
                 deps.setdefault(url, []).append(sh.name)
 
@@ -61,34 +63,22 @@ def run(practice_path: Path, entry: dict) -> list:
     if tf_dir.exists():
         for tf in tf_dir.glob("*.tf"):
             content = tf.read_text(encoding="utf-8-sig", errors="replace")
+            sources.append((tf.name, content))
             for url in extract_urls(content):
                 deps.setdefault(url, []).append(tf.name)
-
-    if not deps:
-        results.append(CheckResult("network", True, "INFO", "未发现外部网络依赖"))
-        return results
 
     need_mirror = 0
     high_risk = 0
     reachable = 0
 
+    for filename, content in sources:
+        for pattern, description in HIGH_RISK_PATTERNS:
+            if re.search(pattern, content):
+                high_risk += 1
+                results.append(CheckResult("network", False, "ERROR", f"[高危] {description}", file=filename))
+
     for url, files in sorted(deps.items()):
         cls = classify(url)
-
-        # 高危检测
-        is_high_risk = False
-        for pat, desc in HIGH_RISK_PATTERNS:
-            if re.search(pat, url):
-                is_high_risk = True
-                high_risk += 1
-                results.append(CheckResult("network", False, "ERROR",
-                                            f"[高危] {desc}: {url[:100]}",
-                                            detail=f"来源: {', '.join(files)}",
-                                            file=files[0]))
-                break
-
-        if is_high_risk:
-            continue
 
         if cls == "REACHABLE":
             reachable += 1

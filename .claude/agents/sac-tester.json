@@ -24,5 +24,9 @@
     "变量 validation 测试结果",
     "资源完整性检查清单",
     "OBS URL 测试结果"
+  ],
+  "rules": [
+    "必须运行 scripts.tests.runner，包括 rfs_policy",
+    "测试 ERROR 必须阻断文档和交付"
   ]
 }

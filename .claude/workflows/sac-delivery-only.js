@@ -10,6 +10,12 @@ export const meta = {
 
 const PROJECT = args.project
 const REGIONS = args.regions || ['cn', 'intl']
+const GATES = args.gates || {}
+const AUTHORIZATION = args.authorization || {}
+
+if (!GATES.test_passed || !GATES.security_passed || !GATES.document_passed) {
+  throw new Error('Delivery requires explicit passing test, security, and document gate evidence')
+}
 
 log(`📦 SAC 交付打包启动：${PROJECT}`)
 
@@ -24,7 +30,10 @@ const prepResult = await agent({
 ## 任务
 1. 创建 release/${PROJECT}/ 目录
 2. 从 practices/${PROJECT}/ 复制文件到对应区域子目录
-3. 预置 templateUrl 指向生产 OBS 路径
+3. 仅当 authorization.production_url=true 时预置生产 templateUrl；否则只整理本地候选包
+
+授权：${JSON.stringify(AUTHORIZATION)}
+不得执行未逐项授权的 OBS 上传、云资源、生产 URL 或 Git commit/push。
 
 输出目录结构。`,
   schema: {

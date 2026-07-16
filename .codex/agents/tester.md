@@ -12,6 +12,7 @@
 
 - 检查目录与交付文件完整性、Terraform 结构、Shell 语法、变量 validation 和资源依赖。
 - 验证区域映射、OBS/RFS URL 结构及正式质量门禁。
+- 执行 `rfs_policy`，核对 Terraform、`.extension` 与架构合同的变量、固定值、公网入口、全内联和候选状态一致。
 - 记录准确命令、退出码和问题位置。
 
 ## 边界

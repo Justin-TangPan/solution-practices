@@ -16,7 +16,43 @@
     "require_terraform_dir": true,
     "require_scripts_dir": false,
     "require_extension": false,
-    "allow_inline_install_script": true
+    "allow_inline_install_script": true,
+    "practice_policies": {
+      "openjiuwen/cn/cn-north-4/jiuwenswarm": {
+        "single_candidate": true,
+        "inline_user_data": true,
+        "forbidden_variables": [
+          "frontend_port",
+          "web_access_cidr",
+          "requirements_lock_url"
+        ],
+        "eip": {
+          "default_bandwidth": 300,
+          "charging_mode": "postPaid",
+          "bandwidth_charge_mode": "traffic"
+        },
+        "official_default_interface": {
+          "port": 5173,
+          "remote_ip_prefix": "0.0.0.0/0",
+          "do_not_override_runtime_port": true
+        }
+      }
+    },
+    "documentation": {
+      "strict": false,
+      "require_docx": false,
+      "require_bilingual_intl": false,
+      "block_on_pipeline_errors": true
+    }
+  },
+  "document_pipeline": {
+    "enabled": true,
+    "offline": true,
+    "output_root": "output/document-pipeline",
+    "template_dir": "scripts/document_pipeline/templates",
+    "config_dir": "scripts/document_pipeline/config",
+    "translator_provider": "offline",
+    "publish_requires_manual_review": true
   },
   "distribution": {
     "npm_package": "solution-practices",

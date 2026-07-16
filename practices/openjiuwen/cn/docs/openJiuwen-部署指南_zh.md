@@ -1,6 +1,7 @@
 # 部署 openJiuwen Agent 智能体开发平台 部署指南
 
 > 文档类型：华为云解决方案实践部署指南
+> 方案状态：中国站候选 `v1`，尚未云测、未晋升，不可上架
 
 ## 1. 方案概述
 
@@ -62,7 +63,7 @@ ECS Ubuntu 24.04
 | ECS | x1.8u.16g 或更高 | 1 | 运行 openJiuwen 全部容器组件 |
 | EVS 系统盘 | 高IO SAS 200GB | 1 | 存放系统、Docker 镜像和运行数据 |
 | VPC/Subnet | 172.16.0.0/16 | 1 | 自动创建 |
-| 安全组 | 开放 3000/8000/8186 和 Cloud Shell SSH | 1 | 3000 为主要访问入口 |
+| 安全组 | 前端端口仅允许 `web_access_cidr`；SSH 仅允许 Cloud Shell | 1 | 后端 8000 和 Runtime 8186 不对公网开放 |
 | EIP | 100Mbit/s 按流量 | 1 | 下载镜像与访问控制台 |
 
 ### 2.2 费用说明
@@ -76,12 +77,12 @@ ECS Ubuntu 24.04
 1. 登录华为云账号，并确认账号余额充足。
 2. 开通 RFS、ECS、VPC、EIP、EVS 等服务。
 3. 创建 RFS 委托 `rf_admin_trust`，授权 RFS 创建云资源。
-4. 如需要启用记忆/知识能力，准备可用的 Embedding 模型 `API Base`、模型名称和 API Key。
+4. 准备自己的可信公网 IPv4 地址，以 `/32` 形式填写前端访问白名单。Embedding 模型参数必须在部署后通过 Studio 配置，不得写入 Terraform。
 
 ### 3.2 快速部署
 
 1. 打开 RFS 控制台，选择“创建资源栈”。
-2. 上传或选择本实践的 Terraform 模板 `deploying-openjiuwen.tf`。
+2. 仅在受控云测中上传候选模板 `practices/openjiuwen/cn/cn-north-4/agent-studio/terraform/deploying-openjiuwen_v1.tf`。当前未生成正式无版本模板或 RFS 入口。
 3. 按参数表填写配置。
 
 | 参数 | 默认值 | 说明 |
@@ -91,13 +92,11 @@ ECS Ubuntu 24.04
 | `ecs_password` | 无 | ECS root 密码 |
 | `system_disk_size` | `200` | 系统盘容量 GB |
 | `bandwidth_size` | `100` | EIP 带宽 Mbit/s |
-| `deploy_package_url` | 官方 0.1.5 amd64 包 | openJiuwen 官方部署工具包 |
+| `web_access_cidr` | `121.36.59.153/32` | 前端访问来源；普通浏览器须改为自己的可信公网 IPv4 `/32` |
 | `frontend_port` | `3000` | Studio 前端访问端口 |
-| `backend_port` | `8000` | 后端健康检查端口 |
-| `runtime_port` | `8186` | Runtime 健康检查端口 |
-| `embedding_api_base` | 空 | 可部署后配置 |
-| `embedding_model_name` | 空 | 可部署后配置 |
-| `embedding_api_key` | 空 | 可部署后配置 |
+| `charging_mode` | `postPaid` | ECS 按需或包年包月 |
+| `charging_unit` | `month` | ECS 订购周期单位 |
+| `charging_period` | `1` | ECS 订购周期 |
 
 4. 提交资源栈，等待 RFS 显示创建成功。
 5. 部署完成后查看 RFS 输出 `studio_url` 和 `access_info`。
@@ -121,6 +120,12 @@ docker ps
 ./service.sh stop
 ./service.sh up
 ```
+
+5. 后端 8000 和 Runtime 8186 仅供 ECS 本机健康检查，不应从公网访问。首次使用记忆或知识能力时，在 Studio 中配置 Embedding 服务并使用测试凭证。
+
+### 3.4 云测验收
+
+候选 `v1` 尚未在真实华为云资源栈验证。晋升前必须记录：RFS 栈成功、固定 SHA-256 的官方部署包校验通过、Studio 白名单内可访问/白名单外被拒绝、后端与 Runtime 仅本机可访问、Embedding 部署后配置成功、重启后服务恢复。未完成前不得宣称可正式发布。
 
 ### 3.4 快速卸载
 
@@ -151,3 +156,4 @@ docker ps
 | 日期 | 版本 | 说明 |
 |---|---|---|
 | 2026-07-10 | v0.1.0 | 首版，提供 cn-north-4 单机标准版部署实践。 |
+| 2026-07-15 | 候选 0.2 | 同步 `deploying-openjiuwen_v1.tf`：`/32` 前端白名单、后端/Runtime 不公开、固定包哈希与 Embedding 部署后配置；明确未云测、未晋升。 |

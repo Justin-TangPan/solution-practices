@@ -1,13 +1,13 @@
 {
   "$schema": "version 1.0",
-  "generated": "2026-06-25",
+  "generated": "2026-07-14",
   "description": "SAC Skills 集中注册索引。完整技能内容外置到 SKILL.md 文件，索引仅保留元数据用于检索路由。",
 
   "skill_tree": {
     "categories": [
       { "id": "project-constitution", "name": "项目规章", "description": "Project-wide rules, naming conventions, directory structure, delivery pipeline", "skills": ["sac-project-rules"] },
       { "id": "template-development", "name": "模板开发", "description": "RFS/OpenTofu template writing, shell scripts, deployment, Docker patterns", "skills": ["sac-rfs-practices"] },
-      { "id": "content-pipeline", "name": "内容提取与增强", "description": "Page extraction from Huawei Cloud, AI copy enhancement, commercialisation", "skills": ["sac-page-enhance"] },
+      { "id": "content-pipeline", "name": "内容与文档生产", "description": "Page enhancement plus structured bilingual Markdown and IDP Word production", "skills": ["sac-page-enhance", "sac-document-pipeline"] },
       { "id": "research", "name": "调研分析", "description": "Multi-layer deep search, competitive analysis, technology selection", "skills": ["sac-deep-search"] },
       { "id": "presentation", "name": "演示文稿", "description": "PPT creation, visual design, slide authoring, Huawei style density standards", "skills": ["ppt-forge"] },
       { "id": "business-evaluation", "name": "业务评估", "description": "四维商业可行性评估：服务端属性、营销价值、场景价值、云上部署价值", "skills": ["sac-business-evaluator"] },
@@ -47,6 +47,22 @@
       "requires": ["sac-project-rules"],
       "conflicts_with": [],
       "merge_group": "template"
+    },
+    {
+      "id": "sac-document-pipeline",
+      "name": "SAC Agent 文档生产流水线",
+      "path": "skills/sac-document-pipeline/SKILL.md",
+      "status": "formal",
+      "scope": "formal-delivery",
+      "owner": "project",
+      "tokens": 6500,
+      "compressed_description": "从 Practice 与技术材料提取可追溯事实，构建统一文档模型，生成正式 _zh/_en Markdown 和 IDP DOCX；提供术语库、技术占位符保护、离线 Word/PDF 解析、双语一致性检查、结构化质量报告和人工审核清单。",
+      "category": "content-pipeline",
+      "agents": ["sac-documenter"],
+      "keywords": ["文档流水线", "统一文档模型", "部署指南", "方案详情", "Solution Details", "Markdown", "DOCX", "IDP Word", "中英翻译", "术语库", "PDF转换", "双语一致性", "文档质量门禁"],
+      "requires": ["sac-project-rules"],
+      "conflicts_with": [],
+      "merge_group": "documentation"
     },
     {
       "id": "sac-page-enhance",
@@ -144,7 +160,7 @@
     "sac-developer":    { "primary": ["sac-rfs-practices"],  "base": ["sac-project-rules"], "max_skills": 2 },
     "sac-tester":       { "primary": [],                     "base": ["sac-project-rules"], "max_skills": 1 },
     "sac-security":     { "primary": [],                     "base": ["sac-project-rules"], "max_skills": 1 },
-    "sac-documenter":   { "primary": ["sac-page-enhance"],   "base": ["sac-project-rules"], "max_skills": 2 },
+    "sac-documenter":   { "primary": ["sac-document-pipeline"], "base": ["sac-project-rules"], "optional": ["sac-page-enhance"], "max_skills": 3 },
     "sac-delivery":     { "primary": [],                     "base": ["sac-project-rules"], "max_skills": 1 }
   }
 }

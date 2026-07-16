@@ -104,14 +104,27 @@ Do not mix Mode A and Mode B in the same deployable instance.
 2. 保持候选文件不可变；不得原地覆盖已经实际测试的 `_vN`。
 3. 上传测试桶时使用带修订号候选，并记录对应 SAC 四级测试版本。
 4. 每次产生新修订后，向用户确认实际云上测试结果。
-5. 只有用户明确确认通过后，才把候选的相同内容复制为 `deploying-{solution}.tf` 正式入口并更新生产发布对象。
-6. 保留候选文件用于审计与回滚。历史无版本模板在下一次修改时开始渐进迁移，不批量破坏现有链接。
+5. 测试未通过时，立即删除该候选文件和待交付副本，在内部变更日志记录失败原因，并使用下一个未使用的 `_vN` 修复；不得复用已失败的修订号。
+6. 只有用户明确确认通过后，才保留该候选用于审计与回滚，并把相同内容复制为 `deploying-{solution}.tf` 正式入口、更新生产发布对象。
+7. 历史无版本模板在下一次修改时开始渐进迁移，不批量破坏现有链接。
 
 模板版本、项目版本和发布门禁的完整规则以 `sac-project-rules` Section 13 为准。
 
 ## User Constraints (用户约束)
 
 以下约束必须遵守，不可违反：
+
+### 0. 基准模板与参数契约
+
+实现前必须记录最接近的 `assets/demo/` 或正式 practice 路径，并先继承其资源形态、计费方式和参数风格。架构 handoff 必须冻结：客户可见变量、固定值、公网接口和允许的交付文件。
+
+- 上游默认的 host、端口、后端端口、健康检查端口、依赖 URL、镜像代理地址和内部 CIDR 不得暴露为客户参数；只有上游明确要求或用户确认后才可例外。
+- 应用启动必须沿用上游官方默认监听配置，不得通过环境变量或启动参数改写；安全组、健康检查和 output URL 与该官方默认入口保持一致。不得自行增加 Nginx/TLS 代理、替换端口或扩大交付物。
+- 中国站标准单 ECS 公网方案沿用 Hermes 基线：`bandwidth_size` 默认 300、范围 1-300，EIP 使用 `PER`、`traffic`、`5_bgp`、`postPaid`。偏离必须在架构阶段说明并取得用户确认。
+- 标准模式全部内联。不得在运行时下载安装脚本、requirements/lock、Compose 或配置文件；上游发布单元确有要求或用户明确批准时，才可声明例外模式。
+- 不得为了 Agent 自主的供应链或安全改造新增 requirements/lock、OBS 依赖、代理层或客户参数。发现风险先报告，由主 Agent组织决策。
+
+实例级固定值和例外写入 `project.config.json` 的 `quality_gate.practice_policies`，由 `scripts.tests.runner --check rfs_policy` 执行；不要把产品常量复制到多个工作流提示词。
 
 ### 1. reference/ 目录只读
 
@@ -138,6 +151,8 @@ Do not mix Mode A and Mode B in the same deployable instance.
 ### 5. 先确认再动手
 
 开发前必须确认决策点（地域、语言、Docker vs 直装等），不得擅自假设。
+
+Architect 必须返回 `rules_read`、`reference_templates`、`exposed_variables`、`fixed_values`、`public_endpoints`、`allowed_artifacts` 和 `deviations`。Developer 只能实现该合同；合同外变量、端口、代理层或外部依赖必须停止并回交主 Agent。
 
 ### 6. OBS 命名规范
 
@@ -241,6 +256,88 @@ headroom proxy --host 0.0.0.0 --port 8787
 **根因：** SWR 镜像未设为公开，需要 `docker login` 认证。
 
 **修复：** 在 SWR 控制台把镜像设为公开，避免在脚本中硬编码凭证。
+
+### Pitfall 31: 手工精简上游 Compose 导致配置漂移
+
+**现象：** 多容器应用部分页面或 API 可用，但新功能报缺少环境变量，持久化目录不存在，或访问管理后台时没有出现预期的 HTTP Basic Auth 登录弹窗。例如 Supabase Studio 报 `SNIPPETS_MANAGEMENT_FOLDER env var is not set`。
+
+**根因：** 部署模板手工重写或只复制了上游 `docker-compose.yml` 的一部分，没有同步新版本增加的环境变量、数据卷、初始化 SQL、网关路由、认证插件或辅助脚本。此类应用的管理端登录弹窗通常由反向代理或 API 网关提供，不是由管理端容器自行提供；网关配置缺失时，只修管理端环境变量不能恢复认证。
+
+**修复：**
+
+1. 固定已审核的上游 tag 或 commit，不跟随滚动分支。
+2. 按上游发布单元复制完整目录，包含 Compose、`.env.example`、网关配置、初始化文件、挂载目录和官方辅助脚本，不再单独维护一份精简 Compose。
+3. 使用官方默认文件生成环境配置和密钥，并对敏感文件设置最小权限；禁止把生成的密钥输出到 cloud-init 日志。
+4. 启动前渲染最终 Compose 配置，静态断言必需环境变量、卷、服务集合和网关认证插件存在。
+5. 启动后同时验证“未认证请求被拒绝”、“已认证请求成功”、持久化路径可写以及重启后数据仍在。
+
+**Supabase 检查要点：** Studio 需同时具备 `SNIPPETS_MANAGEMENT_FOLDER=/app/snippets` 和对应持久化卷；Dashboard 的 Basic Auth 需在 Kong 中配置并分别验证未认证 `401` 与认证后成功响应。
+
+### Pitfall 32: RFS 变量 validation 不允许跨变量引用
+
+**现象：** RFS 在创建堆栈前报 `Failed to init workflow due to bad template. The condition for variable "..." can only refer to the variable itself`。
+
+**根因：** 某个输入变量的 `validation.condition` 引用了其他变量。例如在 `charging_period` 的校验中读取 `var.charging_unit`。部分新版 Terraform 能接受更宽的引用，但 RFS 当前模板解析器仍要求输入变量校验只引用自身；HCL 语法解析和 `terraform fmt` 不会发现这类语义兼容问题。
+
+**修复：** 每个 `variable` 块内的 `validation` 只引用同名变量：
+
+```hcl
+variable "charging_period" {
+  type = number
+  validation {
+    condition     = var.charging_period >= 1 && var.charging_period <= 9
+    error_message = "Period must be between 1 and 9."
+  }
+}
+```
+
+需要“按月 1-9、按年 1-3”这类关联约束时，在 RFS 兼容性未实测前，使用变量描述和 `.extension` 参数说明约束用户输入，不得把其他变量写入 `validation.condition`。质量门禁应另行扫描所有变量块的异名 `var.*` 引用。
+
+### Pitfall 33: 用密码正则回避 Shell 转义问题
+
+**现象：** RFS 在 plan 阶段报 `Invalid value for variable`，用户使用了强密码和特殊字符，却被模板自定义的“只允许字母数字”正则拒绝。
+
+**根因：** 模板为了避免密码在 Shell、`sed`、连接串或 dotenv 中的转义问题，把实现缺陷转化成了用户输入限制。这会拒绝合法的上游密码，并弱化可用密码空间。
+
+**修复：** 只保留云服务或上游官方明确要求的限制。应用密码不得为了方便 Shell 拼接而限制为字母数字；应先在 Terraform 中用 `base64encode()` 传入 cloud-init，再在实例上解码，写入 dotenv 时使用字面量引用并避免将密码直接嵌入 `sed` 替换式。
+
+### Pitfall 34: 严格 umask 使 APT 密钥对 `_apt` 不可读
+
+**现象：** Docker APT 源返回 `NO_PUBKEY`，但 root 使用同一 keyring 可以成功验证仓库签名。
+
+**根因：** cloud-init 为保护密钥设置了 `umask 077`，后续 `gpg --dearmor -o ...` 生成的公开 APT keyring 继承为 `0600`。APT 使用 `_apt` 沙箱用户读取 keyring，因无权读取而误报缺少子密钥。
+
+**修复：** 私密配置继续使用严格 umask，但公开软件源文件必须在创建后显式设置可读权限：
+
+```bash
+chmod 0644 /usr/share/keyrings/docker.gpg
+chmod 0644 /etc/apt/sources.list.d/docker.list
+runuser -u _apt -- test -r /usr/share/keyrings/docker.gpg
+```
+
+遇到 `NO_PUBKEY` 时必须同时核对密钥指纹和 `_apt` 读权限，不得直接关闭签名校验。
+
+### Pitfall 35: 国内 cloud-init 运行时直连 GitHub
+
+**现象：** Docker 已正确配置国内 registry mirror，但部署仍在 `git clone`、`git fetch` 或 GitHub Release 下载阶段反复超时，应用容器始终没有启动。
+
+**根因：** `docker.wangzhou3.top` 是 Docker Hub registry mirror，只代理容器镜像请求，不是 GitHub 通用代理。模板虽然解决了镜像拉取，却仍把上游源码或 Compose 文件留给国内 ECS 在首次启动时从 GitHub 下载。
+
+**修复：** 国内模板不得把 GitHub 可达性作为成功部署的必要条件。固定版本的小型运行资产可经确定性压缩、SHA-256 校验后内置；较大资产应按项目 OBS 规则发布后下载。内置前必须计算最终渲染的 `user_data` 大小，保持不超过华为云 ECS 的 32 KB 上限。Docker Hub 镜像继续保留官方名称，并通过 daemon `registry-mirrors` 使用 `https://docker.wangzhou3.top`；不得把 Git 下载 URL 伪装成 registry mirror URL。
+
+### Pitfall 36: Docker daemon 在写入 mirror 配置前已经启动
+
+**现象：** `/etc/docker/daemon.json` 明确包含 `registry-mirrors`，但 `docker info` 显示 `RegistryConfig.Mirrors=[]`，拉取日志仍访问 `registry-1.docker.io`。
+
+**根因：** Docker 软件包安装阶段已经自动启动 daemon，脚本随后才写入 `daemon.json`。此时执行 `systemctl enable --now docker` 不会重启已经运行的服务，因此新配置没有加载。
+
+**修复：** 写入配置后必须显式执行 `systemctl restart docker`，并在拉取镜像前使用 `docker info --format '{{json .RegistryConfig.Mirrors}}'` 断言目标 mirror 已由运行中的 daemon 加载。只检查配置文件内容不足以证明配置生效。
+
+### Case 1: 多阶段部署连续暴露不同阻塞点
+
+**案例：** Supabase 候选依次在 RFS 变量校验、密码输入限制、APT keyring 权限、GitHub 访问、Docker mirror 重载阶段失败；前一阶段未通过时，后一阶段从未真正执行，因此不能把“修复当前报错”等同于“部署已完整验证”。
+
+**通用排查顺序：** 按 `RFS 模板解析 → 云资源创建 → cloud-init/包管理 → 部署资产获取 → daemon 实际配置 → 镜像拉取 → Compose 启动 → 端口/API/鉴权` 分段确认。每段同时检查配置文件、运行时有效状态和最终业务行为；日志最后一行只代表当前第一个阻塞点。失败候选删除并递增版本，只有用户完成真实部署和关键入口验证后才晋级正式模板。
 
 ## tf.json Template Standards
 
@@ -893,6 +990,13 @@ variable "ecs_flavor" {
   }
 }
 ```
+
+### Rule 10: Validation Must Reflect an Authoritative Constraint
+
+- `validation` 只能实现华为云 Provider/RFS 或上游软件明确公布的参数约束。
+- 不得为了简化 Shell、dotenv、URL 或连接串拼接，自行增加字符白名单或过窄的规格正则。
+- 密码、Token 等用户输入应通过 Base64、文件权限和目标格式的正确引用方式安全传递，不应用削减合法字符集代替转义处理。
+- 查不到权威约束时，优先不在 TF 中添加校验，只在参数说明中给出建议。
 
 ---
 

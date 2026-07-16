@@ -1,5 +1,7 @@
 # openJiuwen Agent 智能体开发平台 方案详情
 
+> **方案状态：** 中国站候选 `v1`，尚未云测、未晋升，不可上架
+
 ## 1. 解决方案概述
 
 openJiuwen Agent Studio 提供一站式 AI Agent 开发平台，覆盖 Agent 开发、测试、工作流编排、模型管理、插件管理和发布运行等环节。本方案将 openJiuwen Agent Studio 封装为华为云 RFS 一键部署实践，帮助用户在华为云 ECS 上快速获得可访问、可调试、可扩展的智能体开发环境。
@@ -41,6 +43,8 @@ ECS Ubuntu 24.04
 - 基础设施：Terraform HCL 模板。
 - 应用部署：内联 `user_data` 自动安装 Docker、下载官方部署工具包、生成 `.env.custom` 并启动服务。
 - 访问入口：`https://<EIP>:3000`。
+- 边界控制：前端仅允许 `web_access_cidr` 的可信 IPv4 `/32`；后端 8000 和 Runtime 8186 仅供主机本地健康检查。
+- 供应链：官方 `0.1.5` amd64 部署包使用模板内固定 SHA-256 校验后解压执行。
 - 运维入口：ECS 内 `/opt/openjiuwen/deployTool` 和 `/var/log/openjiuwen-bootstrap.log`。
 
 ## 4. 应用场景
@@ -87,3 +91,14 @@ ECS Ubuntu 24.04
 - 集成 Runtime，支持从开发态到运行态的发布验证。
 - 使用官方 Docker 部署工具，尽量贴近 openJiuwen 推荐部署路径。
 - RFS 输出访问地址、健康检查地址、安装目录和日志路径，便于交付验收。
+- Embedding API Base、模型名称和 API Key 仅在部署后通过 Studio 配置，不进入 Terraform 与 cloud-init。
+
+## 9. 上线边界
+
+当前候选文件为 `agent-studio/terraform/deploying-openjiuwen_v1.tf`。尚未完成真实 RFS 云测，也未生成正式无版本模板和 RFS 入口；必须在云测、测试/安全复核和文档人工审核完成后才能晋升。
+
+## 10. 修订记录
+
+| 日期 | 版本 | 修订说明 |
+|---|---|---|
+| 2026-07-15 | 候选 0.2 | 同步 Agent Studio `v1` 安全边界、固定包哈希和 Embedding 部署后配置；明确未云测、未晋升。 |

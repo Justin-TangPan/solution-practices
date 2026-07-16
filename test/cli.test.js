@@ -72,10 +72,12 @@ test('formal practice installation records and copies the selected practice', as
   const dir = await fixture(t);
   const result = await executeInstall({ targetDir: dir, components: [], practices: ['openjiuwen'] });
   assert.deepEqual(result.manifest.components.practices, ['openjiuwen']);
-  assert.match(
-    await readFile(join(dir, 'practices/openjiuwen/cn/cn-north-4/standard/terraform/deploying-openjiuwen.tf'), 'utf8'),
-    /resource\s+"huaweicloud_compute_instance"/,
-  );
+  for (const template of [
+    'practices/openjiuwen/cn/cn-north-4/agent-studio/terraform/deploying-openjiuwen_v1.tf',
+    'practices/openjiuwen/cn/cn-north-4/jiuwenswarm/terraform/deploying-jiuwenswarm_v4.tf',
+  ]) {
+    assert.match(await readFile(join(dir, template), 'utf8'), /resource\s+"huaweicloud_compute_instance"/);
+  }
 });
 
 test('Codex install preserves a pre-existing config owned by the host project', async (t) => {

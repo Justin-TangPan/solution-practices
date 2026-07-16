@@ -19,6 +19,7 @@ Current classification:
 | `sac-testing` | formal | formal-delivery |
 | `sac-security` | formal | formal-delivery |
 | `sac-documentation` | formal | formal-delivery |
+| `sac-document-pipeline` | formal | formal-delivery |
 | `sac-delivery` | formal | formal-delivery |
 | `sac-business-evaluator` | optional | research |
 | `sac-technical-evaluator` | optional | research |
@@ -26,3 +27,8 @@ Current classification:
 | `sac-deep-search` | optional | research |
 
 Formal skills must not assume that historical or removed practices still exist. The current formal list comes from `project.config.json`.
+
+`sac-documentation` remains the backward-compatible Markdown authoring contract. New structured generation,
+translation, IDP Word rendering, existing-document conversion, and document quality reports use
+`sac-document-pipeline`. The documenter Agent binds the pipeline as its primary skill and may load
+`sac-page-enhance` only when page copy enhancement is requested.

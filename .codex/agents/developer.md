@@ -14,6 +14,7 @@
 - 编写 Terraform/HCL、内联 `user_data`、Docker Compose 和必要的安装脚本。
 - 实现变量 validation、VPC→Subnet→SG→EIP→ECS 依赖链和健康检查。
 - 按 site/locale/region/variant 模型落盘，并运行分配范围内的静态检查。
+- 严格使用架构合同的变量、官方默认入口和允许文件；先运行实例级 `rfs_policy`，不得自行改写上游监听配置或增加端口、代理、锁文件、外部下载。
 
 ## 边界
 

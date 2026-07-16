@@ -31,19 +31,24 @@ export OBS_BUCKET=your-private-bucket
 ## 2. 路径约定
 
 ```
-obs://<bucket>/sac/<practice>/<region>/<deploy_type>/<version>/<files>
+obs://<bucket>/sac/<practice>/<site>/<locale?>/<region>/<deploy_type>/<version>/<files>
 ```
 
 示例：
 ```
-obs://my-bucket/sac/litellm/cn-north-4/standard/0.3.2/litellm-0.3.2-cn-north-4-standard.zip
-obs://my-bucket/sac/litellm/cn-north-4/standard/0.3.2/manifest.json
+obs://my-bucket/sac/litellm/cn/cn-north-4/standard/0.9.1.1/litellm-0.9.1.1-cn-cn-north-4-standard.zip
+obs://my-bucket/sac/supabase/intl/en-us/ap-southeast-1/standard/0.9.1.1/manifest.json
 ```
 
 - `practice`：方案名（litellm, supabase, ...）
+- `site`：`cn` 或 `intl`
+- `locale`：国际站必须包含 `en-us` 或 `zh-cn`；中国站无此层
 - `region`：华为云区域（cn-north-4, ap-southeast-1, ...）
 - `deploy_type`：`standard` | `ha`
-- `version`：语义化版本号（0.3.2）
+- `version`：测试上传使用 SAC 四级测试版本（如 0.9.1.1）
+
+国际站的 locale 是对象身份的一部分。不得让 `en-us` 与 `zh-cn` 共用同一前缀、归档名或
+manifest，否则第二次上传会覆盖第一次上传。
 
 ---
 
@@ -112,6 +117,9 @@ obs://my-bucket/sac/litellm/cn-north-4/standard/0.3.2/manifest.json
 4. `--force` 可跳过确认（慎用）
 
 目的：防止误覆盖不同内容，同时允许有意识地重传。
+
+上传完成后，工具必须回读 zip 与 manifest，并比较 SHA-256。当前 OBS SDK 使用
+`loadStreamInMemory`；工具同时兼容仍使用 `loadStreamInMS` 的旧 SDK。
 
 ---
 

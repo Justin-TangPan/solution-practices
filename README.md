@@ -4,7 +4,7 @@
 
 ### 解决方案实践 · 让 AI 替你写完从架构到交付的全部代码
 
-**v0.9.0** · 华为云解决方案实践仓库
+**v0.9.1** · 华为云解决方案实践仓库
 
 </div>
 
@@ -15,11 +15,11 @@
 <div align="center">
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.9.0-blue.svg?style=flat-square&label=SAC)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.9.1-blue.svg?style=flat-square&label=SAC)](CHANGELOG.md)
 [![Practices](https://img.shields.io/badge/Practices-3-blue.svg?style=flat-square)](#-已有方案)
-[![Skills](https://img.shields.io/badge/Skills-10-green.svg?style=flat-square)](#-skills-架构)
+[![Skills](https://img.shields.io/badge/Skills-11-green.svg?style=flat-square)](#-skills-架构)
 [![Agents](https://img.shields.io/badge/Agents-6-purple.svg?style=flat-square)](#-skills-架构)
-[![Workflows](https://img.shields.io/badge/Workflows-4-orange.svg?style=flat-square)](#-skills-架构)
+[![Workflows](https://img.shields.io/badge/Workflows-5-orange.svg?style=flat-square)](#-skills-架构)
 [![Platform](https://img.shields.io/badge/华为云-HWC%20Cloud-red.svg?style=flat-square&logo=hua&logoColor=white)](https://www.huaweicloud.com/)
 [![Codex](https://img.shields.io/badge/Codex-multi--agent-black.svg?style=flat-square)](https://developers.openai.com/codex/)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-compatible-blueviolet.svg?style=flat-square&logo=anthropic&logoColor=white)](https://claude.com/claude-code)
@@ -36,7 +36,7 @@
 
 ## 当前可用内容
 
-当前可直接使用的解决方案实践：
+当前正式范围内的解决方案实践：
 
 - `litellm`：统一 LLM API 网关部署实践。
 - `supabase`：开源 BaaS 平台部署实践。
@@ -57,8 +57,9 @@
 |---|---|---|---|
 | **架构设计** | 人工 2–5 天 | 对话即出 | ⚡ ~10× |
 | **模板开发** | 手写 + 查文档 | 27 条 Pitfall 数据库自动避坑 | 🛡️ 0 已知坑 |
-| **测试验证** | 手动跑 + 肉眼审 | 4 类静态校验自动跑 | 🧪 全量覆盖 |
+| **测试验证** | 手动跑 + 肉眼审 | 6 类静态校验自动跑 | 🧪 全量覆盖 |
 | **安全审计** | 事后补审 | 流程内嵌安全 Agent | 🔒 默认合规 |
+| **文档生产** | 手工整理、翻译和 Word 排版 | 可追溯标准稿 + 双语 Markdown + IDP Word + 自动检查 | 📄 内容与格式解耦 |
 | **交付打包** | 手工整理 + 拼 URL | 自动归档 + RFS 一键链接 | 📦 一键出包 |
 | **区域覆盖** | 单区手改 | CN / INTL 双轨多区自动生成 | 🌏 多区域 |
 
@@ -68,7 +69,7 @@
 
 ## 🧊 这是什么
 
-这是一个华为云解决方案实践仓库。本仓库内置一套 Skills 系统（**10 个技能 + 6 个 AI Agent + 4 个工作流**），覆盖从架构设计到交付打包的完整链路，并配有自动化测试框架对全部实践做静态校验。
+这是一个华为云解决方案实践仓库。本仓库内置一套 Skills 系统（**11 个技能 + 6 个 AI Agent + 5 个工作流**），覆盖从架构设计到交付打包的完整链路，并配有自动化测试框架对全部实践做静态校验。
 
 ### 核心工作流
 
@@ -85,7 +86,7 @@ AI 开发    →  写 Terraform 模板、安装脚本、Docker Compose
 AI 测试 + AI 安全  →  验证模板、审计安全风险
   │
   ▼
-AI 文档    →  生成部署指南 + 方案详情
+AI 文档    →  标准稿 → 中英 Markdown → IDP Word → 自动检查 → 人工审核
   │
   ▼
 AI 交付    →  打包、生成一键部署 URL
@@ -110,9 +111,9 @@ AI：好的，先做技术评估...
 
 你：完成了吗？
 AI：已完成！香港区域的标准版和高可用版都已生成：
-   - practices/litellm/cn/cn-north-4/standard/terraform/litellm-standard-cn-north-4.tf
-   - practices/litellm/cn/cn-north-4/standard/.extension
-   - practices/litellm/cn/docs/LiteLLM-部署指南_zh.md
+   - practices/litellm/intl/en-us/ap-southeast-1/standard/terraform/litellm-standard-en-ap-southeast-1.tf
+   - practices/litellm/intl/en-us/ap-southeast-1/ha/terraform/deploying-litellm_v1.tf
+   - practices/litellm/intl/en-us/docs/LiteLLM-Deployment-Guide_en.md
 ```
 
 ### 场景 2 · 快速原型（架构 + 开发，跳过审计文档）
@@ -248,6 +249,9 @@ claude workflow sac-audit
 
 # 仅打包交付
 claude workflow sac-delivery-only
+
+# 文档专用：生成、翻译、排版、转换或只检查
+claude workflow sac-document-only
 ```
 
 | 工作流 | 适用 | 输出 |
@@ -256,12 +260,13 @@ claude workflow sac-delivery-only
 | **sac-architect-develop** | 快速出模板脚本 | practices/ 模板 + 脚本 |
 | **sac-audit** | 已有方案质检 | 测试 + 安全报告 |
 | **sac-delivery-only** | 模板已就绪只差打包 | practices/ + url.txt |
+| **sac-document-only** | 已有 Practice 或存量文档 | 标准稿 + 双语 Markdown/DOCX + 质量报告 |
 
 ---
 
 ## 🧪 自动化测试
 
-仓库内置测试框架，对所有实践做静态校验（Terraform 语法/安全、Shell 脚本质量、文档完整性、网络可达性）：
+仓库内置测试框架，对所有实践执行 6 类静态校验（Terraform 语法、RFS 策略、Shell 脚本、网络、一致性和文档）：
 
 ```bash
 python -m scripts.tests.runner              # 全量测试
@@ -285,9 +290,9 @@ python -m scripts.tests.runner --practice litellm   # 单方案
 
 ## 🛠️ Skills 架构
 
-系统内置 **10 个技能 + 6 个 Agent + 4 个工作流**，自动按需加载。
+系统内置 **11 个技能 + 6 个 Agent + 5 个工作流**，自动按需加载。
 
-### 技能（10）
+### 技能（11）
 
 | 技能 | 职责 |
 |------|------|
@@ -300,6 +305,7 @@ python -m scripts.tests.runner --practice litellm   # 单方案
 | `sac-testing` | 模板、目录、脚本和正式质量门禁验证 |
 | `sac-security` | 凭证、网络、容器、数据和供应链审计 |
 | `sac-documentation` | 部署指南、方案详情和国际站双语一致性 |
+| `sac-document-pipeline` | 可追溯标准稿、翻译保护、双语 Markdown、IDP Word 和文档质量门禁 |
 | `sac-delivery` | 发布门禁、URL 清单、归档和校验和 |
 
 ### Agent（6）
@@ -310,12 +316,31 @@ python -m scripts.tests.runner --practice litellm   # 单方案
 | 👨‍💻 开发 | 写 Terraform 模板、Shell 脚本 | rfs-practices |
 | 🧪 测试 | 模板验证、语法检查 | sac-testing |
 | 🔒 安全 | 安全审计、合规检查 | sac-security |
-| 📝 文档 | 生成部署指南、方案详情 | sac-documentation |
+| 📝 文档 | 生成标准稿、部署指南、方案详情、双语 Markdown/Word 和质量报告 | sac-document-pipeline |
 | 📦 交付 | 打包归档、生成 URL 清单 | sac-delivery |
 
-### 工作流（4）
+### 工作流（5）
 
-`sac-full-pipeline`（全流程） · `sac-architect-develop`（快速原型） · `sac-audit`（审计） · `sac-delivery-only`（仅交付）
+`sac-full-pipeline`（全流程） · `sac-architect-develop`（快速原型） · `sac-audit`（审计） · `sac-delivery-only`（仅交付） · `sac-document-only`（文档生成/翻译/排版/检查）
+
+### 文档流水线 CLI
+
+文档内容先进入统一模型，再分别渲染 Markdown 与 Word。中文正文使用 `_zh`，英文正文使用
+`_en`；历史 Markdown-only Practice 保持兼容。默认离线分析和渲染，模型后端、模板、术语库及
+输出目录均可配置，流水线不会自动上传文档或执行 IDP 上架。
+
+```bash
+python -m scripts.document_pipeline analyze --project litellm
+python -m scripts.document_pipeline generate --project litellm
+python -m scripts.document_pipeline translate --project litellm
+python -m scripts.document_pipeline render-word --project litellm
+python -m scripts.document_pipeline validate --project litellm
+python -m scripts.document_pipeline convert --input legacy.docx
+```
+
+`validate` 是只读检查；正式门禁仍执行 `python -m scripts.tests.runner`。质量报告含阻断错误时，
+完整工作流会停止在交付前。自动检查通过后仍需人工确认技术架构、命令、参数、术语、图片、
+敏感信息、Word 格式和 IDP 导入结果。
 
 ---
 
@@ -323,7 +348,8 @@ python -m scripts.tests.runner --practice litellm   # 单方案
 
 ```
 ├── practices/       # 方案源码（Terraform + 脚本 + 文档）
-│   └── <name>/<cn|intl>/<region>/<standard|ha>/
+│   ├── <name>/cn/<region>/<standard|ha>/
+│   └── <name>/intl/<locale>/<region>/<standard|ha>/
 │       ├── terraform/   # deploying-<name>.tf（单文件模式）
 │       ├── scripts/     # install_*.sh（可选，部分方案使用内联 user_data）
 │       └── .extension   # RFS 界面配置（可选）
