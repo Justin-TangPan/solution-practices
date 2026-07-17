@@ -2,20 +2,22 @@
 
 Formal practice discovery is driven by deployable instance directories under `practices/`.
 
-Supported layouts:
+Canonical layout:
 
 ```text
 practices/<practice>/cn/<region>/<variant>/
 practices/<practice>/intl/<region>/<variant>/
-practices/<practice>/intl/<locale>/<region>/<variant>/
 ```
 
 Where:
 
 - `<practice>` must be listed in `project.config.json` to be part of the formal gate.
 - `<region>` is a Huawei Cloud region code such as `cn-north-4` or `ap-southeast-1`.
-- `<locale>` is optional and currently expected to be `en-us` or `zh-cn` for international variants.
 - `<variant>` is usually `standard` or `ha`.
+
+Locale is not an implementation dimension. International Terraform is shared; localized parameter text
+lives in one bilingual `.extension`, and localized prose lives under `intl/docs/<locale>/`. The historical
+`intl/<locale>/<region>/<variant>/` layout is migration input only and must not be used for new work.
 
 Required contents are controlled by `project.config.json`.
 
@@ -45,7 +47,10 @@ until migrated. Intermediate standard documents, conversion artifacts, and repor
 
 Terraform lifecycle:
 
+- A deployable instance contains exactly one loadable Terraform file: either `.tf` or `.tf.json`, never both.
 - Test candidates use `terraform/deploying-<practice>_vN.tf` (or `_vN.tf.json`).
-- Candidate revisions that entered testing are immutable. Superseded or failed candidates are deleted locally; only user-confirmed cloud-test candidates remain for audit and rollback, while consumed revision numbers stay in the internal changelog.
-- `terraform/deploying-<practice>.tf` is the promoted formal entry only after explicit user test approval.
+- Candidate revisions that entered testing are immutable. Superseded or failed candidates are deleted locally; consumed revision numbers stay in the internal changelog.
+- After explicit cloud-test approval, promotion renames the candidate to `terraform/deploying-<practice>.tf`.
+  It must not leave the candidate beside the formal entry because Terraform loads every file in the directory.
+- Git history, the internal changelog, and versioned OBS test objects provide audit and rollback history.
 - Existing legacy names remain valid until their next functional modification; migration is incremental to avoid breaking RFS and OBS links.

@@ -50,6 +50,10 @@ def run(practice_path: Path, entry: dict) -> list:
     results = []
     quality_gate = load_quality_gate()
 
+    if entry.get("site") == "intl" and entry.get("locale"):
+        results.append(CheckResult("consistency", True, "WARN",
+                                   "历史 intl locale 实现层待迁移；新结构为 intl/<region>/<variant>"))
+
     # ── 1. 子目录检查 ──
     required_dirs = []
     optional_dirs = []

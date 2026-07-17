@@ -7,7 +7,7 @@ from scripts.tests.checks import rfs_policy
 
 
 POLICY = {
-    "single_candidate": True,
+    "single_active_template": True,
     "inline_user_data": True,
     "forbidden_variables": ["frontend_port"],
     "eip": {"default_bandwidth": 300, "charging_mode": "postPaid", "bandwidth_charge_mode": "traffic"},

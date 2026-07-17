@@ -102,6 +102,11 @@ def run(practice_path: Path, entry: dict) -> list[CheckResult]:
         results.append(CheckResult("docs", not strict, severity, "docs 目录中无 Markdown 文档"))
         return results
 
+    maximum = int(config.get("maximum_markdown_files_per_solution", 6))
+    if len(md_files) > maximum:
+        results.append(CheckResult("docs", False, "ERROR",
+                                   f"正式 Markdown 文档 {len(md_files)} 份，超过上限 {maximum}"))
+
     has_deploy = any(_is_deployment(path) for path in md_files)
     has_details = any(_is_details(path) for path in md_files)
     for present, label in ((has_deploy, "部署指南"), (has_details, "Solution Details/方案详情")):

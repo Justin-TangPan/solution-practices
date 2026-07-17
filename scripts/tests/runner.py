@@ -67,7 +67,13 @@ def discover_practices():
     entries = []
 
     def _has_deployable_content(path: Path) -> bool:
-        return (path / "terraform").is_dir() or (path / "scripts").is_dir()
+        terraform = path / "terraform"
+        scripts = path / "scripts"
+        return (
+            any(terraform.glob("*.tf"))
+            or any(terraform.glob("*.tf.json"))
+            or (scripts.is_dir() and any(item.is_file() for item in scripts.rglob("*")))
+        )
 
     def _is_skipped(path: Path) -> bool:
         return any(part in SKIP_DIRS for part in path.parts)
@@ -114,7 +120,7 @@ def load_project_config():
 
 
 def run_checks(entries, check_filter=None):
-    from scripts.tests.checks import tf_syntax, scripts_audit, network_audit, consistency, documentation, rfs_policy
+    from scripts.tests.checks import tf_syntax, scripts_audit, network_audit, consistency, documentation, rfs_policy, security
 
     all_reports = []
     for entry in entries:
@@ -130,6 +136,7 @@ def run_checks(entries, check_filter=None):
             ("network",     network_audit.run),
             ("consistency", consistency.run),
             ("docs",        documentation.run),
+            ("security",    security.run),
         ]
         for cname, fn in specs:
             if check_filter and cname not in check_filter:

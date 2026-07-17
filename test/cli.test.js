@@ -73,8 +73,8 @@ test('formal practice installation records and copies the selected practice', as
   const result = await executeInstall({ targetDir: dir, components: [], practices: ['openjiuwen'] });
   assert.deepEqual(result.manifest.components.practices, ['openjiuwen']);
   for (const template of [
-    'practices/openjiuwen/cn/cn-north-4/agent-studio/terraform/deploying-openjiuwen_v1.tf',
-    'practices/openjiuwen/cn/cn-north-4/jiuwenswarm/terraform/deploying-jiuwenswarm_v4.tf',
+    'practices/openjiuwen/cn/cn-north-4/agent-studio/terraform/deploying-openjiuwen.tf',
+    'practices/openjiuwen/cn/cn-north-4/jiuwenswarm/terraform/deploying-jiuwenswarm.tf',
   ]) {
     assert.match(await readFile(join(dir, template), 'utf8'), /resource\s+"huaweicloud_compute_instance"/);
   }

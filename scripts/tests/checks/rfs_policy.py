@@ -22,7 +22,9 @@ def _variable_blocks(text: str):
 
 
 def run(practice_path: Path, entry: dict) -> list[CheckResult]:
-    key = "/".join((*practice_path.parts[-4:],))
+    key = "/".join(filter(None, (
+        entry.get("name"), entry.get("site"), entry.get("region"), entry.get("deploy_type")
+    ))) or "/".join(practice_path.parts[-4:])
     policies = load_project_config().get("quality_gate", {}).get("practice_policies", {})
     policy = policies.get(key)
     if not policy:
@@ -32,10 +34,8 @@ def run(practice_path: Path, entry: dict) -> list[CheckResult]:
     text = "\n".join(path.read_text(encoding="utf-8-sig", errors="replace") for path in tf_files)
     errors: list[str] = []
 
-    if policy.get("single_candidate"):
-        candidates = [path for path in tf_files if re.search(r"_v\d+\.tf$", path.name)]
-        if len(candidates) != 1:
-            errors.append(f"应只保留1个当前候选，实际为{len(candidates)}个")
+    if policy.get("single_active_template") and len(tf_files) != 1:
+        errors.append(f"应只保留1个 active Terraform，实际为{len(tf_files)}个")
 
     if policy.get("inline_user_data"):
         if "user_data" not in text:

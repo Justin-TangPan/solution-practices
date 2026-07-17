@@ -105,7 +105,7 @@ Do not mix Mode A and Mode B in the same deployable instance.
 3. 上传测试桶时使用带修订号候选，并记录对应 SAC 四级测试版本。
 4. 每次产生新修订后，向用户确认实际云上测试结果。
 5. 测试未通过时，立即删除该候选文件和待交付副本，在内部变更日志记录失败原因，并使用下一个未使用的 `_vN` 修复；不得复用已失败的修订号。
-6. 只有用户明确确认通过后，才保留该候选用于审计与回滚，并把相同内容复制为 `deploying-{solution}.tf` 正式入口、更新生产发布对象。
+6. 只有用户明确确认通过后，才将该候选重命名为 `deploying-{solution}.tf` 正式入口。不得复制后并存；同一 `terraform/` 目录只能有一个可加载模板。
 7. 历史无版本模板在下一次修改时开始渐进迁移，不批量破坏现有链接。
 
 模板版本、项目版本和发布门禁的完整规则以 `sac-project-rules` Section 13 为准。
@@ -147,6 +147,8 @@ Do not mix Mode A and Mode B in the same deployable instance.
 - 高可用与标准版合并为一篇文档，在"快速部署"章节按子章节区分
 
 文件名语言后缀必须跟随文档正文语言，而不是站点目录名：中文正文统一 `_zh`，英文正文统一 `_en`。
+
+国际站 Terraform 不再按语言复制：实现固定在 `intl/<region>/<variant>/`，一份双语 `.extension` 承担参数展示，只有文档保留 `zh-cn` / `en-us` 分支。
 
 ### 5. 先确认再动手
 
@@ -395,7 +397,7 @@ provider "huaweicloud" {
 
 **Common regions:** 参见 `skills/reference/region-mapping.md`
 
-**CRITICAL:** `required_providers` is an **OBJECT** keyed by provider name — NOT an array `[{...},{...}]`. Huawei Cloud RFS only supports the `huaweicloud` provider. Do NOT add `random`, `tls`, or any other HashiCorp provider.
+**CRITICAL:** `required_providers` is an **OBJECT** keyed by provider name — NOT an array `[{...},{...}]`. Huawei Cloud RFS defaults to only the `huaweicloud` provider. Do NOT add `random`, `tls`, or other providers unless an already cloud-validated architecture is explicitly recorded under `quality_gate.architecture_exceptions` in `project.config.json`.
 
 ### Required Variables (7 core variables present in all demos)
 

@@ -4,7 +4,7 @@
 
 ### 解决方案实践 · 让 AI 替你写完从架构到交付的全部代码
 
-**v0.9.1** · 华为云解决方案实践仓库
+**v0.9.2** · 华为云解决方案实践仓库
 
 </div>
 
@@ -15,7 +15,7 @@
 <div align="center">
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.9.1-blue.svg?style=flat-square&label=SAC)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.9.2-blue.svg?style=flat-square&label=SAC)](CHANGELOG.md)
 [![Practices](https://img.shields.io/badge/Practices-3-blue.svg?style=flat-square)](#-已有方案)
 [![Skills](https://img.shields.io/badge/Skills-11-green.svg?style=flat-square)](#-skills-架构)
 [![Agents](https://img.shields.io/badge/Agents-6-purple.svg?style=flat-square)](#-skills-架构)
@@ -111,9 +111,9 @@ AI：好的，先做技术评估...
 
 你：完成了吗？
 AI：已完成！香港区域的标准版和高可用版都已生成：
-   - practices/litellm/intl/en-us/ap-southeast-1/standard/terraform/litellm-standard-en-ap-southeast-1.tf
-   - practices/litellm/intl/en-us/ap-southeast-1/ha/terraform/deploying-litellm_v1.tf
-   - practices/litellm/intl/en-us/docs/LiteLLM-Deployment-Guide_en.md
+   - practices/litellm/intl/ap-southeast-1/standard/terraform/deploying-litellm.tf
+   - practices/litellm/intl/ap-southeast-1/ha/terraform/deploying-litellm.tf
+   - practices/litellm/intl/docs/en-us/LiteLLM-Deployment-Guide_en.md
 ```
 
 ### 场景 2 · 快速原型（架构 + 开发，跳过审计文档）
@@ -349,10 +349,10 @@ python -m scripts.document_pipeline convert --input legacy.docx
 ```
 ├── practices/       # 方案源码（Terraform + 脚本 + 文档）
 │   ├── <name>/cn/<region>/<standard|ha>/
-│   └── <name>/intl/<locale>/<region>/<standard|ha>/
+│   └── <name>/intl/<region>/<standard|ha>/
 │       ├── terraform/   # deploying-<name>.tf（单文件模式）
 │       ├── scripts/     # install_*.sh（可选，部分方案使用内联 user_data）
-│       └── .extension   # RFS 界面配置（可选）
+│       └── .extension   # RFS 双语界面配置（可选）
 ├── skills/          # AI 技能定义（索引 + 嵌入 + 参考文档）
 ├── scripts/tests/   # 自动化测试框架
 ├── bin/ + src/      # npm CLI、manifest、升级和诊断

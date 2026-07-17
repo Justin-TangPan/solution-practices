@@ -17,9 +17,33 @@
     "require_scripts_dir": false,
     "require_extension": false,
     "allow_inline_install_script": true,
+    "canonical_layout": "site-region-variant",
+    "max_terraform_files_per_instance": 1,
+    "terraform_locale_layer": false,
+    "architecture_exceptions": {
+      "litellm/*/ha": {
+        "allowed_providers": [
+          "huaweicloud",
+          "kubernetes"
+        ],
+        "reason": "已上线并验证的 LiteLLM 高可用架构需要 Kubernetes provider"
+      },
+      "litellm/*/standard": {
+        "accepted_risks": [
+          "public_http_control_plane"
+        ],
+        "reason": "保留现有已上线访问架构，风险由质量门禁持续提示"
+      },
+      "supabase/*/standard": {
+        "accepted_risks": [
+          "public_http_control_plane"
+        ],
+        "reason": "保留现有已上线访问架构，风险由质量门禁持续提示"
+      }
+    },
     "practice_policies": {
       "openjiuwen/cn/cn-north-4/jiuwenswarm": {
-        "single_candidate": true,
+        "single_active_template": true,
         "inline_user_data": true,
         "forbidden_variables": [
           "frontend_port",
@@ -41,7 +65,8 @@
     "documentation": {
       "strict": false,
       "require_docx": false,
-      "require_bilingual_intl": false,
+      "require_bilingual_intl": true,
+      "maximum_markdown_files_per_solution": 6,
       "block_on_pipeline_errors": true
     }
   },

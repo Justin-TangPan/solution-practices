@@ -172,12 +172,8 @@ practices/{project}/
 │
 ├── intl/                   # 国际站
 │   ├── ap-southeast-1/     # 香港区域（归属 intl 国际站）
-│   │   ├── en-us/
-│   │   │   ├── standard/
-│   │   │   └── ha/
-│   │   └── zh-cn/
-│   │       ├── standard/
-│   │       └── ha/
+│   │   ├── standard/
+│   │   └── ha/
 │   ├── ap-southeast-3/     # 新加坡
 │   │   ├── standard/
 │   │   │   ├── terraform/
@@ -201,11 +197,12 @@ practices/{project}/
 
 ### 3.4 国际站双语言规则（intl）
 
-`practices/*/intl/` 下必须同时存在 `en-us/` 和 `zh-cn/` 目录，且满足：
+语言不是 Terraform 实现维度。`intl/<region>/<variant>/` 只保留一份部署逻辑：
 
-1. **必须同时存在** — 不允许只有 en-us 没有 zh-cn，反之亦然
-2. **逻辑完全一致** — zh-cn 版仅翻译 `description` / `error_message` / shell 注释 / `output`，资源定义和部署逻辑与 en-us 完全一致
-3. **同步创建** — 新增区域时，en-us 和 zh-cn 同步创建，不允许先建一个再补另一个
+1. `.extension` 同时提供 `zh-cn` 和 `en-us` 参数文案。
+2. 文档分别放在 `intl/docs/zh-cn/` 和 `intl/docs/en-us/`。
+3. 禁止新建 `intl/<locale>/<region>/<variant>/` 或为翻译复制整份 Terraform。
+4. 历史 locale 实现目录只作迁移输入，不作为新交付结构。
 
 ---
 
@@ -488,20 +485,20 @@ Codex 使用根 `AGENTS.md`、`.codex/agents/` 和 `.codex/workflows/`；Claude 
 Terraform 候选模板必须使用带修订号的文件：
 
 ```text
-practices/{solution}/{site}/{locale?}/{region}/{variant}/terraform/deploying-{solution}_v1.tf
+practices/{solution}/{site}/{region}/{variant}/terraform/deploying-{solution}_v1.tf
 ```
 
 区域、语言和部署类型由目录表达，不重复写入标准候选文件名。规则如下：
 
 1. 新模板从 `_v1` 开始；每次影响部署行为的修改创建下一个 `_vN`，不得原地覆盖已进入测试的候选。
 2. 每次更新模板修订号或四级测试版本后，必须询问用户是否测试通过。
-3. 测试未通过的候选必须从 `practices/` 和待交付产物中删除，不作为回滚文件保留；失败原因和已使用的修订号只记入 `.var/log/internal-changelog.md`。
-   未实际云测但已被新修订取代的候选同样删除，仅保留修订号记录；只有云测成功候选才作为审计与回滚文件保留。
+3. 测试未通过或已被取代的候选必须从 `practices/` 和待交付产物中删除；失败原因和已使用的修订号记入 `.var/log/internal-changelog.md`。
 4. 失败修订号不得复用。修复时必须使用下一个 `_vN`；例如 `_v1` 失败并删除后，修复版从 `_v2` 继续。
 5. 用户未明确确认测试通过前，不得删除版本号、覆盖无版本正式入口、替换生产 OBS 对象或宣告正式发布。
-6. 用户确认通过后，保留该 `_vN` 候选用于审计与回滚，并将相同内容提升为 `deploying-{solution}.tf` 无版本正式入口。
+6. 用户确认通过后，将 `_vN` 候选**重命名**为 `deploying-{solution}.tf` 正式入口，不得复制后与候选并存。Git、内部变更日志和版本化 OBS 测试对象承担审计与回滚记录。
 7. 现有历史无版本模板可继续作为正式入口；其下一次修改必须先建立 `_v1` 候选，执行渐进迁移，禁止破坏性批量改名。
-8. `.tf.json` 遵循相同规则，扩展名写作 `_vN.tf.json`。
+8. `.tf.json` 遵循相同规则，扩展名写作 `_vN.tf.json`；同一实例不得与 `.tf` 并存。
+9. 每个 `terraform/` 目录在任何时刻都必须只有一个可加载 Terraform 文件；Terraform 会自动加载目录内全部模板，并存会导致重复定义。
 
 模板晋级前至少验证：Terraform/JSON 语法、渲染后 `user_data` 语法、云上真实部署、cloud-init、核心进程或容器、监听端口、关键接口、文档一致性和安全门禁。
 

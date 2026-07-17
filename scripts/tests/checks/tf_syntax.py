@@ -1,7 +1,7 @@
 """
 Terraform 语法与安全检查
 =======================
-接受单文件（deploying-xxx.tf）或 4 文件拆分两种模式。
+每个部署实例只接受一个 active Terraform 文件。
 检查内容：
 - 安全组过宽检测（SSH/3389 对 0.0.0.0/0）→ ERROR
 - 硬编码 AK/SK 检测 → ERROR
@@ -11,34 +11,95 @@ Terraform 语法与安全检查
 - EIP 带宽成本预警 → WARN
 """
 
+import fnmatch
 import re
+import json
+import subprocess
+import textwrap
 from pathlib import Path
-from ..runner import CheckResult
+from ..runner import CheckResult, load_project_config
+
+try:
+    import hcl2
+except ImportError:  # pragma: no cover - formal repo environment provides python-hcl2
+    hcl2 = None
+
+
+USER_DATA = re.compile(
+    r'user_data\s*=\s*<<-?(?P<tag>[A-Za-z0-9_]+)\s*\n(?P<body>.*?)^\s*(?P=tag)\s*$',
+    re.MULTILINE | re.DOTALL,
+)
+
+
+def _shell_syntax(content: str) -> str | None:
+    match = USER_DATA.search(content)
+    if not match:
+        return None
+    script = textwrap.dedent(match.group("body"))
+    script = re.sub(r'(?<!\$)\$\{[^}\n]+}', 'SAC_VALUE', script)
+    script = script.replace('$${', '${').replace('%%{', '%{')
+    return subprocess.run(["bash", "-n"], input=script, text=True, capture_output=True).stderr.strip() or None
 
 
 def run(practice_path: Path, entry: dict) -> list:
     results = []
     tf_path = practice_path / "terraform"
+    instance = "/".join(filter(None, (
+        entry.get("name"), entry.get("site"), entry.get("region"), entry.get("deploy_type")
+    )))
+    exceptions = load_project_config().get("quality_gate", {}).get("architecture_exceptions", {})
+    exception = next((value for pattern, value in exceptions.items()
+                      if fnmatch.fnmatch(instance, pattern)), {})
+    allowed_providers = set(exception.get("allowed_providers", ["huaweicloud"]))
 
     if not tf_path.exists():
         results.append(CheckResult("tf_syntax", False, "ERROR", "terraform/ 目录不存在"))
         return results
 
-    tf_files = list(tf_path.glob("*.tf"))
-    if not tf_files:
-        results.append(CheckResult("tf_syntax", False, "ERROR", "terraform/ 中没有 .tf 文件"))
+    tf_files = sorted(tf_path.glob("*.tf"))
+    json_files = sorted(tf_path.glob("*.tf.json"))
+    active_files = tf_files + json_files
+    if not active_files:
+        results.append(CheckResult("tf_syntax", False, "ERROR", "terraform/ 中没有 Terraform 文件"))
         return results
 
-    # 检测模式：单文件 vs 拆分
-    is_single_file = len(tf_files) <= 2 and any("deploying-" in f.name for f in tf_files)
-    if is_single_file:
-        results.append(CheckResult("tf_syntax", True, "INFO", f"单文件模式 ({len(tf_files)} 个 .tf)"))
+    if len(active_files) != 1:
+        names = ", ".join(path.name for path in active_files)
+        results.append(CheckResult("tf_syntax", False, "ERROR",
+                                   f"terraform/ 必须只有一个 active 模板，当前 {len(active_files)} 个: {names}"))
     else:
-        results.append(CheckResult("tf_syntax", True, "INFO", f"拆分模式 ({len(tf_files)} 个 .tf)"))
+        results.append(CheckResult("tf_syntax", True, "INFO", "唯一 active Terraform 入口"))
 
     # ── 扫描所有 .tf 文件内容 ──
     for f in tf_files:
         content = f.read_text(encoding="utf-8-sig", errors="replace")
+
+        if hcl2 is None:
+            results.append(CheckResult("tf_syntax", False, "ERROR", "缺少 python-hcl2，无法执行 HCL 解析"))
+        else:
+            try:
+                parsed = hcl2.loads(content)
+                required = parsed.get("terraform", [{}])[0].get("required_providers", [{}])[0]
+                providers = {key.strip('"') for key in required if not key.startswith("__")}
+                if providers != allowed_providers:
+                    results.append(CheckResult("tf_syntax", False, "ERROR",
+                                               f"{f.name}: provider 应为 {sorted(allowed_providers)}，当前 {sorted(providers)}",
+                                               file=str(f)))
+                for block in parsed.get("provider", []):
+                    for name, config in block.items():
+                        if name.strip('"') == "huaweicloud":
+                            keys = {key for key in config if not key.startswith("__")}
+                            if keys != {"region"}:
+                                results.append(CheckResult("tf_syntax", False, "ERROR",
+                                                           f"{f.name}: huaweicloud provider 只允许 region，当前 {sorted(keys)}",
+                                                           file=str(f)))
+            except Exception as exc:
+                results.append(CheckResult("tf_syntax", False, "ERROR", f"{f.name}: HCL 解析失败: {exc}", file=str(f)))
+
+        shell_error = _shell_syntax(content)
+        if shell_error:
+            results.append(CheckResult("tf_syntax", False, "ERROR",
+                                       f"{f.name}: user_data Bash 语法失败: {shell_error}", file=str(f)))
 
         # 硬编码 AK/SK
         if re.search(r'access_key\s*=\s*["\'][^"\']+["\'](?!.*var\.)', content):
@@ -66,7 +127,8 @@ def run(practice_path: Path, entry: dict) -> list:
         desc_pattern = re.compile(r'description\s*=')
         for match in var_pattern.finditer(content):
             var_name = match.group(1)
-            block = content[match.end():]
+            opening = content.find('{', match.end())
+            block = content[opening + 1:]
             depth, end = 1, 0
             for i, c in enumerate(block):
                 if c == '{': depth += 1
@@ -77,13 +139,19 @@ def run(practice_path: Path, entry: dict) -> list:
             if not desc_pattern.search(var_block):
                 results.append(CheckResult("tf_syntax", True, "WARN",
                     f"variable '{var_name}' 缺少 description"))
-            if any(kw in var_name.lower() for kw in ["password", "secret", "token", "key", "ak", "sk"]):
+            if re.search(r'(password|secret|token|key|(?:^|_)ak(?:$|_)|(?:^|_)sk(?:$|_))', var_name.lower()):
                 if 'sensitive' not in var_block:
                     results.append(CheckResult("tf_syntax", True, "WARN",
                         f"variable '{var_name}' 建议设置 sensitive=true"))
 
+    for f in json_files:
+        try:
+            json.loads(f.read_text(encoding="utf-8-sig"))
+        except json.JSONDecodeError as exc:
+            results.append(CheckResult("tf_syntax", False, "ERROR", f"{f.name}: JSON 解析失败: {exc}", file=str(f)))
+
     # BOM 头检测
-    for f in tf_files:
+    for f in active_files:
         raw = f.read_bytes()
         if raw[:3] == b'\xef\xbb\xbf':
             results.append(CheckResult("tf_syntax", False, "ERROR", f"{f.name}: 包含 BOM 头（RFS 不允许）"))

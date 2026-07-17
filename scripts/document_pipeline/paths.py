@@ -1,10 +1,10 @@
-"""Compatibility output policy: prefer whichever historical docs layout exists."""
+"""Canonical site-level document paths."""
 from pathlib import Path
 
 def docs_dir(practice,site="cn",locale="zh-cn",create=False):
     root=Path(practice)
     if site=="cn": candidates=[root/"cn"/"docs"]
-    else: candidates=[root/"intl"/locale/"docs",root/"intl"/"docs"/locale]
+    else: candidates=[root/"intl"/"docs"/locale,root/"intl"/locale/"docs"]
     chosen=next((p for p in candidates if p.is_dir()),candidates[0])
     if create: chosen.mkdir(parents=True,exist_ok=True)
     return chosen

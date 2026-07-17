@@ -1,6 +1,6 @@
 {
   "name": "solution-practices",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "SAC multi-agent toolkit and Huawei Cloud Solution Practices for Codex",
   "type": "module",
   "bin": {

@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.9.2 (2026-07-17) — 三方案正式释放包
+
+### 正式晋级
+
+- 用户确认 LiteLLM、OpenJiuwen、Supabase 全部现有部署实例云测通过。
+- LiteLLM 9 个高可用候选、OpenJiuwen Agent Studio 候选和 Supabase 国际站候选晋级为唯一无版本正式入口。
+- 保留 LiteLLM 已上线高可用架构及其 `huaweicloud` + `kubernetes` Provider 组合，不修改部署逻辑。
+
+### 结构与命名
+
+- 国际站 Terraform 实现收敛为 `intl/<region>/<variant>/`，删除多余的 `en-us/zh-cn` 实现层；语言仅保留在站点级文档中。
+- 每个部署实例只保留一个 `deploying-<project>.tf`；交付文件名按站点、Region 和部署类型区分。
+- 三个方案的正式文档统一为部署指南与方案详情，中国站中文、国际站中英文最多六份。
+
+### 验证
+
+- 正式释放前执行全量 Terraform、Shell、结构、文档和安全门禁。
+- 仅生成本地释放包；未执行 OBS 上传、外部发布、真实云资源变更或 Git 提交。
+
 ## v0.9.1 (2026-07-16) — 文档流水线与 Practice 候选更新
 
 ### 新功能
@@ -12,6 +31,7 @@
 
 - 新增 RFS Practice 策略检查，并扩展 Terraform、网络、文档及双语一致性门禁。
 - 同步 Codex/Claude Agent 契约、工作流、Skill 索引与 npm 分发范围。
+- 用户确认 Supabase CN `v6` 与 JiuwenSwarm `v4` 云测通过，两个候选已保留并字节级晋升为无版本正式入口；Agent Studio 与 Supabase INTL 仍未晋升。
 
 ### 修复
 
