@@ -24,7 +24,9 @@ jobs:
         with:
           python-version: "3.11"
       - name: Install repository dependencies
-        run: npm ci
+        run: |
+          npm ci
+          python -m pip install --requirement requirements-test.txt
       - name: Test repository
         run: npm test
       - name: Inspect npm package
