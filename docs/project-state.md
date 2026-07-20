@@ -9,11 +9,11 @@ This document records the current repository scope. It should be updated when a 
 - Formal rules: `skills/sac-project-rules/`, `skills/sac-rfs-practices/`
 - Formal workflow skills: `skills/sac-testing/`, `skills/sac-security/`, `skills/sac-documentation/`, `skills/sac-delivery/`
 - Formal npm distribution: `package.json`, `bin/sac.js`, `src/`, and `templates/`
+- Formal GitHub visualization source: `web/` (read-only presentation layer; not a release authority)
 - Scope config: `project.config.json`
 
 ## Explicitly Out Of Formal Scope
 
-- `web/` is a future visualization prototype and is not part of the formal release gate.
 - `.claude/agents/`, `.claude/workflows/`, `AGENTS.md`, and `.codex/` are local collaboration assets.
 - Historical half-finished practices may still be referenced by old documents, scripts, or catalog data. Those references are not formal unless the practice is listed in `project.config.json`.
 
@@ -23,7 +23,7 @@ This document records the current repository scope. It should be updated when a 
 2. `practices/` contains deployable implementation assets.
 3. `skills/` contains rules and reusable project knowledge.
 4. `scripts/tests/` validates formal practice assets.
-5. `web/` may visualize or experiment with catalog data, but it does not define formal delivery state.
+5. `web/` visualizes repository facts and generated snapshots, but it does not define formal delivery state.
 
 ## npm Distribution
 

@@ -6,7 +6,6 @@
       "openjiuwen"
     ],
     "exclude": [
-      "web",
       ".claude",
       "scripts/archive",
       "scripts/experimental"
@@ -106,6 +105,6 @@
     ".codex/workflows": "local",
     ".claude/agents": "local",
     ".claude/workflows": "local",
-    "web": "experimental"
+    "web": "formal"
   }
 }

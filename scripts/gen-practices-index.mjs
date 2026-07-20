@@ -14,6 +14,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
 const PRACTICES_DIR = join(ROOT, "practices");
 const OUT = join(ROOT, "web", "src", "lib", "practices-index.json");
+const FORMAL = new Set(JSON.parse(readFileSync(join(ROOT, "project.config.json"), "utf8")).formal.practices);
 
 function dirs(p) {
   if (!existsSync(p)) return [];
@@ -64,7 +65,7 @@ function firstDocH1(slug) {
   return { title: h1 ?? null, docsPath: relative(ROOT, docFile) };
 }
 
-const slugs = dirs(PRACTICES_DIR).sort();
+const slugs = dirs(PRACTICES_DIR).filter(slug => FORMAL.has(slug)).sort();
 const practices = slugs.map(slug => {
   const sites = dirs(join(PRACTICES_DIR, slug));
   const regions = new Set();

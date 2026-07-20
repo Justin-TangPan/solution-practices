@@ -1,0 +1,45 @@
+name: GitHub Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            web/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verify repository
+        run: |
+          npm ci
+          npm test
+          npm run pack:check
+          python -m scripts.tests.runner
+      - name: Verify Web
+        run: |
+          npm ci --prefix web
+          npm run lint --prefix web
+          npm run build --prefix web
+
+  release:
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes --latest

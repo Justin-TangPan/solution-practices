@@ -4,7 +4,7 @@
 
 ### 解决方案实践 · 让 AI 替你写完从架构到交付的全部代码
 
-**v0.9.2** · 华为云解决方案实践仓库
+**v0.10.0** · 华为云解决方案实践仓库
 
 </div>
 
@@ -15,7 +15,7 @@
 <div align="center">
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
-[![Version](https://img.shields.io/badge/version-v0.9.2-blue.svg?style=flat-square&label=SAC)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-v0.10.0-blue.svg?style=flat-square&label=SAC)](CHANGELOG.md)
 [![Practices](https://img.shields.io/badge/Practices-3-blue.svg?style=flat-square)](#-已有方案)
 [![Skills](https://img.shields.io/badge/Skills-11-green.svg?style=flat-square)](#-skills-架构)
 [![Agents](https://img.shields.io/badge/Agents-6-purple.svg?style=flat-square)](#-skills-架构)
@@ -48,6 +48,10 @@
 - 运行质量检查：`python -m scripts.tests.runner`
 - 查看项目规则：`skills/sac-project-rules/`
 - 查看 RFS 模板规范：`skills/sac-rfs-practices/`
+- 启动可视化工作台：`cd web && npm install && npm run dev`
+
+`web/` 是 GitHub 正式源码资产，用于只读展示方案、质量、资产和发布快照；它不替代
+`project.config.json`、`practices/` 与 `scripts/tests/` 的正式事实源。
 
 ---
 

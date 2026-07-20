@@ -1,0 +1,53 @@
+{
+  "generated": "2026-07-20T09:55:26.784Z",
+  "count": 3,
+  "practices": [
+    {
+      "slug": "litellm",
+      "title": "LiteLLM，统一的 LLM 网关",
+      "sites": [
+        "cn",
+        "intl"
+      ],
+      "regions": [
+        "af-north-1",
+        "af-south-1",
+        "ap-southeast-1",
+        "ap-southeast-2",
+        "ap-southeast-3",
+        "cn-north-4",
+        "la-north-2",
+        "sa-brazil-1",
+        "tr-west-1"
+      ],
+      "hasHA": true,
+      "docsPath": "practices/litellm/cn/docs/LiteLLM-方案详情_zh.md"
+    },
+    {
+      "slug": "openjiuwen",
+      "title": "JiuwenSwarm 华为云解决方案实践 — 方案详情",
+      "sites": [
+        "cn"
+      ],
+      "regions": [
+        "cn-north-4"
+      ],
+      "hasHA": false,
+      "docsPath": "practices/openjiuwen/cn/docs/JiuwenSwarm-方案详情_zh.md"
+    },
+    {
+      "slug": "supabase",
+      "title": "Supabase 业务价值报告",
+      "sites": [
+        "cn",
+        "intl"
+      ],
+      "regions": [
+        "ap-southeast-1",
+        "cn-north-4"
+      ],
+      "hasHA": false,
+      "docsPath": "practices/supabase/cn/docs/Supabase-方案详情_zh.md"
+    }
+  ]
+}
