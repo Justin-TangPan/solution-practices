@@ -14,11 +14,11 @@
 { "registry-mirrors": ["https://docker.wangzhou3.top"] }
 ```
 
-适用范围：**cn 站点全部 install 脚本、docker-compose、TF 内联 user_data 中的 Docker Hub 镜像**。
+适用范围：**cn 站点 Terraform 内联 `user_data` 及其生成的 Docker Compose 中的 Docker Hub 镜像**。
 
 ### cn 路径映射约定
 
-| 原镜像 | cn compose/install/user_data 写法 |
+| 原镜像 | cn Compose / `user_data` 写法 |
 |---|---|
 | 裸 Docker Hub `postgres:16`、`kong:3.9.1` | `postgres:16`、`kong:3.9.1` |
 | 带命名空间 `prom/prometheus`、`n8nio/n8n`、`supabase/gotrue` 等 | `prom/prometheus`、`n8nio/n8n`、`supabase/gotrue` |
@@ -43,7 +43,7 @@
 docker pull <image>
 ```
 
-适用范围：**intl 站点全部 install 脚本、docker-compose、TF 内联 user_data**。不要在 intl 加 `docker.wangzhou3.top` 前缀。
+适用范围：**intl 站点 Terraform 内联 `user_data` 及其生成的 Docker Compose**。不要在 intl 加 `docker.wangzhou3.top` 前缀。
 
 ### intl 路径映射约定
 
@@ -67,5 +67,4 @@ docker pull <image>
 
 ## 相关
 
-- 镜像引用出现在 install 脚本里时，注意 heredoc 引用展开：`docker-compose.yaml` 里 `${POSTGRES_PASSWORD}` 是 compose 变量（要保留 `$`），而 install 脚本里 heredoc 不带引号会展开 shell 变量——按需用 `$$` 转义或单引号 heredoc。
-- OBS 脚本分发规范见 [obs-conventions.md](obs-conventions.md)。
+- 在 `user_data` heredoc 生成 `docker-compose.yaml` 时，`${POSTGRES_PASSWORD}` 是 Compose 变量（要保留 `$`）；未加引号的 heredoc 会先展开 Shell 变量，应按 Terraform/HCL 语义转义或使用单引号 heredoc。

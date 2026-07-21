@@ -82,7 +82,7 @@
     "npm_package": "solution-practices",
     "node_minimum": "20",
     "manifest_schema_version": 1,
-    "content_version": "2026.07",
+    "content_version": "2026.07.21",
     "managed_file_policies": {
       "AGENTS.md": "merge-block",
       ".codex/agents/sac-*": "managed",
@@ -100,7 +100,6 @@
     "bin/sac.js": "formal",
     "src": "formal",
     "templates": "formal",
-    "scripts/obs": "optional",
     ".codex/agents": "local",
     ".codex/workflows": "local",
     ".claude/agents": "local",

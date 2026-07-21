@@ -1,14 +1,24 @@
 # 安全审计规则（公共参考文档）
 
-> 本文档定义了 SAC 项目安全审计的检查规则。sac-security Agent 通过引用本文档执行审计。
+> `sac-security` 按语义和实际可利用性审计完整部署链路。搜索命令只能帮助定位，不能代替上下文判断或作为通过依据。
 
-| ID | 严重度 | 规则 | 检查命令 |
-|----|--------|------|----------|
-| SEC-001 | critical | 部署逻辑（内联 user_data 或例外安装脚本）不得硬编码 AK/SK | `grep -RInE '(access_key\|secret_key\|AKID\|SKID\|ak\\s*=\|sk\\s*=)' terraform/ scripts/` |
-| SEC-002 | critical | 部署逻辑（内联 user_data 或例外安装脚本）不得硬编码 API Key | `grep -RInE '(api.?key\|apikey\|token\\s*=\|master.?key)' terraform/ scripts/` |
-| SEC-003 | high | 安全组不得开放高危端口到 0.0.0.0/0 | `grep -A2 'remote_ip_prefix.*0.0.0.0/0' deploying-* \| grep -E '(22\|3306\|5432\|6379\|27017)'` |
-| SEC-004 | high | SSH 端口仅限 Cloud Shell IP | `grep -B2 'ports.*22' deploying-* \| grep -c '121.36.59.153/32'` |
-| SEC-005 | medium | cn 站点部署逻辑不应包含 docker login（公开镜像源或公开 SWR 镜像无需认证拉取） | `grep -RIn 'docker login' terraform/ scripts/` |
-| SEC-006 | medium | 数据库密码通过环境变量传入 | `grep -E '(POSTGRES_PASSWORD\|DB_PASSWORD\|REDIS_PASSWORD)' docker-compose.yaml` |
-| SEC-007 | low | 容器不以 privileged 模式运行 | `grep -c 'privileged: true' docker-compose.yaml` |
-| SEC-008 | low | ECS 开启 hss + ces 监控 | `grep -c 'agent_list.*hss.*ces' deploying-*` |
+| ID | 严重度 | 语义规则 | 核验重点 |
+|----|--------|----------|----------|
+| SEC-001 | critical | 产物不得包含可用的 AK/SK、API Key、Token、私钥或等效长期凭证 | 区分真实凭证、变量名、文档占位符和测试假值；报告时脱敏 |
+| SEC-002 | critical | 不得提供无需认证即可控制敏感系统、读取敏感数据或执行任意代码的公网路径 | 管理界面、调试接口、初始化接口、默认账号和远程执行能力 |
+| SEC-003 | high | 管理端口、数据库、缓存、消息系统等不得向不受信网络宽泛开放 | CIDR、端口、实际监听地址、认证和架构合同共同判断 |
+| SEC-004 | high | 不得向公网工作负载授予可形成实际主机或控制面突破的广泛容器权限 | `privileged`、Docker socket、host PID/network、设备映射、可写敏感宿主机挂载；无可利用路径时按证据降级 |
+| SEC-005 | high | Secret 的生成、传递或记录不得使其对非预期主体可读 | Terraform 状态、`user_data`、进程参数、日志、环境文件权限和固定默认密码 |
+| SEC-006 | medium | 公网业务入口应具备与数据敏感度匹配的认证、TLS 和访问控制 | 明文传输、弱默认认证、无速率限制等需结合威胁模型定级 |
+| SEC-007 | medium | 镜像和依赖来源必须可追溯，不执行无法验证来源的远程内容 | 官方来源、固定版本或摘要、下载校验、可变标签和供应链边界 |
+| SEC-008 | medium | 持久化数据、备份和日志不得产生超出合同的数据暴露或不可恢复风险 | 卷权限、公开存储、敏感日志、备份保护、删除与恢复路径 |
+| SEC-009 | low | 缺少不直接形成可利用路径的纵深防护时记录加固建议 | 非 root、只读文件系统、能力裁剪、监控和告警 |
+
+## 判定规则
+
+- `critical`：已存在直接凭证失陷、未认证敏感控制或同等级即时影响。
+- `high`：存在现实可行的远程入侵、广泛特权暴露或阻断发布的 Secret 处理缺陷。
+- `medium`：需要有意义前提才能利用的防御缺口。
+- `low`：影响有限的加固机会。
+
+任何 `critical` 或 `high` 发现都令 `passed=false`。每项发现必须包含文件与位置、脱敏证据、可利用条件、影响、修复和验证方式；无法由静态证据确认的运行时假设单独列出。

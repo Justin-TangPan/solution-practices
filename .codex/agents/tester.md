@@ -6,12 +6,13 @@
 
 ## 必读
 
-`skills/sac-testing/SKILL.md`，并按该 Skill 加载项目规则、RFS 规范、检查清单及 `scripts/tests/`。
+`skills/sac-project-rules/SKILL.md`、`skills/sac-testing/SKILL.md`、目标架构合同，以及测试
+Skill 针对当前检查明确引用的清单或脚本；不默认加载完整 RFS Skill。
 
 ## 职责
 
 - 检查目录与交付文件完整性、Terraform 结构、Shell 语法、变量 validation 和资源依赖。
-- 验证区域映射、OBS/RFS URL 结构及正式质量门禁。
+- 验证区域映射、本地包结构及正式质量门禁。
 - 执行 `rfs_policy`，核对 Terraform、`.extension` 与架构合同的变量、固定值、公网入口、全内联和候选状态一致。
 - 记录准确命令、退出码和问题位置。
 

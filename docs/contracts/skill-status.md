@@ -1,14 +1,8 @@
 # Skill Status Contract
 
-Skills are project knowledge assets. They should state whether they are formal, optional, experimental, or deprecated.
-
-Recommended metadata:
-
-```yaml
-status: formal | optional | experimental | deprecated
-scope: formal-delivery | research | visualization | local-agent
-owner: project | user-local | internal
-```
+Skills are project knowledge assets. Runtime routing lives in `AGENTS.md` and `.codex/agents/`; each
+`SKILL.md` owns its behavior, while `skills-index.json` is discovery and audit metadata only. SKILL
+frontmatter contains only `name` and `description` so discovery metadata stays minimal.
 
 Current classification:
 
@@ -16,19 +10,18 @@ Current classification:
 |---|---|---|
 | `sac-project-rules` | formal | formal-delivery |
 | `sac-rfs-practices` | formal | formal-delivery |
+| `sac-technical-evaluator` | formal | research |
 | `sac-testing` | formal | formal-delivery |
 | `sac-security` | formal | formal-delivery |
 | `sac-documentation` | formal | formal-delivery |
-| `sac-document-pipeline` | formal | formal-delivery |
+| `sac-document-pipeline` | deprecated alias | compatibility |
 | `sac-delivery` | formal | formal-delivery |
 | `sac-business-evaluator` | optional | research |
-| `sac-technical-evaluator` | optional | research |
 | `sac-page-enhance` | optional | content |
 | `sac-deep-search` | optional | research |
 
 Formal skills must not assume that historical or removed practices still exist. The current formal list comes from `project.config.json`.
 
-`sac-documentation` remains the backward-compatible Markdown authoring contract. New structured generation,
-translation, IDP Word rendering, existing-document conversion, and document quality reports use
-`sac-document-pipeline`. The documenter Agent binds the pipeline as its primary skill and may load
-`sac-page-enhance` only when page copy enhancement is requested.
+`sac-documentation` is the sole formal documentation entry for maintenance, generation, translation,
+optional DOCX rendering, conversion, and quality gates. `sac-document-pipeline` is a compatibility alias
+and is never loaded beside it. `sac-page-enhance` is loaded only for explicit page-copy work.

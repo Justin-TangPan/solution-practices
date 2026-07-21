@@ -1,549 +1,124 @@
 ---
 name: sac-project-rules
-description: |
-  SAC（Solution Practices — 解决方案实践）交付包项目的完整规则定义。
-
-  本 skill 定义了项目的命名规范、目录结构、文件组织、多 Agent 协同架构、交付流程和操作守则。
-
-  触发场景（四类）：
-  【直接询问】"项目规则是什么"、"交付规范是什么"、"SAC 规则"、"目录结构怎么组织"、
-  "文件命名规则"、"怎么创建新方案"、"release 怎么打包"、"OBS 规则"、"命名规范"
-  【多 Agent 协同】当在工作流（sac-full-pipeline）中被架构师/开发/测试/安全/文档/
-  交付 Agent 作为共性基础加载时，提供全局规则上下文
-  【方案开发】本项目中工作但未明确引用其他 skill 时
-  【疑问类】任何涉及项目整体组织方式的疑问
-metadata:
-  status: formal
-  scope: formal-delivery
-  owner: project
+description: Govern every SAC Solution Practice from main-Agent architecture assessment through verified local delivery. Use for any SAC project work, workflow selection, role handoff, quality gate, or release decision.
 ---
 
-# SAC 交付包项目规则
+# SAC Project Rules
 
-> **SAC = Solution Practices**（解决方案实践）
->
-> 中文名：**解决方案实践**
-> 英文名：**Solution Practices**
-> 简称：**SAC**
+SAC means **Solution Practices（解决方案实践）**. This Skill owns project-wide decisions; implementation,
+testing, security, documentation, and packaging details belong to their role Skills.
 
-本文档定义了本项目（Solution Practices）的完整组织规则、命名规范、文件结构和交付流程。
+## Authority and safety
 
----
+Use truth in this order: `project.config.json`, `practices/`, executable tests, `skills/`,
+`docs/contracts/`, then `web/`. `.codex/` and `.claude/` are local orchestration only.
+`docs/project-state.md` records current scope. `reference/` is user-owned and read-only.
 
-## 0. 当前范围与事实源
+In an npm-installed host without a root `project.config.json`, use `.sac/project.config.json` as the
+packaged baseline. Every role's reference to project configuration follows this fallback.
 
-本 skill 是正式规则源，但不直接声明当前有哪些 practice 属于正式版本。当前正式范围以仓库根目录 `project.config.json` 为准。
+Preserve existing changes. Never write credentials, tokens, private endpoints, or private bucket data
+to source, artifacts, or logs. Record modification batches in `.var/log/internal-changelog.md`;
+`.var/` is local memory and is never delivered.
 
-事实源优先级：
+## Main-Agent architecture gate
 
-1. `project.config.json`：正式 practice 范围、质量门禁策略、资产状态。
-2. `practices/`：可部署方案实现。
-3. `scripts/tests/`：正式质量门禁。
-4. `skills/`：规则和可复用知识。
-5. `web/`：未来可视化原型，不反向约束正式版本。
-6. `.codex/` 与 `.claude/`：本地协作实现，不作为正式发布事实源。
-7. npm 安装环境若没有 SAC 根 `project.config.json`，使用 `.sac/project.config.json` 作为打包时正式范围基线。
+For every new practice, the main Agent is the accountable solution architect and must:
 
-当前治理文件：
+1. **Assess the system**: official release unit, version, license, dependencies, Huawei Cloud fit,
+   Region constraints, topology, persistence, capacity, availability, cost, security, operations,
+   upgrade, backup, recovery, and closest formal repository evidence.
+2. **Present an initial solution**: recommended topology and defaults, deployment path, runtime,
+   public entry, data model, external dependencies, deviations, evidence, and risks.
+3. **Confirm user decisions**: site, Region, `standard|ha`, template format, installation/runtime mode,
+   public access, billing scope, and product-specific dependencies. Do not re-ask known inputs.
+4. **Freeze one architecture contract**: assessment, solution, confirmed inputs, rules read, references,
+   variables, fixed values, endpoints, artifacts, deviations, resources, dependencies, and risks.
+5. **Dispatch only the frozen contract** with non-overlapping file scopes to child Agents.
 
-- `docs/project-state.md`：当前版本状态。
-- `OWNERSHIP.md`：资产归属。
-- `docs/contracts/`：目录、脚本、skill、发布契约。
-- `.var/log/internal-changelog.md`：本地内部变更日志。每个修改批次必须新增一条记录，包含时间戳和三级版本号；`.var/` 不提交、不上传远端。
+Stop before implementation when the contract is absent, incomplete, or internally conflicting.
+Child Agents never replace final architecture judgment or ask the user fragmented design questions;
+they stop affected writes and report gaps to the main Agent.
 
-历史半成品 practice、旧 web catalog、旧一次性脚本或旧 README 示例，不构成正式交付依据，除非对应 practice 被重新加入 `project.config.json`。
+## Formal outcome and authorization stops
 
----
+The formal outcome is a verified **local package** containing deployable Terraform, an optional
+`.extension`, required Markdown documents, configured DOCX documents, a deterministic archive, and
+SHA-256 checksums. New practices use inline `user_data`; external installers, hosted paths, URL lists,
+and `manifest.json` are not formal artifacts.
 
-## 1. 项目概述
+Stop the pipeline when tests contain an error, security contains a critical/high finding, required
+review is incomplete, or authoritative sources disagree. The user normally performs real cloud testing
+from the candidate package. Cloud changes, external publication, Git commit/push, and package publication
+always require separate explicit authorization. Local checks never imply cloud success or production readiness.
 
-本项目是一个基于华为云的解决方案实践集合仓库，提供多种 AI 工具和平台的一键部署方案。
+## Canonical structure and candidates
 
-### 1.1 项目使命
-
-将每个解决方案打包为标准交付包，包含：
-- **Terraform 模板**（`deploying-{project}.tf`）— 基础设施即代码 + 内联 user_data 部署逻辑
-- **部署指南** — 面向运维和最终用户的操作手册
-- **方案详情**（Solution-Details）— 面向客户的价值、架构和场景描述
-- **RFS 一键部署 URL** — 用户点击即可部署
-
-`scripts/install_*.sh` 不是标准交付物。标准实践参考 LiteLLM、Supabase，部署逻辑内联在 Terraform `user_data` 中；只有用户明确要求或特殊技术约束存在时，才使用外置脚本。
-
-`manifest.json` 不是 SAC 标准交付物。它只能作为测试桶索引或工具临时辅助文件出现，不进入标准交付清单。
-
-### 1.2 技能与 Agent 架构
-
-```
-solution-practice/
-├── skills/                          ← AI 技能包（专业知识范式）
-│   ├── sac-project-rules/           ← 项目规则总纲（共性基础）
-│   ├── sac-rfs-practices/          ← RFS 模板 + 部署脚本开发
-│   ├── sac-page-enhance/           ← 方案页面内容提取 + 文案增强（原 sac-solution-extractor 已合并为 alias）
-│   └── sac-deep-search/            ← 深度搜索与洞察
-│
-├── .claude/agents/                 ← Agent 角色定义（JSON 配置）
-│   ├── sac-architect.json          🧠 架构师
-│   ├── sac-developer.json          💻 开发
-│   ├── sac-tester.json             🧪 测试
-│   ├── sac-security.json           🔒 安全审查
-│   ├── sac-documenter.json         📝 文档
-│   └── sac-delivery.json           📦 交付
-│
-└── .claude/workflows/              ← 多 Agent 协同工作流（JS 编排）
-    ├── sac-full-pipeline.js        🔄 全流程：6 Agent 串行+并行
-    ├── sac-architect-develop.js    ⚡ 快速原型：架构→开发
-    ├── sac-audit.js                🔍 审计：测试+安全并行
-    └── sac-delivery-only.js        📦 仅交付：打包→上线
-```
-
-**核心关系：** Skills 是"知识库"，Agents 是"角色"，Workflows 是"剧本"。
-
----
-
-## 2. 根目录结构
-
-```
-solution-practice/
-├── practices/          # 实践方案源码（开发目录）
-│   ├── litellm/        # 完整参考：cn+intl双站点，standard+ha双变体
-│   │   ├── cn/         # 中国站（含cn-north-4北京）
-│   │   │   ├── cn-north-4/standard/...
-│   │   │   ├── cn-north-4/ha/...
-│   │   │   └── docs/         ← 中国站中文文档（站点级）
-│   │   └── intl/       # 国际站（含ap-southeast-1香港 + 其他区域 + docs/{zh-cn,en-us}）
-│   ├── headroom-claude-code/
-│   ├── headroom-opencode/
-│   ├── openhands/
-│   ├── supabase/
-│   ├── codewhale/
-│   └── aitoearn/
-├── release/            # 发布包目录（交付产物）
-│   ├── litellm/
-│   └── headroom-claude-code/
-├── skills/             # AI 技能定义
-├── assets/             # 模板与示例
-│   ├── demo/
-│   ├── templates/
-│   └── extension-samples/
-├── reference/          # 参考文档（只读）
-├── scripts/            # 自动化工具脚本
-├── docs/               # 项目文档
-├── .claude/            # Claude Code 配置
-├── .secrets/
-├── README.md
-└── .gitignore
-```
-
-### 2.1 reference/ 目录只读规则
-
-`reference/` 目录仅用户可修改。AI 不得主动修改此目录下的任何文件，除非明确授权。
-
----
-
-## 3. 区域组织原则
-
-项目涉及两个维度：**区域组**（决定运行时差异）和**具体区域**（决定 OBS 端点）。
-
-### 3.1 区域组划分
-
-| 站点 | 包含的具体区域 | 特点 |
-|------|--------------|------|
-| `cn` | cn-north-4（华北-北京四） | 中国站，中文文档 |
-| `intl` | **ap-southeast-1（中国-香港）**、ap-southeast-3（亚太-新加坡）、ap-southeast-2（亚太-曼谷）、af-south-1（非洲-约翰内斯堡）、af-north-1（非洲-开罗）、tr-west-1（土耳其-伊斯坦布尔）、la-north-2（拉美-墨西哥城2）、sa-brazil-1（拉美-圣保罗）等 | 国际站，中/英文文档 |
-
-### 3.2 practices/ 按区域组组织（开发目录）
-
-`practices/` 按**区域组**划分，同一组内的脚本和文档共享。
-
-```
-practices/{project}/
-├── cn/                     # 中国站
-│   ├── cn-north-4/         # 北京四区域
-│   │   ├── standard/       # 单机版
-│   │   │   ├── terraform/
-│   │   │   └── .extension
-│   │   └── ha/             # 高可用版（可选）
-│   │       ├── terraform/
-│   │       └── .extension
-│   │
-│   └── docs/               # ← 中国站中文文档（站点级，不按区域重复）
-│       ├── {Name}-部署指南_zh.md        # 中文内容，合并 HA+标准版
-│       └── {Name}-方案详情_zh.md
-│
-├── intl/                   # 国际站
-│   ├── ap-southeast-1/     # 香港区域（归属 intl 国际站）
-│   │   ├── standard/
-│   │   └── ha/
-│   ├── ap-southeast-3/     # 新加坡
-│   │   ├── standard/
-│   │   │   ├── terraform/
-│   │   │   └── .extension
-│   │   └── ha/
-│   ├── af-south-1/         # 约翰内斯堡
-│   └── ...                 # 其他区域
-│
-└── docs/                    # ← 国际站文档（站点级）
-    ├── zh-cn/
-    │   ├── {Name}-部署指南_zh.md
-    │   └── {Name}-方案详情_zh.md
-    └── en-us/
-        ├── {Name}-Deployment-Guide_en.md
-        └── {Name}-Solution-Details_en.md
-```
-
-### 3.3 `.extension` 文件
-
-`.extension` 定义了参数分组和国际化配置，支持 `zh-cn` 和 `en-us`。
-
-### 3.4 国际站双语言规则（intl）
-
-语言不是 Terraform 实现维度。`intl/<region>/<variant>/` 只保留一份部署逻辑：
-
-1. `.extension` 同时提供 `zh-cn` 和 `en-us` 参数文案。
-2. 文档分别放在 `intl/docs/zh-cn/` 和 `intl/docs/en-us/`。
-3. 禁止新建 `intl/<locale>/<region>/<variant>/` 或为翻译复制整份 Terraform。
-4. 历史 locale 实现目录只作迁移输入，不作为新交付结构。
-
----
-
-## 4. release/ 按具体区域组织（发布目录）
-
-`release/` 按**具体区域代码**展开，因为每个区域的 OBS 端点不同，需要独立的模板和 URL。
-
-```
-release/{project}/
-├── cn/                           # 中国站
-│   ├── cn-north-4/               # 北京四
-│   │   ├── standard/
-│   │   │   ├── deploying-{project}.tf
-│   │   │   ├── .extension
-│   │   │   └── url.txt
-│   │   └── ha/
-│   │       ├── deploying-{project}-ha.tf
-│   │       └── url.txt
-│
-├── intl/                         # 国际多区域
-│   ├── ap-southeast-1/           # 香港（归属 intl 国际站）
-│   │   ├── standard/
-│   │   │   ├── deploying-{project}-ap-southeast-1.tf
-│   │   │   ├── .extension
-│   │   │   └── url.txt
-│   │   └── ha/
-│   │       ├── deploying-{project}-ha-ap-southeast-1.tf
-│   │       └── url.txt
-│   ├── ap-southeast-3/
-│   ├── ap-southeast-2/
-│   ├── af-south-1/
-│   ├── af-north-1/
-│   ├── tr-west-1/
-│   ├── la-north-2/
-│   └── sa-brazil-1/
-│
-└── docs/                         # ← 文档站点级
-    ├── {Name}-部署指南_zh.md
-    ├── {Name}-方案详情_zh.md
-    └── intl/{zh-cn,en-us}/
-```
-
-每个区域目录内部：
-
-```
-release/{project}/intl/af-south-1/
-├── standard/
-│   ├── deploying-litellm-af-south-1.tf    # Terraform 模板（含区域代码）
-│   ├── .extension
-│   └── url.txt                            # 该区域专属 URL
-└── ha/
-    ├── deploying-litellm-ha-af-south-1.tf
-    └── url.txt
-```
-
-文档按站点归类，不按区域重复：
-
-```
-release/{project}/
-├── cn/cn-north-4/...
-├── intl/ap-southeast-3/...
-├── cn/docs/
-│   ├── {Name}-部署指南_zh.md
-│   └── {Name}-方案详情_zh.md
-└── intl/docs/
-    ├── zh-cn/
-    │   ├── {Name}-部署指南_zh.md
-    │   └── {Name}-方案详情_zh.md
-    └── en-us/
-        ├── {Name}-Deployment-Guide_en.md
-        └── {Name}-Solution-Details_en.md
-```
-
-### 4.1 URL 文件格式
-
-每个区域 `url.txt` 记录该区域的部署链接：
-
-```
-# --- af-south-1 (Johannesburg) ---
-TF:https://{bucket}.obs.af-south-1.myhuaweicloud.com/{path}/standard/deploying-{project}-af-south-1.tf
-RFS_intl:https://console-intl.huaweicloud.com/rf/?region=af-south-1&locale=en-us#/console/stack/stackCreate?templateUrl={TF_URL}&stackName={name}&stackDescription={desc}
-```
-
-### 4.2 归档包
-
-`release/{project}/{project}.zip` 是完整的交付归档包。
-
----
-
-## 5. 文件命名规范
-
-| 对象 | 命名规则 | 示例 |
-|------|---------|------|
-| 项目名 | 小写 + 连字符 | `litellm`、`headroom-claude-code` |
-| 模板（国内标准） | `deploying-{project}.tf` | `deploying-litellm.tf` |
-| 模板（海外标准） | `deploying-{project}-{region}.tf` | `deploying-litellm-af-south-1.tf` |
-| 模板（高可用） | `deploying-{project}-ha[-{region}].tf` | `deploying-litellm-ha-af-south-1.tf` |
-| 安装脚本 | 非标准交付物，仅例外脚本模式使用 | `install_litellm.sh` |
-| 部署指南（中国站中文） | `{Name}-部署指南_zh.md` | 位于 `cn/docs/`，中文内容，含标准版+HA |
-| 方案详情（中国站中文） | `{Name}-方案详情_zh.md` | 位于 `cn/docs/`，中文内容 |
-| 部署指南（国际站中文） | `{Name}-部署指南_zh.md` | 位于 `intl/docs/zh-cn/`，中文内容，含标准版+HA |
-| 方案详情（国际站中文） | `{Name}-方案详情_zh.md` | 位于 `intl/docs/zh-cn/`，中文内容 |
-| 部署指南（国际站英文） | `{Name}-Deployment-Guide_en.md` | 位于 `intl/docs/en-us/`，英文内容，含标准版+HA |
-| 方案详情（国际站英文） | `{Name}-Solution-Details_en.md` | 位于 `intl/docs/en-us/`，英文内容 |
-| 扩展配置 | `.extension` | 固定文件名 |
-| URL 清单 | `url.txt` | 每区域每个模式一个 |
-| 归档包 | `{project}.zip` | `litellm.zip` |
-| practices 目录 | 按区域组 | `practices/litellm/intl/` |
-| release 目录 | 按具体区域代码 | `release/litellm/intl/af-south-1/` |
-
-**注意事项：**
-- 项目名不带区域后缀（如 `litellm`，不是 `litellm-hk`）
-- 模板文件名中的区域后缀在 `release/` 多区域场景使用
-- 高可用版模板加 `-ha-` 标识
-
----
-
-## 6. OBS 存储规范
-
-参见 `skills/reference/obs-conventions.md`（OBS 目录结构、环境区分、RFS URL 格式）。
-
-生产 OBS 桶地址和公开发布 URL 是对外发布信息，不作为安全风险点；测试桶、AK/SK、上传凭证仍为敏感信息，不得提交。
-
----
-
-## 7. 模板技术规范
-
-参见 `sac-rfs-practices` 获取完整技术规范：
-
-| 本节主题 | 对应位置 |
-|---------|---------|
-| Provider 配置（只写 region） | `sac-rfs-practices` Rule 1 + Pitfall 19 |
-| required_providers 对象格式 | `sac-rfs-practices` tf.json Template Standards |
-| 标准资源创建顺序 | `sac-rfs-practices` VPC/Subnet/Security Group/EIP/ECS |
-| user_data 标准模式（内联）与例外模式（OBS 下载） | `sac-rfs-practices` Rule 3 + user_data Pattern |
-| HCL2 转义坑（`%%{}`/`$$`） | `sac-rfs-practices` Pitfall 22 |
-| intl 语言层 | `sac-rfs-practices` 定位 → intl 语言层说明 |
-
----
-
-## 8. SAC 交付流程
-
-```
-洞察（用户）→ 技术评估（AI）→ 方案设计（AI）
-→ 用户拍板 → 开发（AI）→ 测试 OBS 上传
-→ 用户测试 → 生产打包 → 用户上传 OBS → RFS 上线
-```
-
-| 阶段 | 负责人 | 产出 |
-|------|--------|------|
-| 1. 洞察 | 用户 | 明确方案、目标用户、核心价值 |
-| 2. 技术评估 | AI | 可行性分析、技术栈评估 |
-| 3. 方案设计 | AI | 架构设计 + 决策点确认 |
-| 4. 拍板 | 用户 | 确认决策点 |
-| 5. 开发 | AI | 内联 user_data 的 `.tf` + Markdown 文档（部署指南+方案详情） |
-| 6. 测试上传 | AI | 上传测试桶验证 |
-| 7. 用户测试 | 用户 | 部署验证 |
-| 8. 生产打包 | AI | 预置生产路径到 `release/` |
-
-### 8.1 交付步骤（AI 执行）
-
-| 步骤 | 操作 | 说明 |
-|------|------|------|
-| 1 | 整理 practices/ 到 release/ | 按区域复制 practices 文件到 release 目录 |
-| 2 | 预置生产 OBS 路径 | 将 templateUrl 中的测试桶路径替换为生产桶路径 |
-| 3 | 生成 URL 清单 | 为每个区域生成 TF 链接、RFS 页面链接；只有例外脚本模式才生成 SH 链接 |
-| 4 | 打包归档 | 创建 {project}.zip，包含全部区域文件 |
-| 5 | 更新变更日志 | 在 CHANGELOG.md 中记录版本变更 |
-| 6 | Git 提交 | 提交 release/ 目录到仓库 |
-
-### 8.2 URL 格式
-
-| 类型 | 格式 |
-|------|------|
-| TF 模板 | `https://{bucket}.obs.{region}.myhuaweicloud.com/{path}/deploying-{project}.tf` |
-| 安装脚本 | 非标准项；仅例外脚本模式使用 `https://{bucket}.obs.{region}.myhuaweicloud.com/{path}/install_{project}.sh` |
-| RFS（intl） | `https://console-intl.huaweicloud.com/rf/?region={region}&locale=en-us#/console/stack/stackCreate?templateUrl={TF_URL}&stackName={name}&stackDescription={desc}` |
-| RFS（cn） | `https://console.huaweicloud.com/rf/?region={region}&locale=zh-cn#/console/stack/stackCreate?templateUrl={TF_URL}&stackName={name}&stackDescription={desc}` |
-
----
-
-## 9. 决策点框架
-
-| # | 决策点 | 选项 | 默认 |
-|---|--------|------|------|
-| 1 | 模板格式 | `.tf` (HCL) / `.tf.json` (JSON) | 问用户 |
-| 2 | 安装策略 | 内联 user_data / OBS 下载 | 默认内联；OBS 下载为例外，需要说明原因 |
-| 3 | 地域 | 国内 (cn-*) / 海外 (ap-*, af-*) | 问用户 |
-| 4 | 语言 | 中文 / 英文 | 跟随地域 |
-| 5 | 部署架构 | 标准版 / 高可用版 | 问用户 |
-| 6 | 容器化 | Docker Compose / 直接安装 | 问用户 |
-
----
-
-## 10. 项目约束规则
-
-通用开发约束参见 `sac-rfs-practices` User Constraints（不硬编码凭证 → UC2，不修改第三方源码 → UC3，先确认再动手 → UC5）。
-
-国内/海外差异（Docker CE apt 源、pip 镜像、Docker daemon registry mirror、容器镜像引用规则）参见 `skills/reference/docker-registry.md`。国内 Docker Hub 镜像不得默认改写为 `docker.wangzhou3.top/...` 自定义仓库路径。
-
-### 10.2 文档交付规则
-
-- **方案描述必须包含量化价值指标** — 如"降低 70% 运维成本"、"部署时间从 2 小时缩短至 10 分钟"
-- **费用表必须包含按需和包年包月两种计费模式** — 两种模式都要列出，方便用户对比
-- **部署参数表中的每个变量必须有中文/英文描述** — cn 站点中文描述，intl 站点英文描述
-- **所有 URL 链接必须可访问** — 文档中不含占位符 URL（如 `https://xxx`），所有链接必须指向真实地址
-
-### 10.3 上线信息告知规则
-
-交付时（交付 Agent 完成打包后、或向用户汇报交付结果时），**必须向用户明确说明以下三项上线信息**：
-
-| # | 信息项 | 说明 | 示例 |
-|---|--------|------|------|
-| 1 | **上线形式** | 部署方式与架构变体 | `RFS 一键部署 · 标准版` / `RFS 一键部署 · 高可用版` |
-| 2 | **上线站点** | 中国站 (cn) 或国际站 (intl) | `cn（中国站）` / `intl（国际站）` |
-| 3 | **上线 Region** | 具体区域代码及中文名称 | `cn-north-4（华北-北京四）` / `ap-southeast-1（中国-香港）` |
-
-**输出格式**（在交付汇报或文档中必须出现）：
-
-```
-上线信息：
-  形式：RFS 一键部署 · 标准版
-  站点：intl（国际站）
-  Region：ap-southeast-1（中国-香港）
-```
-
-- 多区域交付时，每个区域单独列出上线信息
-- 此规则适用于所有交付场景：Agent 工作流交付、手动交付、文档中的部署说明
-
----
-
-## 11. 常用区域代码
-
-参见 `skills/reference/region-mapping.md`（站点类型、区域代码映射、区域组划分、国内/海外差异）。
-
----
-
-## 12. Agent 与 Skill 映射
-
-Codex 使用根 `AGENTS.md`、`.codex/agents/` 和 `.codex/workflows/`；Claude Code 兼容层参见
-`.claude/MULTI-AGENT-README.md`。两者共享本目录下的正式 Skills 和 `project.config.json` 规则源。
-
-### 12.1 Agent 合同与硬门禁
-
-- Architect 冻结规则来源、参考模板、客户变量、固定值、公网入口、交付文件和偏差；偏差会改变官方默认、成本、范围或外部依赖时必须取得用户确认。
-- Developer 不得扩大合同；Tester 必须运行 `scripts.tests.runner` 并校验合同；Security 默认只读，只报告风险，不得自行改变产品接口、参数或依赖模型。
-- 测试存在 ERROR 或安全存在 critical/high 时，工作流必须立即停止整改；不得只记录日志后继续文档或交付。
-- Documenter 只能基于通过合同门禁的实现同步事实；Delivery 必须取得测试、安全、文档证据和动作级授权。
-- 上传、真实云资源、生产 URL、Git commit/push 均为拒绝默认；授权必须指明动作和范围，不能由“完成方案”推导。
-- 固定约束优先写入 `project.config.json` 并由 `scripts/tests/` 执行；`.codex` 与 `.claude` 只引用事实源，不重复维护产品常量。
-
----
-
-## 13. 版本与发布管理
-
-项目同时使用正式版本、测试版本和 Terraform 模板修订号，三者不得混用。
-
-### 13.0 npm 分发版本
-
-- npm 包版本使用 `package.json.version` 的 SemVer。
-- 安装状态结构使用 `package.json.sac.manifestSchemaVersion`，结构变化必须提供确定性 migration。
-- Skills、Agent 与 practice 内容批次使用 `package.json.sac.contentVersion`。
-- CLI 命令、Agent 名、Skill 名、manifest 字段和安装路径属于公共接口，不得在次版本或修订版本静默删除或改名。
-- `AGENTS.md` 仅合并 SAC 标记区块；受管文件只有当前哈希与 manifest 一致时才可自动更新，否则输出 `.sac-new`。
-- npm 安装和更新不得通过 `postinstall` 修改用户工作区；用户必须显式运行 `sac init` 或 `sac update`。
-- 完整约束见 `docs/contracts/npm-distribution.md`。
-
-### 13.1 项目版本
-
-- 正式版本使用三级版本 `vX.Y.Z`，如 `v0.8.4`。
-- 待验证修改使用 SAC 四级测试版本 `vX.Y.Z.N`，如 `v0.8.3.1`；它是项目自定义测试编号，不称为 SemVer。
-- 修复和小改动在当前正式版本后递增测试序号；用户确认测试通过后，再发布下一个三级正式版本。
-- 兼容性新功能或较大调整通常提升次版本；破坏兼容或达到稳定里程碑时审视是否提升主版本。
-- 正式发布必须使用精确版本号，不得用 `0.8.x` 代替具体版本。
-
-每个修改批次必须追加 `.var/log/internal-changelog.md`，记录时间戳、四级测试版本、变更和验证结果。历史编号保留，不回写。
-
-### 13.2 Terraform 模板修订与晋级
-
-Terraform 候选模板必须使用带修订号的文件：
+Implementation dimensions are `site → region → variant`:
 
 ```text
-practices/{solution}/{site}/{region}/{variant}/terraform/deploying-{solution}_v1.tf
+practices/<project>/<cn|intl>/<region>/<standard|ha>/
+├── terraform/deploying-<project>_vN.tf   # or .tf.json
+└── .extension                            # optional
+practices/<project>/cn/docs/*.md
+practices/<project>/intl/docs/{zh-cn,en-us}/*.md
 ```
 
-区域、语言和部署类型由目录表达，不重复写入标准候选文件名。规则如下：
+Locale is never an implementation dimension. Each `terraform/` directory contains exactly one loadable
+Terraform file. Project IDs are lowercase hyphenated names.
 
-1. 新模板从 `_v1` 开始；每次影响部署行为的修改创建下一个 `_vN`，不得原地覆盖已进入测试的候选。
-2. 每次更新模板修订号或四级测试版本后，必须询问用户是否测试通过。
-3. 测试未通过或已被取代的候选必须从 `practices/` 和待交付产物中删除；失败原因和已使用的修订号记入 `.var/log/internal-changelog.md`。
-4. 失败修订号不得复用。修复时必须使用下一个 `_vN`；例如 `_v1` 失败并删除后，修复版从 `_v2` 继续。
-5. 用户未明确确认测试通过前，不得删除版本号、覆盖无版本正式入口、替换生产 OBS 对象或宣告正式发布。
-6. 用户确认通过后，将 `_vN` 候选**重命名**为 `deploying-{solution}.tf` 正式入口，不得复制后与候选并存。Git、内部变更日志和版本化 OBS 测试对象承担审计与回滚记录。
-7. 现有历史无版本模板可继续作为正式入口；其下一次修改必须先建立 `_v1` 候选，执行渐进迁移，禁止破坏性批量改名。
-8. `.tf.json` 遵循相同规则，扩展名写作 `_vN.tf.json`；同一实例不得与 `.tf` 并存。
-9. 每个 `terraform/` 目录在任何时刻都必须只有一个可加载 Terraform 文件；Terraform 会自动加载目录内全部模板，并存会导致重复定义。
+Start at `_v1`; use the next `_vN` for every behavior change. Once real testing starts, do not overwrite
+that revision. A failed number is not reused. Only explicit approval of that exact candidate permits a
+rename to `deploying-<project>.tf`; candidate and formal files never coexist.
 
-模板晋级前至少验证：Terraform/JSON 语法、渲染后 `user_data` 语法、云上真实部署、cloud-init、核心进程或容器、监听端口、关键接口、文档一致性和安全门禁。
+## Workflow and ownership
 
-### 13.2.1 未经用户测试的候选上传测试 OBS
+Choose the smallest workflow in `.codex/workflows/`: full delivery, architecture/development prototype,
+audit, or delivery-only. The standard dependency chain is:
 
-- 将尚未经过用户实际部署测试的 `_vN` 候选上传到**测试 OBS 桶或测试路径**时，无需先执行或通过质量、安全、文档、完整性等门禁；不得以门禁未运行、存在 ERROR/WARNING 或缺少审计报告为由阻止测试上传。
-- 用户明确要求上传测试候选且已提供相应上传授权后，可直接上传并返回测试 URL，供用户通过 RFS 或其他约定方式执行真实部署测试。
-- 测试对象必须保留候选修订号和测试属性，不得覆盖无版本正式入口、生产 OBS 对象或正式发布 URL，不得宣称已验收、已上线或可用于生产。
-- 用户测试失败后，按 13.2 删除失败候选并使用下一个 `_vN`；用户确认测试通过后，才进入模板晋级和正式发布门禁。
-- 凭证不得写入仓库、产物或日志，测试桶与上传凭证仍按敏感信息处理；这属于基础凭证处理要求，不构成测试上传前置门禁。
+```text
+assessment → initial solution → confirmation → contract → implementation
+→ test + security → remediation → user cloud test → promotion → documentation → local delivery
+```
 
-### 13.3 正式发布门禁
+- Architect supplies read-only evidence and candidate design to the main Agent.
+- Developer owns only its assigned `site/region/variant` implementation directory.
+- Tester and Security are read-only unless remediation is explicitly assigned.
+- Documenter owns only assigned site/locale documents derived from verified implementation.
+- Delivery owns verified local `release/` assets, archive, checksums, and authorized version records.
+- Main Agent owns shared files, decisions, conflicts, final gates, and the local changelog.
 
-正式发布需要同时满足：
+Run only independent, non-overlapping work in parallel. Every child returns `status`, `summary`,
+`files_changed`, `checks_run`, `issues`, and `handoff`, plus its role-specific fields.
 
-- 正式 practice 范围与 `project.config.json` 一致；
-- 全量质量门禁无 ERROR；
-- 待发布 Terraform 候选已经用户明确确认测试通过；
-- 文档、`.extension`、模板和 OBS/发布路径一致；
-- 凭证未进入仓库、日志或交付产物；
-- 变更、回滚路径和上线信息已记录；
-- 用户明确确认允许正式发布，或已预先授权在全部门禁通过时发布。
+## Skill routing
 
-CHANGELOG 格式参照已有条目：**日期 + 版本标题 + 分类描述 + 关键文件清单**。
+- Terraform, resources, inline bootstrap, regional runtime, candidates: `sac-rfs-practices`.
+- Static and repository verification: `sac-testing`.
+- Secret, exposure, and exception review: `sac-security`.
+- Markdown maintenance, full generation, translation, optional DOCX, and document gates: `sac-documentation`.
+- `sac-document-pipeline` is a compatibility alias; never load both document Skills.
+- Local archive and checksum assembly: `sac-delivery`.
+- Business viability, deep research, and page enhancement are conditional, never default gates.
 
-### 13.4 版本号同步规则
+Do not duplicate those Skills' procedures here. Instance-specific accepted risk belongs in
+`project.config.json.quality_gate.practice_policies` or `architecture_exceptions`.
 
-版本号变更时，**必须同步更新以下三处**，缺一不可：
+## Promotion and local delivery gates
 
-| # | 文件 | 更新内容 |
-|---|------|---------|
-| 1 | `CHANGELOG.md` | 新增版本条目（日期 + 标题 + 分类描述 + 关键文件） |
-| 2 | `README.md` | ① 版本显示文本（`**vX.Y.Z**`）② 版本徽章（`badge/version-vX.Y.Z-blue`） |
-| 3 | `.claude/CLAUDE.md` | 如有版本号引用，同步更新 |
-| 4 | `package.json` | npm 正式发布时同步 `version`；内容变化同步 `sac.contentVersion` |
+Before promotion, verify syntax, rendered `user_data`, cloud-init, services, ports, API/auth behavior,
+persistence, contract consistency, documentation consistency, and configured security gates.
 
-**检查清单**（提交前逐项确认）：
+Assemble `release/<project>/` only when the practice is formal, the exact candidate has user-confirmed
+cloud approval and was promoted, configured tests have no errors, security has no critical/high finding,
+required locale documents and reviews exist, and copied assets match `practices/`. Build deterministically,
+calculate checksums, compare sources, list contents, and call it a local delivery package.
 
-- [ ] `CHANGELOG.md` 顶部新增了版本条目
-- [ ] `README.md` 中 `**vX.Y.Z**` 已更新为新版本号
-- [ ] `README.md` 中 badge `version-vX.Y.Z` 已更新为新版本号
-- [ ] 方案表（README 已有方案章节）已反映新增/变更的区域覆盖
+## Versioning and completion
 
----
+Formal releases use `vX.Y.Z`; unvalidated batches use four-level test versions such as `vX.Y.Z.N`.
+Failed candidate numbers are never reused. Public names, commands, fields, and paths cannot silently
+disappear in a patch/minor change. Any formal version change synchronizes its configured version records.
 
-*文档版本：2026-07-10*
-*英文名：Solution Practices*
-*区域：practices 按区域组，release 按具体区域代码*
+Report each variant's local package form, site, Region, variant, static-gate result, and user cloud-test
+state. Explicitly state skipped checks and never infer deployment, publication, or production readiness.

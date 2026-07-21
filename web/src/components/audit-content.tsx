@@ -14,13 +14,6 @@ const gates = [
   ["rfs_policy", "RFS 策略"],
 ] as const
 
-const coverage = [
-  ["LiteLLM Standard", true, true, true, true, true, true],
-  ["LiteLLM HA", true, true, true, true, true, true],
-  ["Supabase", true, true, false, false, false, false],
-  ["openJiuwen", true, false, false, false, false, false],
-] as const
-
 function PracticeCard({ result }: { result: AuditResult }) {
   const [open, setOpen] = useState(false)
   const visible = result.items.filter(item => item.severity !== "INFO")
@@ -48,6 +41,15 @@ export function AuditContent({ results, generated, totalErrors, totalWarnings, t
   const checks = results.flatMap(result => result.items)
   const filtered = results.filter(result => filter === "error" ? result.errors > 0 : filter === "warn" ? result.warnings > 0 : true)
   const totalChecks = results.reduce((sum, result) => sum + result.total, 0)
+  const regionColumns = [...new Set(results.map(result => result.practice.split("/").at(-2)).filter((value): value is string => Boolean(value)))].sort()
+  const coverage = results.reduce((map, result) => {
+    const [slug] = result.practice.split("/")
+    const region = result.practice.split("/").at(-2)
+    if (!region) return map
+    if (!map.has(slug)) map.set(slug, new Set<string>())
+    map.get(slug)!.add(region)
+    return map
+  }, new Map<string, Set<string>>())
 
   return <>
     <section className="grid gap-6 lg:grid-cols-[1.35fr_1fr]">
@@ -82,7 +84,7 @@ export function AuditContent({ results, generated, totalErrors, totalWarnings, t
 
     <section className="rounded-2xl border border-border bg-surface p-6 md:p-7 shadow-soft">
       <div className="flex items-center gap-3"><MapPinned className="h-5 w-5 text-accent" /><div><div className="eyebrow">Coverage Matrix</div><h2 className="serif mt-1 text-xl font-bold text-ink">区域覆盖矩阵</h2></div></div>
-      <div className="mt-6 overflow-x-auto"><table className="w-full min-w-[46rem] text-left text-xs"><thead><tr className="border-b border-border text-ink-muted">{["方案", "北京四", "香港", "新加坡", "曼谷", "拉美", "南非"].map(label => <th key={label} className="px-3 py-3 font-medium">{label}</th>)}</tr></thead><tbody>{coverage.map(([name, ...regions]) => <tr key={name} className="border-b border-border-light last:border-0"><td className="px-3 py-4 font-bold text-ink">{name}</td>{regions.map((covered, index) => <td key={index} className="px-3 py-4">{covered ? <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-label="支持" /> : <span className="text-ink-muted">—</span>}</td>)}</tr>)}</tbody></table></div>
+      <div className="mt-6 overflow-x-auto"><table className="w-full min-w-[46rem] text-left text-xs"><thead><tr className="border-b border-border text-ink-muted"><th className="px-3 py-3 font-medium">方案</th>{regionColumns.map(code => <th key={code} className="px-3 py-3 font-medium">{code}</th>)}</tr></thead><tbody>{[...coverage.entries()].map(([name, coveredRegions]) => <tr key={name} className="border-b border-border-light last:border-0"><td className="px-3 py-4 font-bold text-ink">{name}</td>{regionColumns.map(code => <td key={code} className="px-3 py-4">{coveredRegions.has(code) ? <CheckCircle2 className="h-4 w-4 text-emerald-600" aria-label="支持" /> : <span className="text-ink-muted">—</span>}</td>)}</tr>)}</tbody></table></div>
     </section>
   </>
 }

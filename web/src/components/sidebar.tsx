@@ -4,10 +4,11 @@ import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Boxes, Blocks, Rocket, BarChart3, ShieldCheck, Upload, Menu, X, FolderKanban } from "lucide-react"
+import { LayoutDashboard, Boxes, Blocks, Rocket, BarChart3, ShieldCheck, Upload, Menu, X, FolderKanban, Network } from "lucide-react"
 
 const groups = [
   { label: "主工作台", items: [{ href: "/", icon: LayoutDashboard, label: "交付工作台" }, { href: "/deploy", icon: Rocket, label: "交付任务" }] },
+  { label: "架构中心", items: [{ href: "/workspace", icon: Network, label: "架构工作区" }] },
   { label: "四个中心", items: [{ href: "/practices", icon: Boxes, label: "解决方案库" }, { href: "/quality", icon: ShieldCheck, label: "质量中心" }, { href: "/skills", icon: Blocks, label: "Skills" }, { href: "/assets", icon: FolderKanban, label: "资产管理" }] },
   { label: "记录", items: [{ href: "/manage/releases", icon: Upload, label: "发布记录" }, { href: "/reports", icon: BarChart3, label: "报告" }] },
 ]

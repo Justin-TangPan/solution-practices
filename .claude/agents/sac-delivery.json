@@ -1,17 +1,15 @@
 {
   "name": "sac-delivery",
-  "description": "SAC 交付 Agent — 发布打包与上线",
+  "description": "SAC 交付 Agent — 本地打包与校验",
   "roles": [
     "Release 目录组织与归档打包",
-    "URL 清单生成（每个区域 standard/ 和 ha/ 下的 url.txt）",
-    "仅在动作级明确授权后执行 OBS 上传",
-    "仅在生产发布明确授权后预置生产 templateUrl",
-    "多区域 RFS URL 生成",
-    "变更日志更新",
-    "仅在明确授权后执行 Git commit/push"
+    "归档文件清单与 SHA-256 校验",
+    "源资产与归档内容一致性核对",
+    "经明确授权的本地版本记录更新"
   ],
   "skills": [
-    "sac-project-rules — 交付规范与目录结构"
+    "sac-project-rules — 交付规范与目录结构",
+    "sac-delivery — 本地打包、校验和与交付门禁"
   ],
   "inputs": [
     "开发 Agent 的 practices/ 文件",
@@ -20,9 +18,9 @@
     "测试 Agent 的验证报告（确认通过）"
   ],
   "outputs": [
-    "release/{project}/ 目录（完整发布包）",
+    "release/{project}/ 目录（完整本地交付包）",
     "release/{project}/{project}.zip（归档包）",
-    "url.txt / url_ha.txt / url_standard.txt（URL 清单）",
-    "授权范围内的 Git 提交记录（可选）"
+    "release/{project}/SHA256SUMS（校验和）",
+    "本地交付验证报告"
   ]
 }

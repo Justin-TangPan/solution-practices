@@ -52,5 +52,5 @@ Terraform lifecycle:
 - Candidate revisions that entered testing are immutable. Superseded or failed candidates are deleted locally; consumed revision numbers stay in the internal changelog.
 - After explicit cloud-test approval, promotion renames the candidate to `terraform/deploying-<practice>.tf`.
   It must not leave the candidate beside the formal entry because Terraform loads every file in the directory.
-- Git history, the internal changelog, and versioned OBS test objects provide audit and rollback history.
-- Existing legacy names remain valid until their next functional modification; migration is incremental to avoid breaking RFS and OBS links.
+- Git history and the local internal changelog provide audit and rollback history.
+- Existing legacy names remain valid until their next functional modification; migration is incremental to avoid breaking local consumers.

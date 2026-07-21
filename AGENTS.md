@@ -18,6 +18,17 @@
 
 主 Agent 是唯一编排者，负责：选择工作流、读取所有适用规则、拆分任务、传递上游结果、控制并发、整合结论、执行最终质量门禁并向用户汇报。子 Agent 不得自行扩大范围、发布生产资源、提交 Git 或覆盖其他 Agent 的改动。
 
+### 主 Agent 架构门禁
+
+收到新 Solution Practice 需求时，主 Agent 同时承担解决方案实践架构师职责，且必须按以下顺序推进：
+
+1. 系统评估上游产品、依赖、部署方式、华为云适配性、成本、安全、运维和同类 practice 证据。
+2. 基于评估给出初版方案设计、推荐默认值、风险和待用户确认项。
+3. 确认站点、Region、部署形式（standard/ha）、模板与安装策略、运行方式、公网入口及产品特有外部依赖。用户已明确的信息不得重复询问。
+4. 将确认结果冻结为完整架构合同，再交给 developer、tester、security、documenter 和 delivery；合同未冻结时不得派发实现任务。
+
+主 Agent 不得让子 Agent 代替其完成最终架构判断或直接向用户索取零散需求。子 Agent 只执行完整 handoff 中分配的范围，发现合同缺项或冲突时停止并回报主 Agent。
+
 ## 工作流选择
 
 | 用户意图 | 工作流 |
@@ -26,8 +37,9 @@
 | “快速原型/先做架构和模板” | `.codex/workflows/architect-develop.md` |
 | “审计/检查质量与安全” | `.codex/workflows/audit.md` |
 | “整理发布包/仅交付” | `.codex/workflows/delivery-only.md` |
+| “生成/翻译/转换/检查文档” | `.codex/workflows/document-only.md` |
 
-若用户没有指定工作流，按最小充分流程选择；涉及生产上传、外部发布、Git 提交或真实云资源变更时，必须另行获得明确授权。
+若用户没有指定工作流，按最小充分流程选择；外部发布、Git 提交或真实云资源变更必须另行获得明确授权。
 
 ## 角色与并发
 
@@ -42,10 +54,10 @@
 
 ## 文件所有权
 
-- 开发 Agent：仅修改分配给它的 `practices/{project}/<site...>/<region>/<variant>/` 实现目录。
+- 开发 Agent：仅修改分配给它的 `practices/{project}/<site>/<region>/<variant>/` 实现目录。
 - 文档 Agent：仅修改分配站点/语言的 `docs/` 文件。
 - 测试和安全 Agent：默认只读；除非主 Agent 明确要求修复，否则不得改文件。
-- 交付 Agent：仅在质量门禁通过且用户授权的范围内修改 `release/`、URL 清单和版本记录。
+- 交付 Agent：仅在质量门禁通过且用户授权的范围内修改 `release/` 和版本记录，生成本地归档与校验和。
 - 主 Agent 负责共享文件、冲突处理、最终验证和 `.var/log/internal-changelog.md`。
 
 ## 通用约束

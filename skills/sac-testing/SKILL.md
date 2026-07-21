@@ -9,9 +9,8 @@ Validate the requested scope without editing it unless the parent task explicitl
 
 ## Required inputs
 
-Identify the practice, site, locale, region, variant, and whether the target is a candidate or formal
-release. Read `project.config.json` and `skills/sac-project-rules/SKILL.md`. For implementation checks,
-also read `skills/sac-rfs-practices/SKILL.md`.
+Identify the practice, site, region, variant, document locale, candidate/formal state, and frozen architecture
+contract. Read `project.config.json` and `skills/sac-project-rules/SKILL.md`; do not load the full RFS Skill.
 
 Read `skills/reference/validation-checklist.md` for the detailed checklist. Read
 `docs/contracts/practice-layout.md` and `docs/contracts/release-contract.md` when validating layout or
@@ -20,11 +19,13 @@ release readiness.
 ## Workflow
 
 1. Preserve the current worktree and record the exact scope.
-2. Discover deployable instances using the supported site/locale/region/variant layouts.
-3. Run the formal gate with `.venv-sac/bin/python -m scripts.tests.runner` when the repository tooling
-   is available. Run narrower syntax checks when the scope is smaller.
+2. Discover deployable instances using the canonical site/region/variant layout; treat locale as a docs-only dimension.
+3. Run the formal gate with `.venv-sac/bin/python -m scripts.tests.runner` in the source repository, or
+   `PYTHONPATH=.sac/tooling .venv-sac/bin/python -m scripts.tests.runner` in an npm-initialized host. If neither
+   tooling location exists, report the unavailable checks instead of claiming a formal pass. Run narrower syntax
+   checks when the scope is smaller.
 4. Inspect Terraform structure, variables, validation rules, resource dependencies, `user_data`, Shell
-   syntax, `.extension`, documentation, and regional consistency as applicable.
+   syntax, `.extension`, documentation, regional consistency, and contract parity as applicable.
 5. Separate tool/environment failures from product failures. Do not claim live deployment success from
    static checks.
 6. Report each issue with severity, file, line when available, evidence, and a concrete remediation.

@@ -3,16 +3,15 @@
   "description": "SAC 测试 Agent — 模板验证与部署测试",
   "roles": [
     "Terraform 模板结构验证",
-    "Shell 脚本语法检查与逻辑验证",
+    "内联 user_data 语法与逻辑验证",
     "变量 validation 规则验证",
     "资源依赖完整性检查",
     "安全组规则完整性检查",
-    "OBS 路径正确性验证",
-    "RFS URL 可用性验证"
+    "本地交付包结构与校验和验证"
   ],
   "skills": [
     "sac-project-rules — 项目交付标准与区域架构",
-    "sac-rfs-practices — 模板验证规范"
+    "sac-testing — 测试与质量门禁"
   ],
   "inputs": [
     "开发 Agent 输出的 practices/ 目录文件",
@@ -20,13 +19,14 @@
   ],
   "outputs": [
     "模板验证报告（通过/失败 + 问题清单）",
-    "脚本语法检查结果",
+    "内联 user_data 检查结果",
     "变量 validation 测试结果",
     "资源完整性检查清单",
-    "OBS URL 测试结果"
+    "本地交付包验证结果"
   ],
   "rules": [
     "必须运行 scripts.tests.runner，包括 rfs_policy",
+    "不默认加载完整 sac-rfs-practices；按 sac-testing 的明确引用读取检查规则",
     "测试 ERROR 必须阻断文档和交付"
   ]
 }

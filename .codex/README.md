@@ -15,7 +15,7 @@ AGENTS.md                 # Codex 自动读取的项目级调度规则
 ├── README.md
 ├── config.toml            # 子 Agent 并发与嵌套深度
 ├── agents/               # 六个 TOML 原生 Agent + Markdown 详细角色契约
-└── workflows/            # 四个可执行工作流说明
+└── workflows/            # 五个可执行工作流说明
 ```
 
 ## 自然语言入口
@@ -24,8 +24,9 @@ AGENTS.md                 # Codex 自动读取的项目级调度规则
 - `用 SAC Codex 快速原型做 <project>`
 - `用 SAC Codex 审计 <project>`
 - `用 SAC Codex 仅交付 <project>`
+- `用 SAC Codex 生成/翻译/检查 <project> 文档`
 
-调用时应提供项目名、目标站点/区域和简要说明。缺失信息可从仓库可靠推断时直接推断；
+调用时应提供项目名、目标 `site/region`（例如 `cn/cn-north-4`）和简要说明。缺失信息可从仓库可靠推断时直接推断；
 会显著改变架构、成本或发布范围时由主 Agent 向用户确认。
 
 ## 与 Claude Code 版本的差异
@@ -33,4 +34,4 @@ AGENTS.md                 # Codex 自动读取的项目级调度规则
 - Claude Code 版以 JS 工作流声明执行；Codex 版以 `AGENTS.md` 持久规则和角色/工作流契约执行。
 - Codex 通过六个项目级 TOML 自定义 Agent 加载角色，主 Agent 根据可用槽动态分批。
 - 子 Agent 共享工作区，因此通过文件所有权和只读审计约束避免冲突。
-- 外部发布、生产 OBS 上传、Git 提交和云资源变更不会因选择工作流而自动获得授权。
+- 外部发布、Git 提交和云资源变更不会因选择工作流而自动获得授权。

@@ -7,7 +7,8 @@
 
 ## 阶段
 
-1. 读取项目规则、`sac-document-pipeline` 和目标 Practice；保留现有文件与目录布局。
+1. 读取项目规则、`sac-documentation` 和目标 Practice；保留现有文件与目录布局。旧名
+   `sac-document-pipeline` 仅映射到该 Skill，不重复加载。
 2. 按模式提取项目、Markdown、Word 或 PDF，生成带来源和审核标记的统一文档模型。
 3. 生成/翻译正文；翻译前保护代码、命令、参数、URL、路径和专有词。
 4. 按配置分别渲染 Markdown 与 Word。`retemplate` 只改变格式，不重写正文。

@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { readFile } from 'node:fs/promises';
-import { MANIFEST_PATH, MANIFEST_SCHEMA_VERSION } from './constants.js';
+import { AGENTS_END, AGENTS_START, MANIFEST_PATH, MANIFEST_SCHEMA_VERSION } from './constants.js';
 import { exists, readText, sha256 } from './fs-utils.js';
 
 function result(level, code, message) {
@@ -34,7 +34,7 @@ export async function diagnose(targetDir = process.cwd()) {
       continue;
     }
     if (metadata.mode === 'merge-block') continue;
-    const checksum = sha256(await readText(absolute));
+    const checksum = sha256(await readFile(absolute));
     if (checksum !== metadata.checksum) {
       results.push(result('warning', 'managed-file-modified', path));
     }
@@ -46,10 +46,40 @@ export async function diagnose(targetDir = process.cwd()) {
         results.push(result('error', 'codex-incomplete', required));
       }
     }
+    const agentsPath = join(targetDir, 'AGENTS.md');
+    if (await exists(agentsPath)) {
+      const agents = await readText(agentsPath);
+      if (agents.split(AGENTS_START).length !== 2 || agents.split(AGENTS_END).length !== 2) {
+        results.push(result('error', 'agents-block-invalid', 'AGENTS.md must contain exactly one complete SAC marker block.'));
+      }
+    }
   }
   if (manifest.components?.skills) {
-    for (const required of ['skills/sac-project-rules/SKILL.md', '.codex/skills/sac-project-rules/SKILL.md']) {
-      if (!(await exists(join(targetDir, required)))) results.push(result('error', 'skills-incomplete', required));
+    for (const required of [
+      '.sac/tooling/scripts/document_pipeline/__main__.py',
+      '.sac/tooling/scripts/tests/runner.py',
+      '.sac/tooling/requirements-document-pipeline.txt',
+    ]) {
+      if (!(await exists(join(targetDir, required)))) results.push(result('error', 'tooling-incomplete', required));
+    }
+    const indexPath = join(targetDir, 'skills-index.json');
+    if (!(await exists(indexPath))) {
+      results.push(result('error', 'skills-index-missing', 'skills-index.json'));
+    } else {
+      try {
+        const index = JSON.parse(await readText(indexPath));
+        for (const skill of index.skills.filter((item) => item.owner === 'project')) {
+          if (!/^skills\/[a-z0-9-]+\/SKILL\.md$/.test(skill.path)) {
+            results.push(result('error', 'skills-index-invalid', `Invalid project Skill path: ${skill.path}`));
+            continue;
+          }
+          for (const required of [skill.path, `.codex/${skill.path}`]) {
+            if (!(await exists(join(targetDir, required)))) results.push(result('error', 'skills-incomplete', required));
+          }
+        }
+      } catch (error) {
+        results.push(result('error', 'skills-index-invalid', error.message));
+      }
     }
   }
 

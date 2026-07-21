@@ -1,20 +1,18 @@
 {
   "$schema": "version 1.0",
-  "generated": "2026-07-14",
-  "description": "SAC Skills 集中注册索引。完整技能内容外置到 SKILL.md 文件，索引仅保留元数据用于检索路由。",
-
+  "generated": "2026-07-21",
+  "description": "SAC Skills 发现、展示与审计目录。运行时加载以 .codex/agents 角色合同为准。",
   "skill_tree": {
     "categories": [
-      { "id": "project-constitution", "name": "项目规章", "description": "Project-wide rules, naming conventions, directory structure, delivery pipeline", "skills": ["sac-project-rules"] },
-      { "id": "template-development", "name": "模板开发", "description": "RFS/OpenTofu template writing, shell scripts, deployment, Docker patterns", "skills": ["sac-rfs-practices"] },
-      { "id": "content-pipeline", "name": "内容与文档生产", "description": "Page enhancement plus structured bilingual Markdown and IDP Word production", "skills": ["sac-page-enhance", "sac-document-pipeline"] },
-      { "id": "research", "name": "调研分析", "description": "Multi-layer deep search, competitive analysis, technology selection", "skills": ["sac-deep-search"] },
-      { "id": "presentation", "name": "演示文稿", "description": "PPT creation, visual design, slide authoring, Huawei style density standards", "skills": ["ppt-forge"] },
-      { "id": "business-evaluation", "name": "业务评估", "description": "四维商业可行性评估：服务端属性、营销价值、场景价值、云上部署价值", "skills": ["sac-business-evaluator"] },
-      { "id": "technical-evaluation", "name": "技术评估", "description": "应用架构分析、部署方案设计、云资源规划、安全风险评估", "skills": ["sac-technical-evaluator"] }
+      { "id": "project-constitution", "name": "项目规章", "description": "项目规则、目录合同和交付门禁", "skills": ["sac-project-rules"] },
+      { "id": "template-development", "name": "模板开发", "description": "RFS/OpenTofu、全内联 user_data 和运行时部署", "skills": ["sac-rfs-practices"] },
+      { "id": "evaluation", "name": "方案评估", "description": "业务、技术与证据调研", "skills": ["sac-business-evaluator", "sac-technical-evaluator", "sac-deep-search"] },
+      { "id": "quality", "name": "质量与安全", "description": "静态验证、质量门禁和安全审计", "skills": ["sac-testing", "sac-security"] },
+      { "id": "content-pipeline", "name": "内容与文档", "description": "正式文档、双语流水线和页面内容增强", "skills": ["sac-documentation", "sac-document-pipeline", "sac-page-enhance"] },
+      { "id": "delivery", "name": "本地交付", "description": "本地 release 组装、归档和校验", "skills": ["sac-delivery"] },
+      { "id": "presentation", "name": "演示文稿", "description": "用户本地 PPT 生产能力", "skills": ["ppt-forge"] }
     ]
   },
-
   "skills": [
     {
       "id": "sac-project-rules",
@@ -23,14 +21,12 @@
       "status": "formal",
       "scope": "formal-delivery",
       "owner": "project",
-      "tokens": 3000,
-      "compressed_description": "项目宪法：命名规范、目录结构、OBS 规则（参见 reference/obs-conventions.md）、决策框架（参见 reference/decision-framework.md）、区域代码（参见 reference/region-mapping.md）、交付流程、约束规则。所有 Agent 共享的共性基础。",
+      "compressed_description": "项目宪法：事实源、目录结构、架构门禁、命名规范、本地交付流程和操作约束。",
       "category": "project-constitution",
       "agents": ["sac-architect", "sac-developer", "sac-tester", "sac-security", "sac-documenter", "sac-delivery"],
-      "keywords": ["命名规范", "目录结构", "OBS", "交付流程", "决策点", "区域代码", "约束规则", "模板规范", "国内海外差异"],
+      "keywords": ["项目规则", "目录结构", "架构合同", "命名规范", "交付门禁", "Region"],
       "requires": [],
-      "conflicts_with": [],
-      "merge_group": "base"
+      "conflicts_with": []
     },
     {
       "id": "sac-rfs-practices",
@@ -39,63 +35,12 @@
       "status": "formal",
       "scope": "formal-delivery",
       "owner": "project",
-      "tokens": 12000,
-      "compressed_description": "华为云 RFS/Terraform 模板开发（HCL/JSON），Provider 配置，标准资源链（VPC-Subnet-SG-EIP-ECS），4 阶段安装脚本模式，27 个 Pitfall 踩坑数据库，国内/海外差异处理，Hard Rules 硬规则，Docker Compose 规范。",
+      "compressed_description": "华为云 RFS/OpenTofu 模板开发：标准资源链、全内联 user_data、Docker Compose、区域差异和部署故障规避。",
       "category": "template-development",
-      "agents": ["sac-developer", "sac-tester", "sac-security"],
-      "keywords": ["Terraform", "RFS", "HCL", "tf.json", "Docker", "user_data", "Pitfall", "安全组", "ECS", "安装脚本", "OBS上传", "SWR"],
+      "agents": ["sac-developer"],
+      "keywords": ["Terraform", "OpenTofu", "RFS", "HCL", "tf.json", "Docker", "user_data", "安全组", "ECS"],
       "requires": ["sac-project-rules"],
-      "conflicts_with": [],
-      "merge_group": "template"
-    },
-    {
-      "id": "sac-document-pipeline",
-      "name": "SAC Agent 文档生产流水线",
-      "path": "skills/sac-document-pipeline/SKILL.md",
-      "status": "formal",
-      "scope": "formal-delivery",
-      "owner": "project",
-      "tokens": 6500,
-      "compressed_description": "从 Practice 与技术材料提取可追溯事实，构建统一文档模型，生成正式 _zh/_en Markdown 和 IDP DOCX；提供术语库、技术占位符保护、离线 Word/PDF 解析、双语一致性检查、结构化质量报告和人工审核清单。",
-      "category": "content-pipeline",
-      "agents": ["sac-documenter"],
-      "keywords": ["文档流水线", "统一文档模型", "部署指南", "方案详情", "Solution Details", "Markdown", "DOCX", "IDP Word", "中英翻译", "术语库", "PDF转换", "双语一致性", "文档质量门禁"],
-      "requires": ["sac-project-rules"],
-      "conflicts_with": [],
-      "merge_group": "documentation"
-    },
-    {
-      "id": "sac-page-enhance",
-      "name": "AI 解决方案页面增强",
-      "path": "skills/sac-page-enhance/SKILL.md",
-      "status": "optional",
-      "scope": "content",
-      "owner": "project",
-      "tokens": 4000,
-      "compressed_description": "华为云解决方案实践页面内容提取（Mode A）、AI 文案增强与卖点提炼（Mode B）、商品化报告生成（Mode C）。10 维度优化检查清单。替代原 sac-solution-extractor。",
-      "category": "content-pipeline",
-      "agents": ["sac-documenter"],
-      "keywords": ["页面提取", "文案增强", "卖点提炼", "Excel导出", "CellRichText", "方案商品化", "agent-browser", "WebSearch兜底", "优化建议"],
-      "requires": ["sac-project-rules"],
-      "conflicts_with": [],
-      "merge_group": "content",
-      "aliases": ["sac-solution-extractor"]
-    },
-    {
-      "id": "sac-deep-search",
-      "name": "深度搜索调研",
-      "path": "skills/sac-deep-search/SKILL.md",
-      "status": "optional",
-      "scope": "research",
-      "owner": "project",
-      "tokens": 4100,
-      "compressed_description": "3 层深度搜索（广度覆盖-深度挖掘-交叉验证），多源交叉验证，信息质量评估，智能输出（简约 Markdown / 专业 .md 含 Mermaid / 可视化 HTML 含 QuickChart）。用于技术选型、竞品分析、趋势研究。",
-      "category": "research",
-      "agents": ["sac-architect"],
-      "keywords": ["搜索", "调研", "对比分析", "技术选型", "趋势分析", "多源验证", "竞品分析", "研究报告", "Mermaid", "QuickChart"],
-      "requires": [],
-      "conflicts_with": [],
-      "merge_group": "research"
+      "conflicts_with": []
     },
     {
       "id": "sac-business-evaluator",
@@ -104,30 +49,124 @@
       "status": "optional",
       "scope": "research",
       "owner": "project",
-      "tokens": 9000,
-      "compressed_description": "四维评估模型：服务端属性(25%)、营销价值(25%)、场景价值(25%)、云上部署价值(25%)。每维度0-10分加权，总分决定推荐等级(强烈推荐/值得做/勉强可做/不建议)。含典型项目评估参考对照表。",
-      "category": "business-evaluation",
+      "compressed_description": "从服务端属性、营销价值、场景价值和云上部署价值评估 Practice 的业务可行性。",
+      "category": "evaluation",
       "agents": ["sac-architect"],
-      "keywords": ["业务评估", "商业可行性", "四维评估", "服务端属性", "营销价值", "场景价值", "云上部署价值", "商业预筛"],
+      "keywords": ["业务评估", "商业可行性", "营销价值", "场景价值", "上云价值"],
       "requires": ["sac-project-rules"],
-      "conflicts_with": [],
-      "merge_group": "evaluation"
+      "conflicts_with": []
     },
     {
       "id": "sac-technical-evaluator",
       "name": "SAC 技术评估",
       "path": "skills/sac-technical-evaluator/SKILL.md",
+      "status": "formal",
+      "scope": "research",
+      "owner": "project",
+      "compressed_description": "评估应用架构、华为云适配、资源拓扑、网络、持久化、成本、安全和运维风险。",
+      "category": "evaluation",
+      "agents": ["sac-architect"],
+      "keywords": ["技术评估", "架构设计", "资源规划", "华为云适配", "安全评估"],
+      "requires": ["sac-project-rules"],
+      "conflicts_with": []
+    },
+    {
+      "id": "sac-deep-search",
+      "name": "深度搜索调研",
+      "path": "skills/sac-deep-search/SKILL.md",
       "status": "optional",
       "scope": "research",
       "owner": "project",
-      "tokens": 6000,
-      "compressed_description": "技术评估子Agent：应用架构分析(技术栈/运行时/存储/网络)、部署架构设计(单机/主从/集群)、云资源规划(VPC/ECS/EIP/安全组)、安全风险评估(网络/数据/合规)。含ECS/磁盘/带宽选择规范。",
-      "category": "technical-evaluation",
+      "compressed_description": "对需要外部证据的技术选型、竞品和趋势问题执行多源搜索与交叉验证。",
+      "category": "evaluation",
       "agents": ["sac-architect"],
-      "keywords": ["技术评估", "架构分析", "部署设计", "资源规划", "安全评估", "ECS规格", "费用估算"],
+      "keywords": ["深度调研", "多源验证", "竞品分析", "技术选型", "趋势研究"],
+      "requires": [],
+      "conflicts_with": []
+    },
+    {
+      "id": "sac-testing",
+      "name": "SAC 测试与质量门禁",
+      "path": "skills/sac-testing/SKILL.md",
+      "status": "formal",
+      "scope": "formal-delivery",
+      "owner": "project",
+      "compressed_description": "验证目录、Terraform、user_data、文档、区域一致性和 release readiness，并输出可复现证据。",
+      "category": "quality",
+      "agents": ["sac-tester"],
+      "keywords": ["测试", "质量门禁", "回归", "模板验证", "发布检查"],
       "requires": ["sac-project-rules"],
-      "conflicts_with": [],
-      "merge_group": "evaluation"
+      "conflicts_with": []
+    },
+    {
+      "id": "sac-security",
+      "name": "SAC 安全审计",
+      "path": "skills/sac-security/SKILL.md",
+      "status": "formal",
+      "scope": "formal-delivery",
+      "owner": "project",
+      "compressed_description": "审计凭证、网络暴露、容器权限、危险挂载、数据保护及镜像与依赖来源。",
+      "category": "quality",
+      "agents": ["sac-security"],
+      "keywords": ["安全审计", "凭证", "公网暴露", "privileged", "Docker socket", "供应链"],
+      "requires": ["sac-project-rules"],
+      "conflicts_with": []
+    },
+    {
+      "id": "sac-documentation",
+      "name": "SAC 正式文档",
+      "path": "skills/sac-documentation/SKILL.md",
+      "status": "formal",
+      "scope": "formal-delivery",
+      "owner": "project",
+      "compressed_description": "从已验证实现创建和核对中国站中文、国际站中英文部署指南与方案详情。",
+      "category": "content-pipeline",
+      "agents": ["sac-documenter"],
+      "keywords": ["部署指南", "方案详情", "正式文档", "双语", "DOCX", "文档一致性"],
+      "requires": ["sac-project-rules"],
+      "conflicts_with": []
+    },
+    {
+      "id": "sac-document-pipeline",
+      "name": "SAC 文档生产流水线",
+      "path": "skills/sac-document-pipeline/SKILL.md",
+      "status": "compatibility",
+      "scope": "legacy-alias",
+      "owner": "project",
+      "compressed_description": "旧名兼容入口；正式文档任务统一使用 sac-documentation。",
+      "category": "content-pipeline",
+      "agents": [],
+      "keywords": ["文档流水线", "旧名兼容"],
+      "requires": ["sac-documentation"],
+      "conflicts_with": []
+    },
+    {
+      "id": "sac-page-enhance",
+      "name": "AI 解决方案页面增强",
+      "path": "skills/sac-page-enhance/SKILL.md",
+      "status": "optional",
+      "scope": "content",
+      "owner": "project",
+      "compressed_description": "提取 Practice 页面事实，增强商品化文案、卖点和场景表达，并支持结构化导出。",
+      "category": "content-pipeline",
+      "agents": ["sac-documenter"],
+      "keywords": ["页面增强", "文案优化", "卖点提炼", "商品化", "结构化导出"],
+      "requires": [],
+      "conflicts_with": []
+    },
+    {
+      "id": "sac-delivery",
+      "name": "SAC 本地交付",
+      "path": "skills/sac-delivery/SKILL.md",
+      "status": "formal",
+      "scope": "formal-delivery",
+      "owner": "project",
+      "compressed_description": "质量门禁通过后组装本地 release 目录、确定性归档、校验和与版本记录。",
+      "category": "delivery",
+      "agents": ["sac-delivery"],
+      "keywords": ["本地交付", "release", "打包", "归档", "checksum", "交付门禁"],
+      "requires": ["sac-project-rules"],
+      "conflicts_with": []
     },
     {
       "id": "ppt-forge",
@@ -136,31 +175,27 @@
       "status": "optional",
       "scope": "local-agent",
       "owner": "user-local",
-      "tokens": 8000,
-      "compressed_description": "全链路 PPT 工作流：内容规划(A) - 风格定调(B) - Slide 批量制作(C) - 视觉审查 Gate D1/D2(D) - Export Truth Gate(E) - 交付(F)。华为高密战略页风格，多角色审查流程。",
+      "compressed_description": "用户本地的华为风格 PPT 内容规划、制作、视觉审查与导出工作流。",
       "category": "presentation",
       "agents": [],
-      "keywords": ["PPT", "Slide", "演示文稿", "华为风格", "视觉审查", "密度控制", "Export Gate", "风格定调"],
+      "keywords": ["PPT", "Slide", "演示文稿", "华为风格", "视觉审查"],
       "requires": [],
-      "conflicts_with": [],
-      "merge_group": "presentation"
+      "conflicts_with": []
     }
   ],
-
   "merge_map": {
-    "sac-solution-extractor": {
-      "target": "sac-page-enhance",
-      "reason": "Strict subset: extraction workflow (Phase 1-4) is identical to sac-page-enhance Mode A",
+    "sac-document-pipeline": {
+      "target": "sac-documentation",
+      "reason": "The former pipeline name is retained only for compatibility.",
       "action": "alias"
     }
   },
-
   "agent_skill_bindings": {
-    "sac-architect":    { "primary": ["sac-deep-search"],    "base": ["sac-project-rules"], "optional": ["sac-business-evaluator", "sac-technical-evaluator"], "max_skills": 3 },
-    "sac-developer":    { "primary": ["sac-rfs-practices"],  "base": ["sac-project-rules"], "max_skills": 2 },
-    "sac-tester":       { "primary": [],                     "base": ["sac-project-rules"], "max_skills": 1 },
-    "sac-security":     { "primary": [],                     "base": ["sac-project-rules"], "max_skills": 1 },
-    "sac-documenter":   { "primary": ["sac-document-pipeline"], "base": ["sac-project-rules"], "optional": ["sac-page-enhance"], "max_skills": 3 },
-    "sac-delivery":     { "primary": [],                     "base": ["sac-project-rules"], "max_skills": 1 }
+    "sac-architect": { "mandatory": ["sac-project-rules", "sac-technical-evaluator"], "conditional": ["sac-business-evaluator", "sac-deep-search"] },
+    "sac-developer": { "mandatory": ["sac-project-rules", "sac-rfs-practices"], "conditional": [] },
+    "sac-tester": { "mandatory": ["sac-project-rules", "sac-testing"], "conditional": [] },
+    "sac-security": { "mandatory": ["sac-project-rules", "sac-security"], "conditional": [] },
+    "sac-documenter": { "mandatory": ["sac-project-rules", "sac-documentation"], "conditional": ["sac-page-enhance"] },
+    "sac-delivery": { "mandatory": ["sac-project-rules", "sac-delivery"], "conditional": [] }
   }
 }

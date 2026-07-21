@@ -1,155 +1,58 @@
 ---
 name: sac-page-enhance
-status: optional
-scope: content
-owner: project
-description: |
-  AI 解决方案页面增强 Skills — 平台级能力。
-
-  基于大模型能力，对华为云解决方案实践页面进行智能文案生成、卖点提炼、场景化增强与结构化导出，
-  实现技术资产（Terraform / Helm / 部署模板）向商品化页面内容的自动转换。
-
-  触发关键词：方案页面增强、页面文案优化、卖点提炼、方案介绍生成、解决方案商品化、
-  页面内容结构化导出、方案信息提取、Solution Practice 内容增强、商品化运营。
-
-  当用户提到"方案页面不好看"、"帮我把方案内容整理一下"、"提取方案信息"、
-  "生成方案介绍"、"优化页面文案"、"导出方案内容到 Excel" 时，必须使用本 skill。
-  同时也处理 AI 部署引导、架构说明生成、方案推荐等扩展场景。
-
-  属于 Solution Practice AI Agent Framework 核心能力之一。
+description: Extract existing Huawei Cloud Solution Practice page content, refine evidence-backed marketing copy, compare page variants, and export structured Excel. Use only for page extraction, selling-point wording, merchandising reports, or Excel output; not for architecture or formal documents.
 ---
 
-# AI 解决方案页面增强 Skills
+# SAC Page Enhance
 
-## 定位
+Transform existing page evidence into structured content and clearer merchandising copy. Do not design an
+architecture, alter deployment facts, recommend a solution, or generate formal multilingual documents.
 
-> 基于大模型能力，对解决方案页面进行智能文案生成、卖点提炼与场景化增强，实现技术资产向商品化页面的自动转换。
+## Inputs and outputs
 
-本 skill 是 **Solution Practice AI Agent Framework** 的组成部分，覆盖从技术资产到市场化页面的全链路：
+Accept a user-provided page URL, saved page content, or structured project JSON. Retrieve network content only
+when the user requests it or an authorized workflow already permits it. Prefer the page itself; use Huawei Cloud support documentation
+only when dynamic deployment content is unavailable, and record that fallback source.
 
-```
-Terraform / Helm / IaC 模板
-        ↓
-  方案页面内容提取 & 结构化
-        ↓
-  AI 文案增强 & 卖点提炼
-        ↓
-  商品化页面输出（Excel / 建议报告）
-```
+Produce only the requested artifacts:
 
-## 能力矩阵
+- structured JSON for extracted page sections;
+- enhanced JSON plus a before/after report for copy refinement;
+- comparison report for multiple page variants;
+- two-column rich-text Excel through `scripts/gen_xlsx.py`.
 
-### 核心能力（当前已实现）
+Use the schema and formatting accepted by the existing script; inspect its input contract when producing JSON
+instead of duplicating that contract here.
 
-| 能力 | 说明 | 输出 |
-|------|------|------|
-| 页面内容提取 | 从华为云解决方案实践页面抓取结构化信息 | Excel（2列，富文本） |
-| 支持文档兜底 | 部署页动态内容(Svelte SPA)自动 fallback 到 support 文档 | Excel（增加部署/配置/卸载章节） |
-| 优化建议生成 | 自动分析页面内容缺失、重复、可优化点 | 10 维度优化建议报告 |
-| 多方案管理 | 同一页面多个部署方案的分离提取与对比 | 架构/费用/时长 分列展现 |
+## Workflow
 
-### 扩展能力（框架预留）
+1. Capture source URL/file, access time, and fallback sources.
+2. Remove navigation, login, footer, duplicate DOM blocks, and unrelated page noise.
+3. Separate multiple deployment variants; preserve each variant's components, cost, duration, and constraints.
+4. Structure title, introduction, customers, advantages, architecture, scenarios, preparation, deployment,
+   getting-started, uninstall, cost, and optimization sections when present.
+5. For marketing enhancement, improve clarity and customer value without changing technical meaning.
+6. Check missing constraints, variant coverage, parameter/code readability, cost context, and repeated content.
+7. Generate only the requested JSON, report, or Excel and disclose missing or low-confidence fields.
 
-| 能力 | 说明 | 触发场景 |
-|------|------|----------|
-| AI 文案增强 | 对提取内容做卖点提炼、行业化改写 | "帮我把方案描述写得更吸引人" |
-| 架构说明生成 | 从 IaC 模板自动生成架构说明 | "根据这个 tf.json 生成架构描述" |
-| 部署引导生成 | 从参数表自动生成图文部署引导 | "把参数配置变成可读的部署指南" |
-| 方案推荐 | 根据客户场景推荐匹配的解决方案 | "我们想做 RAG 应用，有什么方案？" |
-| 多语言输出 | 页面内容翻译为英文/日语/东南亚语言 | "把这个方案翻译成英文版" |
+## Evidence rules
 
-## 工作流
+Retain every cost, duration, percentage, performance figure, customer count, and comparative claim only with a
+verifiable source. Do not calculate or infer a number from marketing context. Remove unsupported numbers or mark
+them `待业务确认`; never present the marker as validated evidence.
 
-### 模式 A：页面提取 + 优化分析（当前主流程）
+Keep product names, resource names, commands, parameters, URLs, versions, regions, and deployment behavior
+unchanged unless the verified source supports the edit. Conflicts between page content and implementation are
+reported, not silently corrected.
 
-输入一个华为云解决方案实践 URL 或项目名：
+## Excel
 
-1. **页面抓取**：用 `WebFetch` 或 `agent-browser` 获取详情页和部署页内容
-2. **动态内容兜底**：如果部署页右侧面板显示"内容加载失败"，通过 `WebSearch` 搜索 support.huaweicloud.com 文档站
-3. **结构化提取**：按 schema 提取标题/简介/客户/优势/架构/场景/部署步骤/费用/卸载
-4. **优化分析**：自动检查 10 个维度的问题并生成优化建议
-5. **Excel 输出**：调用 `scripts/gen_xlsx.py` 生成富文本 Excel（2 列，CellRichText 加粗层级）
-
-### 模式 B：AI 文案增强（扩展）
-
-1. 读入已提取的结构化 JSON
-2. 对每段内容进行行业化、卖点化改写
-3. 补充量化指标和客户价值
-4. 输出增强后的 JSON + 对比报告
-
-### 模式 C：方案商品化报告（扩展）
-
-1. 整合多个提取结果
-2. 生成跨方案对比表格
-3. 输出带建议的商品化报告
-
-## 数据 Schema
-
-```json
-{
-  "title": "方案标题",
-  "intro": "方案简介",
-  "customers": ["客户群体1", "客户群体2"],
-  "advantages": [
-    {"title": "优势标题", "content": "优势描述"}
-  ],
-  "architecture": [
-    {"title": "方案一：xxx", "content": "描述",
-     "fields": {"架构组件": "xxx", "预估费用": "xxx", "部署时长": "xxx"}}
-  ],
-  "scenarios": [{"title": "场景", "content": "描述"}],
-  "extensions": [{"title": "关联方案", "content": "描述"}],
-  "preparation": [{"title": "步骤", "content": "详细内容"}],
-  "quick_deploy": [{"title": "步骤", "content": "详细内容"}],
-  "getting_started": [{"title": "章节", "content": "内容"}],
-  "quick_uninstall": [{"title": "步骤", "content": "内容"}],
-  "cost_planning": [{"title": "计费模式", "content": "费用明细"}],
-  "optimization": [
-    {"title": "建议1: xxx", "content": "问题描述与修复建议"}
-  ]
-}
-```
-
-## Excel 输出规范
-
-- **2 列**：项目、内容
-- **内容列用 CellRichText**：子项标题加粗独占一行，正文另起一行不加粗
-- **字段标题加粗**（如"架构组件："、"预估费用："）
-- **多项用序号**（1、2、3...）
-- **自动换行**，**xml:space="preserve"** 修复确保飞书正确换行
-- **内容列宽 100**
-
-## 脚本
-
-参见 `scripts/gen_xlsx.py` — 接收 JSON 数据，生成富文本 xlsx 文件
+Run:
 
 ```bash
-python ../../../scripts/gen_xlsx.py input.json output.xlsx
+python scripts/gen_xlsx.py <input.json> <output.xlsx>
 ```
 
-## 优化建议维度（10 项检查清单）
-
-每次提取后自动做以下检查并写入 optimization 字段：
-
-1. **DOM 重复去重** — 检查目标页面是否有重复渲染的内容块
-2. **架构分离度** — 多 Tab 方案的组件/费用/时长是否完整分离
-3. **参数可读性** — 部署参数是否适合表格化展示
-4. **CLI 可读性** — 代码块是否标注清楚
-5. **长内容折叠** — JSON 配置等长文本是否需要独立标注
-6. **约束与限制** — 页面是否有前置条件未被提取
-7. **多方案覆盖** — 是否有遗漏的部署方案
-8. **成本建议** — 按需 vs 包年包月是否有对比建议
-9. **页脚噪音** — 导航/登录/ICP 等是否被合理过滤
-10. **价值量化** — 场景描述是否偏功能化，可补充量化指标
-
-## 框架关系
-
-```
-Solution Practice AI Agent Framework
-├── AI 解决方案页面增强 Skills      ← 本 skill（内容提取 + 文案增强）
-├── AI 部署引导 Skills              ← 扩展示例：从参数表生成部署指南
-├── AI 架构解释 Skills              ← 扩展示例：从 IaC 生成架构说明
-├── AI POC 助手 Skills              ← 扩展示例：方案验证引导
-├── AI 运维问答 Skills              ← 扩展示例：部署后的运维支持
-└── AI 方案推荐 Skills              ← 扩展示例：场景匹配推荐
-```
+Use two columns (`项目`, `内容`), rich-text headings, numbered repeated items, wrapped text, and the formatting
+implemented by the script. Return source coverage, generated files, unsupported claims removed or marked, and
+unresolved conflicts.

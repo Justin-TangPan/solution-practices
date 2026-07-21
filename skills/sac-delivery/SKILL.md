@@ -1,39 +1,37 @@
 ---
 name: sac-delivery
-description: Validate and assemble SAC release directories, regional RFS URL manifests, archives, checksums, and version records after quality and security gates pass. Use for local packaging, delivery-only workflows, release readiness checks, or authorized publication preparation; never infer permission for external publication.
+description: Validate and assemble verified SAC release directories, deterministic local archives, SHA-256 checksums, and authorized version records. Use for local package assembly, delivery readiness, or release-package verification after test, security, documentation, and cloud-test gates pass.
 ---
 
-# SAC Delivery
+# SAC Local Delivery
 
-Package only verified inputs and preserve the distinction between local assembly, test publication, and
-production publication.
+Produce a local delivery package only. Never describe it as published or online.
 
 ## Required inputs
 
 Read `skills/sac-project-rules/SKILL.md`, `docs/contracts/release-contract.md`, `project.config.json`,
-and the tester/security/documentation handoffs. Confirm project, regions, locales, variants, candidate/formal
-version, and the user's publication authorization.
+and the architecture, developer, tester, security, documentation, and user cloud-test handoffs.
+
+Confirm the project, sites, Regions, variants, exact formal templates, version, and local output scope.
 
 ## Gates
 
-Stop formal delivery when:
-
-- the practice is outside formal scope;
-- tests contain an error;
-- security contains a critical or high finding;
-- required site or international locale documentation is absent;
-- an exact candidate lacks explicit cloud-test approval for promotion;
-- the formal entry differs from the approved candidate.
+Stop when the practice is outside formal scope; tests contain an error; security contains a
+critical/high finding; required Markdown or international locale pairs are absent; configured document
+review is blocked; the exact candidate lacks explicit user cloud-test approval; or the promoted formal
+entry differs from the approved candidate.
 
 ## Workflow
 
-1. Assemble `release/{project}/` from the authoritative `practices/` inputs.
-2. Generate region- and variant-specific URL manifests using the documented OBS conventions.
+1. Copy authoritative `practices/` inputs into the canonical `release/<project>/` layout.
+2. Compare every copied file with its source.
 3. Create the archive deterministically and list its contents.
-4. Calculate SHA-256 checksums and compare copied files with their sources.
-5. Update version records only within the authorized release scope.
-6. Keep production OBS upload, external release, Git commit/push, and real RFS deployment disabled unless the
-   user explicitly authorizes that exact action.
+4. Generate `SHA256SUMS` for the delivered files and archive.
+5. Update version records only when explicitly authorized.
+6. Run final package-integrity and repository gates.
 
-Return release directory, regions/locales/variants, URL files, archive, checksums, gates evaluated, and any
-blocking reason. Never describe a local package as published.
+Do not create URL manifests or hosted-object metadata. Git commit/tag/push, npm publication, external
+release, and real cloud-resource changes are separate actions requiring explicit authorization.
+
+Return `release_dir`, sites, Regions, variants, archive file, checksums, gates evaluated, copied-file
+comparison, and blocking reasons.

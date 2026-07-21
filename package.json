@@ -1,6 +1,6 @@
 {
   "name": "solution-practices",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "SAC multi-agent toolkit and Huawei Cloud Solution Practices for Codex",
   "type": "module",
   "bin": {
@@ -17,7 +17,7 @@
     "skills/**/SKILL.md",
     "skills/**/agents/openai.yaml",
     "skills/reference/*.md",
-    "skills/sac-rfs-practices/SAC-技术路线总结.md",
+    "skills-index.json",
     "practices/litellm/**/*",
     "practices/supabase/**/*",
     "practices/openjiuwen/**/*",
@@ -60,6 +60,6 @@
   "license": "MIT",
   "sac": {
     "manifestSchemaVersion": 1,
-    "contentVersion": "2026.07"
+    "contentVersion": "2026.07.21"
   }
 }

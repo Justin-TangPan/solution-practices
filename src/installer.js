@@ -1,5 +1,5 @@
-import { readFile, readdir } from 'node:fs/promises';
-import { join, relative } from 'node:path';
+import { readFile, readdir, rm } from 'node:fs/promises';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import {
   AGENTS_END,
   AGENTS_START,
@@ -33,7 +33,7 @@ function record(manifest, relativePath, content, component, mode = 'managed') {
 }
 
 async function installManagedFile({ source, destination, relativePath, component, manifest, dryRun, force, actions }) {
-  const incoming = await readText(source);
+  const incoming = await readFile(source);
   if (!(await exists(destination))) {
     await writeText(destination, incoming, { dryRun });
     record(manifest, relativePath, incoming, component);
@@ -41,8 +41,8 @@ async function installManagedFile({ source, destination, relativePath, component
     return;
   }
 
-  const current = await readText(destination);
-  if (current === incoming) {
+  const current = await readFile(destination);
+  if (current.equals(incoming)) {
     record(manifest, relativePath, incoming, component);
     actions.push({ action: 'unchanged', path: relativePath });
     return;
@@ -169,6 +169,33 @@ export async function installSkills(targetDir, manifest, options, actions) {
     targetDir,
     component: 'skills', manifest, ...options, actions,
   });
+  const toolingFilter = (path) => !path.includes('__pycache__') && !path.endsWith('.pyc');
+  await installTree({
+    sourceRoot: join(PACKAGE_ROOT, 'scripts/document_pipeline'),
+    targetRoot: join(targetDir, '.sac/tooling/scripts/document_pipeline'),
+    targetDir,
+    component: 'skills', manifest, ...options, actions,
+    filter: toolingFilter,
+  });
+  await installTree({
+    sourceRoot: join(PACKAGE_ROOT, 'scripts/tests'),
+    targetRoot: join(targetDir, '.sac/tooling/scripts/tests'),
+    targetDir,
+    component: 'skills', manifest, ...options, actions,
+    filter: toolingFilter,
+  });
+  await installManagedFile({
+    source: join(PACKAGE_ROOT, 'requirements-document-pipeline.txt'),
+    destination: join(targetDir, '.sac/tooling/requirements-document-pipeline.txt'),
+    relativePath: '.sac/tooling/requirements-document-pipeline.txt',
+    component: 'skills', manifest, ...options, actions,
+  });
+  await installManagedFile({
+    source: join(PACKAGE_ROOT, 'skills-index.json'),
+    destination: join(targetDir, 'skills-index.json'),
+    relativePath: 'skills-index.json',
+    component: 'skills', manifest, ...options, actions,
+  });
   await installManagedFile({
     source: join(PACKAGE_ROOT, 'project.config.json'),
     destination: join(targetDir, '.sac/project.config.json'),
@@ -176,6 +203,29 @@ export async function installSkills(targetDir, manifest, options, actions) {
     component: 'skills', manifest, ...options, actions,
   });
   manifest.components.skills = true;
+}
+
+async function pruneStaleManagedFiles(targetDir, manifest, updatedComponents, activePaths, actions, { dryRun }) {
+  for (const [path, metadata] of Object.entries(manifest.managedFiles)) {
+    if (!updatedComponents.has(metadata.component) || activePaths.has(path)) continue;
+    const absolute = resolve(targetDir, path);
+    const local = relative(resolve(targetDir), absolute);
+    if (local === '..' || local.startsWith(`..${sep}`) || isAbsolute(local)) {
+      throw new Error(`Invalid managed path outside the project: ${path}`);
+    }
+    const present = await exists(absolute);
+    const unchanged = present && metadata.mode === 'managed'
+      && metadata.checksum === sha256(await readFile(absolute));
+    if (unchanged) {
+      if (!dryRun) await rm(absolute);
+      actions.push({ action: 'remove-stale', path });
+    } else if (!present) {
+      actions.push({ action: 'forget-stale', path, note: 'already absent' });
+    } else {
+      actions.push({ action: 'preserve-stale', path, note: 'modified or merged user content' });
+    }
+    if (!dryRun) delete manifest.managedFiles[path];
+  }
 }
 
 export async function availablePractices() {
@@ -205,6 +255,18 @@ export async function executeInstall({ targetDir = process.cwd(), components, pr
   if (components.includes('codex')) await installCodex(targetDir, manifest, options, actions);
   if (components.includes('skills')) await installSkills(targetDir, manifest, options, actions);
   for (const practice of practices) await installPractice(practice, targetDir, manifest, options, actions);
+  const updatedComponents = new Set([
+    ...components,
+    ...practices.map((name) => `practice:${name}`),
+  ]);
+  await pruneStaleManagedFiles(
+    targetDir,
+    manifest,
+    updatedComponents,
+    new Set(actions.map((item) => toPosix(item.path))),
+    actions,
+    options,
+  );
   manifest.schemaVersion = MANIFEST_SCHEMA_VERSION;
   manifest.packageVersion = packageVersion;
   manifest.contentVersion = contentVersion;

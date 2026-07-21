@@ -17,5 +17,8 @@ Before a practice is released:
 - Promotion renames the approved candidate to the unversioned formal entry; its approved checksum and
   revision are recorded before the rename. Candidate and formal files must never coexist in one directory.
 - Credentials must not be committed or written into generated artifacts.
-- Any OBS upload must use environment variables for credentials.
+- The formal delivery output is `release/<project>/`, a deterministic local ZIP, and `SHA256SUMS` covering
+  delivered files and the archive. It contains deployable Terraform, optional `.extension`, required
+  Markdown, and DOCX only when configured or requested; it contains no hosted-object metadata or URL manifest.
+- Git, external publication, and real cloud-resource changes are separate explicitly authorized actions.
 - Test releases use four-level SAC versions (`X.Y.Z.N`); formal releases use exact three-level versions (`X.Y.Z`).

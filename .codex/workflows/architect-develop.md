@@ -2,14 +2,15 @@
 
 ## 输入
 
-`project`、`regions`、`description`；可选 `variants`。
+`project`、`regions`（`site/region`，例如 `cn/cn-north-4`）、`description`；可选 `variants`。
 
 ## 阶段
 
-1. 派发 `architect`，形成 decisions、variables、resources 和 risks。
-2. 主 Agent审阅会显著改变范围的决策；必要时向用户确认。
-3. 按区域/variant 并行派发 `developer`，每个 Agent只拥有一个不重叠目录。
-4. 主 Agent运行基础静态检查并检查 diff。
+1. 主 Agent 派发只读 `architect`，形成 `system_assessment`、`initial_solution`、用户待确认项和证据。
+2. 主 Agent 向用户呈现初版方案，确认站点、Region、standard/ha、模板与安装策略、运行方式、公网入口和产品特有外部依赖。
+3. 主 Agent 冻结完整 `architecture_contract`；必要确认缺失时停止，不派发实现。
+4. 将完整合同下发给按区域/variant 分配的 `developer`，每个 Agent只拥有一个不重叠目录。
+5. 主 Agent运行基础静态检查并检查 diff。
 
 ## 范围
 

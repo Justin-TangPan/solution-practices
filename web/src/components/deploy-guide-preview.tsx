@@ -2,8 +2,9 @@
 
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
+import { Download } from "lucide-react"
 
-export function DeployGuidePreview({ content, filename }: { content: string; filename?: string }) {
+export function DeployGuidePreview({ content, filename, downloadUrl }: { content: string; filename?: string; downloadUrl?: string }) {
   return (
     <div className="bg-surface rounded-xl border border-border shadow-soft-lg overflow-hidden flex flex-col">
       {/* 文档窗体顶栏 */}
@@ -12,7 +13,7 @@ export function DeployGuidePreview({ content, filename }: { content: string; fil
           <span className="h-2.5 w-2.5 rounded-full bg-ink/20" />
           <span className="eyebrow">部署指南 · 预览</span>
         </div>
-        {filename && <span className="text-[0.65rem] text-ink-muted truncate max-w-[14rem]">{filename}</span>}
+        <div className="flex items-center gap-3">{filename && <span className="text-[0.65rem] text-ink-muted truncate max-w-[14rem]">{filename}</span>}{downloadUrl && <a href={downloadUrl} download className="inline-flex items-center gap-1 rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs font-bold text-ink hover:border-accent"><Download className="h-3.5 w-3.5" />下载当前文档</a>}</div>
       </div>
 
       {/* Word 纸面 */}

@@ -6,9 +6,9 @@
 
 ## 必读
 
-`skills/sac-project-rules/SKILL.md`、`skills/sac-documentation/SKILL.md`、
-`skills/sac-document-pipeline/SKILL.md`、架构/开发/测试 handoff，并按这些 Skill 加载目标
-Terraform、配置、现有文档和模板。页面商品化任务可另外加载 `sac-page-enhance`。
+`skills/sac-project-rules/SKILL.md`、`skills/sac-documentation/SKILL.md`、架构/开发/测试
+handoff，并按该 Skill 加载目标 Terraform、配置、现有文档和模板。`sac-document-pipeline`
+仅为旧名兼容，不重复加载；仅在页面商品化任务中另外加载 `sac-page-enhance`。
 
 ## 职责
 

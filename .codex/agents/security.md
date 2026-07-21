@@ -6,13 +6,14 @@
 
 ## 必读
 
-`skills/sac-security/SKILL.md`，并按该 Skill 加载项目规则、RFS 规范和安全检查规则。
+`skills/sac-project-rules/SKILL.md`、`skills/sac-security/SKILL.md`、目标架构合同，以及安全
+Skill 针对当前审计明确引用的规则；不默认加载完整 RFS Skill。
 
 ## 职责
 
 - 检查硬编码 AK/SK/API Key/Token、测试端点和危险日志输出。
 - 审计安全组最小权限、端口暴露、特权容器、危险挂载和不可信镜像。
-- 检查数据库密码处理、加密、依赖固定和 OBS 权限。
+- 检查数据库密码处理、加密、依赖固定和交付包敏感信息。
 
 ## 边界
 

@@ -4,8 +4,7 @@ import { getPracticeDocuments } from "@/lib/deploy-guide"
 import { getDeployablePractices } from "@/lib/deployable"
 import { notFound } from "next/navigation"
 
-const formalSlugs = new Set(["litellm", "supabase", "openjiuwen"])
-const formalPractices = practices.filter(practice => formalSlugs.has(practice.slug))
+const formalPractices = practices
 
 export function generateStaticParams() {
   return formalPractices.map(practice => ({ slug: practice.slug }))

@@ -4,6 +4,7 @@ from pathlib import Path
 from .adapters import load_input
 from .bilingual_checker import check_bilingual
 from .docx_renderer import render_docx
+from .docxtpl_renderer import render_markdown_docxtpl
 from .glossary import Glossary
 from .markdown_renderer import render_markdown
 from .models import DocumentModel
@@ -22,18 +23,23 @@ def _load(args):
 def _copy_model(model): return DocumentModel.from_dict(model.to_dict())
 
 def _generate_full_set(model,out,args):
-    """Render the six contract documents without publishing into practices/."""
+    """Render the requested contract documents without publishing into practices/."""
     name=model.metadata.solution_name or model.metadata.project_id or "Solution"
     generated_md=[]; generated_docx=[]; reports=[]; locale_models={"zh-cn":model}
     locale_models["en-us"]=translate_model(model,"en-us",glossary=Glossary(args.glossary))
-    targets=(("cn","zh-cn",out/"cn"/"docs"),("intl","zh-cn",out/"intl"/"zh-cn"/"docs"),("intl","en-us",out/"intl"/"en-us"/"docs"))
+    targets=[]
+    if args.site in {"all","cn"}: targets.append(("cn","zh-cn",out/"cn"/"docs"))
+    if args.site in {"all","intl"}: targets.extend((("intl","zh-cn",out/"intl"/"docs"/"zh-cn"),("intl","en-us",out/"intl"/"docs"/"en-us")))
     for site,locale,directory in targets:
         directory.mkdir(parents=True,exist_ok=True)
         for document_type in ("deployment-guide","solution-details"):
             current=_copy_model(locale_models[locale]);current.metadata.site=site;current.metadata.locale=locale;current.metadata.document_type=document_type
-            md=directory/document_filename(name,document_type,locale,"md");docx=directory/document_filename(name,document_type,locale,"docx")
-            render_markdown(current,md);render_docx(current,docx,args.template,args.style_config)
-            generated_md.append(str(md));generated_docx.append(str(docx));reports.append(check_model(current,[md,docx]))
+            md=directory/document_filename(name,document_type,locale,"md")
+            render_markdown(current,md);generated_md.append(str(md));checked=[md]
+            if args.docx:
+                docx=directory/document_filename(name,document_type,locale,"docx")
+                render_docx(current,docx,args.template,args.style_config);generated_docx.append(str(docx));checked.append(docx)
+            reports.append(check_model(current,checked))
     aggregate=QualityReport(
         errors=[item for report in reports for item in report.errors],
         warnings=[item for report in reports for item in report.warnings],
@@ -47,7 +53,7 @@ def build_parser():
     p=argparse.ArgumentParser(prog="python -m scripts.document_pipeline",description="Offline-first SAC document pipeline")
     sub=p.add_subparsers(dest="command",required=True)
     for name in ("analyze","generate","translate","render-word","validate","convert"):
-        s=sub.add_parser(name);s.add_argument("--project");s.add_argument("--input");s.add_argument("--output");s.add_argument("--locale",default="zh-cn");s.add_argument("--document-type",default="deployment-guide",choices=["deployment-guide","solution-details"]);s.add_argument("--template");s.add_argument("--style-config");s.add_argument("--glossary",action="append",default=[]);s.add_argument("--source")
+        s=sub.add_parser(name);s.add_argument("--project");s.add_argument("--input");s.add_argument("--output");s.add_argument("--locale",default="zh-cn");s.add_argument("--site",default="all",choices=["all","cn","intl"]);s.add_argument("--docx",action="store_true");s.add_argument("--document-type",default="deployment-guide",choices=["deployment-guide","solution-details"]);s.add_argument("--template");s.add_argument("--style-config");s.add_argument("--glossary",action="append",default=[]);s.add_argument("--source")
     return p
 def main(argv=None):
     args=build_parser().parse_args(argv)
@@ -58,12 +64,15 @@ def main(argv=None):
         if args.command=="analyze": print(model.save(out/"standard-document.json"));return 0
         if args.command=="translate":
             translated=translate_model(model,args.locale,glossary=Glossary(args.glossary)); translated.save(out/f"standard-document-{args.locale}.json"); print(render_markdown(translated,out/f"document-{args.locale}.md"),end=""); return 0
-        if args.command=="render-word": print(render_docx(model,out/"document.docx",args.template,args.style_config));return 0
+        if args.command=="render-word":
+            if args.template and args.source and args.input and Path(args.input).suffix.lower()==".md":
+                print(render_markdown_docxtpl(args.input,args.template,args.source,out/"document.docx",out/"docxtpl-context.json"));return 0
+            print(render_docx(model,out/"document.docx",args.template,args.style_config));return 0
         if args.command=="validate":
             report=check_model(model,[args.input] if args.input and Path(args.input).suffix in {".md",".docx"} else []); print(json.dumps(report.__dict__,ensure_ascii=False,indent=2));return 1 if report.status=="fail" else 0
         if args.command=="convert":
             model.save(out/"standard-document.json");render_markdown(model,out/"document.md");render_docx(model,out/"document.docx",args.template,args.style_config);print(out);return 0
-        # generate: deterministic three-site/locale, two-document set. Offline English is always review-marked.
+        # generate: deterministic requested site/locale set. Offline English is always review-marked.
         standard=model.save(out/"standard-document.json");markdown_files,docx_files,report=_generate_full_set(model,out,args);rp=report.save(out/"quality-report.json");manual=out/"manual-review.json";manual.write_text(json.dumps({"status":"pending","items":report.manual_review_items,"approved":False},ensure_ascii=False,indent=2),encoding="utf-8");print(json.dumps({"standard_document":str(standard),"markdown_files":markdown_files,"docx_files":docx_files,"languages":["zh-cn","en-us"],"quality_report":str(rp),"manual_review":str(manual),"quality_status":report.status,"errors":report.errors,"warnings":report.warnings,"manual_review_items":report.manual_review_items,"ready_for_listing":False},ensure_ascii=False,indent=2));return 1 if report.status=="fail" else 0
     except (OSError,ValueError,RuntimeError) as e:
         print(json.dumps({"status":"fail","errors":[{"message":str(e),"blocking":True}]},ensure_ascii=False),file=sys.stderr);return 2

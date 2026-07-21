@@ -1,9 +1,12 @@
 import json,tempfile,unittest
+from collections import Counter
 from pathlib import Path
+from types import SimpleNamespace
 from zipfile import ZipFile
 from scripts.document_pipeline.adapters import load_input
 from scripts.document_pipeline.bilingual_checker import check_bilingual
 from scripts.document_pipeline.docx_renderer import render_docx
+from scripts.document_pipeline.docxtpl_renderer import build_company_template,render_markdown_docxtpl
 from scripts.document_pipeline.glossary import Glossary
 from scripts.document_pipeline.markdown_parser import parse_markdown
 from scripts.document_pipeline.markdown_renderer import render_markdown
@@ -14,6 +17,7 @@ from scripts.document_pipeline.quality_checker import check_model
 from scripts.document_pipeline.security import scan_sensitive
 from scripts.document_pipeline.translator import translate_model
 from scripts.document_pipeline.paths import document_filename
+from scripts.document_pipeline.cli import _generate_full_set
 
 class PipelineTest(unittest.TestCase):
  def setUp(self): self.t=tempfile.TemporaryDirectory();self.root=Path(self.t.name)
@@ -41,10 +45,33 @@ class PipelineTest(unittest.TestCase):
  def test_contract_filenames(self):
   self.assertEqual(document_filename("Demo","deployment-guide","zh-cn"),"Demo-部署指南_zh.md")
   self.assertEqual(document_filename("Demo","solution-details","en-us","docx"),"Demo-Solution-Details_en.docx")
+ def test_generate_respects_site_and_optional_docx(self):
+  model=DocumentModel();model.metadata.solution_name="Demo";model.metadata.project_id="demo"
+  args=SimpleNamespace(site="intl",docx=False,glossary=[],template=None,style_config=None)
+  markdown,docx,_=_generate_full_set(model,self.root,args)
+  self.assertEqual(len(markdown),4);self.assertEqual(docx,[])
+  self.assertTrue(all("/intl/docs/" in path for path in markdown))
  def test_missing_template_and_pdf_failure_are_explicit(self):
   p=self.root/"a.md";p.write_text("# Title\nBody",encoding="utf-8");model=parse_markdown(p)
   self.assertRaises(FileNotFoundError,render_docx,model,self.root/"a.docx",self.root/"missing.docx")
   bad_pdf=self.root/"bad.pdf";bad_pdf.write_bytes(b"not a pdf")
   with self.assertRaises((RuntimeError,ValueError)): load_input(bad_pdf)
+ def test_template_render_replaces_package_members(self):
+  p=self.root/"a.md";p.write_text("# Demo 部署指南\n\n## 方案概述\n\n新正文",encoding="utf-8");model=parse_markdown(p)
+  template=render_docx(model,self.root/"template.docx")
+  output=render_docx(model,self.root/"output.docx",template)
+  with ZipFile(output) as z:
+   self.assertFalse([name for name,count in Counter(z.namelist()).items() if count>1])
+   self.assertIn("新正文",z.read("word/document.xml").decode())
+ def test_docxtpl_company_template(self):
+  source=Path("assets/doc-templates/LiteLLM，统一的AI管理网关-pdf.docx")
+  if not source.exists(): self.skipTest("company template not packaged")
+  markdown=self.root/"demo.md";markdown.write_text("# 部署 Demo — 演示 部署指南\n\n> **文档版本：** 01\n> **发布日期：** 2026-07-21\n\n## 1. 方案概述\n\n- 列表项\n\n| A | B |\n|---|---|\n| 1 | 2 |\n",encoding="utf-8")
+  template=build_company_template(source,self.root/"template.docx")
+  output=render_markdown_docxtpl(markdown,template,source,self.root/"output.docx")
+  with ZipFile(output) as z:
+   xml=b"\n".join(z.read(name) for name in z.namelist() if name.endswith((".xml",".rels")))
+   self.assertNotIn(b"LiteLLM",xml);self.assertNotIn(b"{{",xml)
+  rendered=load_input(output);self.assertTrue(rendered.sections)
 
 if __name__=="__main__":unittest.main()

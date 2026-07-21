@@ -1,24 +1,22 @@
-# Skill Zone 规则（Agent 共享）
+# Skill 加载规则
 
-> 本文档定义了 SAC Agent 框架中技能加载（Skill Zone）的通用规则。
-> 所有 Agent 引用此文件而非各自维护，确保规则一致。
+## 运行时真相
 
-## R1: 意图预检
+`AGENTS.md`、`.codex/agents/*.md` 和同名 TOML 决定 Agent 实际加载内容。
+`skills-index.json` 只用于发现、展示和内部审计，不得覆盖角色合同。
 
-加载任何技能前，先判断用户查询是否匹配当前 Agent 的 `skill_binding` 注册范围；
-不匹配时跳过技能加载，直接使用基线能力。
+## 最小加载
 
-## R2: 冲突抑制
+每个角色默认只加载项目总纲和一个角色 Skill：
 
-查询同时命中多个技能时，优先选择 `skills-index.json` 中 `category`、`keywords`、`agents` 和 `status/scope` 最匹配当前任务的技能；
-若两个技能声明了 `conflicts_with` 关系，不得同时加载。
+| 角色 | 必需 Skill | 条件 Skill |
+|---|---|---|
+| Architect | `sac-project-rules`、`sac-technical-evaluator` | 业务预筛时加载 `sac-business-evaluator`；复杂多源研究时加载 `sac-deep-search` |
+| Developer | `sac-project-rules`、`sac-rfs-practices` | 仅按 RFS 路由读取相关 reference |
+| Tester | `sac-project-rules`、`sac-testing` | 无 |
+| Security | `sac-project-rules`、`sac-security` | 无 |
+| Documenter | `sac-project-rules`、`sac-documentation` | 页面营销任务才加载 `sac-page-enhance` |
+| Delivery | `sac-project-rules`、`sac-delivery` | 无 |
 
-## R3: 递归限制
-
-技能加载深度上限 = 1 层。技能内容中不得递归引用加载其他技能。
-所有跨技能引用必须通过 `reference/*.md` 公共参考文档完成。
-
-## R4: 技能区生命周期
-
-每次 Agent 执行完成后，清空 ZONE 3（技能区）上下文，
-仅保留 ZONE 1（系统指令）+ ZONE 2（用户查询）+ ZONE 4（滑动历史窗口）。
+`sac-document-pipeline` 仅保留为旧名称兼容入口，不与 `sac-documentation` 重复加载。
+任务结束后清空本次 Skill 上下文。不得为了“可能有用”加载条件 Skill。

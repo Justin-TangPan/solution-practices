@@ -9,6 +9,7 @@
 - commands: `init`, `install`, `update`, `list`, `doctor`
 - manifest: `.sac/manifest.json`
 - discoverable Skills: `.codex/skills/` with a root `skills/` compatibility mirror
+- isolated document/test tooling: `.sac/tooling/` (invoked with `PYTHONPATH=.sac/tooling`)
 - Codex custom-agent names: `sac_architect`, `sac_developer`, `sac_tester`, `sac_security`,
   `sac_documenter`, `sac_delivery`
 
@@ -54,5 +55,5 @@ Before `npm publish`:
    directories.
 6. Publish a prerelease tag before `latest` for breaking or migration-heavy changes.
 
-`npm install`, `sac init`, and `sac update` never imply permission for Git commit/push, OBS upload, external
-publication, real RFS deployment, or production cloud mutation.
+`npm install`, `sac init`, and `sac update` never imply permission for Git commit/push, external publication,
+real RFS deployment, or production cloud mutation.

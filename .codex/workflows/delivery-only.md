@@ -2,7 +2,7 @@
 
 ## 输入
 
-`project`、目标 `regions`；可选 `production_publish=false`。
+`project`、目标 `regions`（`site/region`）和既有测试、安全、文档、用户云测门禁证据。
 
 ## 前置检查
 
@@ -12,11 +12,11 @@
 ## 阶段
 
 1. 只读检查源目录、版本、文件命名和所需语言。
-2. 派发 `delivery` 生成 `release/{project}/`、URL 清单和归档。
+2. 派发 `delivery` 生成 `release/{project}/`、确定性归档和 SHA-256 校验和。
 3. 主 Agent比对 release 与 practices，检查归档列表和校验和。
 4. 记录内部 changelog 并汇报结果。
 
 ## 授权边界
 
-默认只生成本地交付物。生产 OBS 上传、外部发布、Git commit/push 和真实 RFS 部署必须由用户
-明确授权；`production_publish=true` 也只能在该授权已经存在时使用。
+本工作流只生成本地交付物。外部发布、Git commit/push 和真实云资源变更属于独立请求，
+不通过“仅交付”工作流执行。

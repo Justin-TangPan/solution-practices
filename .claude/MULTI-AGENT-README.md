@@ -22,13 +22,13 @@
 │ 架构师   │ │ 开发  │ │ 测试  │ │ 安全  │ │  文档   │ │  交付   │
 │ Agent   │→│ Agent │→│ Agent │→│ Agent │→│  Agent  │→│  Agent  │
 │         │ │      │ │      │ │      │ │         │ │         │
-│ 方案设计  │ │ 编码  │ │ 验证  │ │ 审计  │ │ 文档生成 │ │ 打包上线 │
+│ 方案设计  │ │ 编码  │ │ 验证  │ │ 审计  │ │ 文档生成 │ │ 本地打包 │
 └─────────┘ └──────┘ └──────┘ └──────┘ └─────────┘ └─────────┘
        │         │        │        │         │          │
        ▼         ▼        ▼        ▼         ▼          ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                        交付产物                                    │
-│  practices/ + release/ + 文档 + 安全报告 + URL 清单 + 归档包       │
+│  practices/ + release/ + 文档 + 安全报告 + 校验和 + 归档包         │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -40,16 +40,16 @@
 
 | Agent | 文件 | 职责 | 技能映射 |
 |-------|------|------|---------|
-| 🧠 **架构师** | `sac-architect.json` | 方案设计、技术评估、决策确认 | `sac-project-rules` + `sac-deep-search` |
-| 💻 **开发** | `sac-developer.json` | .tf 模板、.sh 脚本、Docker Compose | `sac-rfs-practices` + `sac-project-rules` |
-| 🧪 **测试** | `sac-tester.json` | 模板验证、脚本检查、完整性检查 | `sac-project-rules` + `sac-rfs-practices` |
-| 🔒 **安全** | `sac-security.json` | 凭证审计、安全组审计、端口暴露 | `sac-rfs-practices` + `sac-project-rules` |
-| 📝 **文档** | `sac-documenter.json` | README、业务文档、Word 生成 | `sac-page-enhance` + `sac-project-rules` |
-| 📦 **交付** | `sac-delivery.json` | 目录整理、URL 生成、打包归档 | `sac-project-rules` |
+| 🧠 **架构师** | `sac-architect.json` | 方案设计、技术评估、决策确认 | `sac-project-rules` + `sac-technical-evaluator`；业务评估/深搜按条件 |
+| 💻 **开发** | `sac-developer.json` | Terraform、内联 user_data、Docker Compose | `sac-rfs-practices` + `sac-project-rules` |
+| 🧪 **测试** | `sac-tester.json` | 模板验证、脚本检查、完整性检查 | `sac-project-rules` + `sac-testing` |
+| 🔒 **安全** | `sac-security.json` | 凭证审计、安全组审计、端口暴露 | `sac-project-rules` + `sac-security` |
+| 📝 **文档** | `sac-documenter.json` | README、业务文档、Word 生成 | `sac-project-rules` + `sac-documentation`；页面增强按条件 |
+| 📦 **交付** | `sac-delivery.json` | 目录整理、校验和、打包归档 | `sac-project-rules` + `sac-delivery` |
 
 ---
 
-## 4 个工作流
+## 5 个工作流
 
 工作流脚本在 `.claude/workflows/` 目录下：
 
@@ -90,10 +90,11 @@ Workflow({scriptPath: '.claude/workflows/sac-architect-develop.js', args: {
 Workflow({scriptPath: '.claude/workflows/sac-audit.js', args: {
   project: 'litellm',
 	  regions: ['cn/cn-north-4', 'intl/ap-southeast-1']
+	  // release_package: 'release/litellm/litellm.zip' // 仅审计候选包时填写
 }})
 ```
 
-**流程：** 测试 → 安全 → 报告汇总
+**流程：** 测试 → 安全 →（仅指定 `release_package` 时只读核验交付包）→ 报告汇总
 
 **适用：** 审查已有 practices/ 目录的质量
 
@@ -107,9 +108,16 @@ Workflow({scriptPath: '.claude/workflows/sac-delivery-only.js', args: {
 }})
 ```
 
-**流程：** 准备 → URL 生成 → 打包
+**流程：** 准备 → 打包 → 校验
 
-**适用：** 已有 practices/ 内容，需要打包发布
+**适用：** 已有 practices/ 内容和完整门禁证据，需要生成本地交付包
+
+### 5️⃣ `sac-document-only` — 文档专用
+
+**流程：** 使用 `sac-documentation` 完成生成、翻译、转换或只读检查；旧名
+`sac-document-pipeline` 仅作兼容映射。
+
+**适用：** 不修改 Terraform 的独立文档任务
 
 ---
 
@@ -137,7 +145,8 @@ Workflow({scriptPath: '.claude/workflows/sac-delivery-only.js', args: {
 - **"用全流程做 litellm 方案"** → 触发 `sac-full-pipeline`
 - **"快速原型一个新方案"** → 触发 `sac-architect-develop`
 - **"审计一下 litellm 的质量"** → 触发 `sac-audit`
-- **"把 litellm 打包发布"** → 触发 `sac-delivery-only`
+- **"把 litellm 生成本地交付包"** → 触发 `sac-delivery-only`
+- **"生成/翻译/检查 litellm 文档"** → 触发 `sac-document-only`
 
 ### 方式三：单步调 Agent
 
@@ -164,7 +173,7 @@ Agent({...})  // 只调测试做验证
   ├── 💻 开发 Agent（cn 区域）──────┐
 	  ├── 💻 开发 Agent（intl/ap-southeast-1 区域）──────┤  并行执行
   ├── 💻 开发 Agent（intl 区域）────┘  ─────────────── 1 轮对话
-  │   输出：每个区域的 .tf + .sh + .extension 文件
+  │   输出：每个区域的 .tf + 可选 .extension 文件
   │
   ├── 🧪 测试 Agent ──────────────┐  并行执行
   ├── 🔒 安全 Agent ──────────────┘  ─────────────── 1 轮对话
@@ -176,7 +185,7 @@ Agent({...})  // 只调测试做验证
   │   输出：部署指南_zh / 方案详情_zh / Deployment-Guide_en / Solution-Details_en
   │
   ├── 📦 交付 Agent ─────────────────────────────────────── 1 轮对话
-  │   输出：release/ 目录 + url.txt + .zip 归档
+  │   输出：release/ 目录 + SHA256SUMS + .zip 归档
   │
   └── ✅ 向用户汇报最终结果
 ```
@@ -223,5 +232,5 @@ Agent({...})  // 只调测试做验证
 
 ### 映射新技能
 
-Agent 通过 `skills` 字段声明依赖哪些技能，技能在 `skills/` 目录下维护。
+Agent 通过 `skills` 声明必读技能，通过 `conditional_skills` 声明条件技能；技能在 `skills/` 目录下维护。
 当技能更新时，Agent 自动受益（因为 prompt 中引用技能内容）。

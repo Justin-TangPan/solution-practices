@@ -1,67 +1,40 @@
 export const meta = {
   name: 'sac-delivery-only',
-  description: 'SAC 交付流程：从 practices/ 打包到 release/，生成 URL 清单',
+  description: 'SAC 本地交付流程：整理、归档并校验 release/ 交付包',
   phases: [
-    { title: 'Prepare', detail: '整理与预置' },
-    { title: 'Package', detail: '打包归档' },
-    { title: 'Generate URLs', detail: '生成 URL 清单' },
+    { title: 'Prepare', detail: '整理本地交付目录' },
+    { title: 'Package', detail: '生成归档与校验和' },
+    { title: 'Verify', detail: '核对归档内容' },
   ],
 }
 
 const PROJECT = args.project
-const REGIONS = args.regions || ['cn', 'intl']
+const TARGETS = args.regions || []
 const GATES = args.gates || {}
-const AUTHORIZATION = args.authorization || {}
 
-if (!GATES.test_passed || !GATES.security_passed || !GATES.document_passed) {
-  throw new Error('Delivery requires explicit passing test, security, and document gate evidence')
+if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(PROJECT || '')) {
+  throw new Error('Delivery requires a lowercase hyphenated project id')
+}
+if (!TARGETS.length || TARGETS.some(target => !/^(cn|intl)\/[^/]+$/.test(target))) {
+  throw new Error('Delivery requires site/region targets, for example cn/cn-north-4')
 }
 
-log(`📦 SAC 交付打包启动：${PROJECT}`)
+if (!GATES.test_passed || !GATES.security_passed || !GATES.document_passed || !GATES.cloud_test_passed) {
+  throw new Error('Delivery requires passing test, security, document, and user cloud-test evidence')
+}
 
 phase('Prepare')
 const prepResult = await agent({
   label: 'delivery-prep',
   agentType: 'sac-delivery',
-  prompt: `## 项目上下文
-项目：${PROJECT}
-区域：${REGIONS.join(', ')}
-
-## 任务
-1. 创建 release/${PROJECT}/ 目录
-2. 从 practices/${PROJECT}/ 复制文件到对应区域子目录
-3. 仅当 authorization.production_url=true 时预置生产 templateUrl；否则只整理本地候选包
-
-授权：${JSON.stringify(AUTHORIZATION)}
-不得执行未逐项授权的 OBS 上传、云资源、生产 URL 或 Git commit/push。
-
-输出目录结构。`,
+  prompt: `将 practices/${PROJECT}/ 中已通过门禁的 ${TARGETS.join(', ')} 资产复制到 release/${PROJECT}/，保持 site/region/variant 结构。只整理本地文件。`,
   schema: {
     type: 'object',
-    properties: { release_dir: { type: 'string' }, regions_ready: { type: 'array', items: { type: 'string' } } },
+    properties: {
+      release_dir: { type: 'string' },
+      regions_ready: { type: 'array', items: { type: 'string' } },
+    },
     required: ['release_dir', 'regions_ready'],
-  },
-})
-
-phase('Generate URLs')
-const urlResult = await agent({
-  label: 'delivery-urls',
-  agentType: 'sac-delivery',
-  prompt: `## 项目上下文
-项目：${PROJECT}
-区域：${REGIONS.join(', ')}
-
-	为每个 site/region/variant 生成 URL 清单文件，路径遵循 sac-project-rules 的 release 目录模型。
-
-区域代码映射：
-- cn → cn-north-4 (Beijing)
-- intl → 多区域
-
-输出 URL 文件路径。`,
-  schema: {
-    type: 'object',
-    properties: { url_files: { type: 'array', items: { type: 'string' } } },
-    required: ['url_files'],
   },
 })
 
@@ -69,23 +42,35 @@ phase('Package')
 const archiveResult = await agent({
   label: 'delivery-archive',
   agentType: 'sac-delivery',
-  prompt: `创建 release/${PROJECT}/${PROJECT}.zip 归档包。
-输出归档文件路径。`,
+  prompt: `创建 release/${PROJECT}/${PROJECT}.zip 和 SHA256SUMS；不得执行外部发布、云资源变更或 Git 操作。`,
   schema: {
     type: 'object',
-    properties: { archive_file: { type: 'string' }, size_bytes: { type: 'number' } },
-    required: ['archive_file'],
+    properties: {
+      archive_file: { type: 'string' },
+      checksum_file: { type: 'string' },
+      size_bytes: { type: 'number' },
+    },
+    required: ['archive_file', 'checksum_file', 'size_bytes'],
   },
 })
 
-log(`✅ 交付完成：${PROJECT}`)
-log(`   发布目录：${prepResult.release_dir}`)
-log(`   URL 文件：${urlResult.url_files.join(', ')}`)
-log(`   归档包：${archiveResult.archive_file} (${Math.round(archiveResult.size_bytes / 1024)} KB)`)
+phase('Verify')
+const verifyResult = await agent({
+  label: 'delivery-verify',
+  agentType: 'sac-delivery',
+  prompt: `只读核对 ${archiveResult.archive_file} 的文件清单、SHA-256 和 practices/${PROJECT}/ 源资产一致性。`,
+  schema: {
+    type: 'object',
+    properties: { passed: { type: 'boolean' }, summary: { type: 'string' } },
+    required: ['passed', 'summary'],
+  },
+})
+
+if (!verifyResult.passed) throw new Error(`Local delivery verification failed: ${verifyResult.summary}`)
 
 return {
   project: PROJECT,
   release_dir: prepResult.release_dir,
-  url_files: urlResult.url_files,
   archive_file: archiveResult.archive_file,
+  checksum_file: archiveResult.checksum_file,
 }

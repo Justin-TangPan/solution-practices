@@ -53,7 +53,7 @@ const documentResult = await agent({
 语言：${LOCALES.join(', ')}
 
 ## 任务
-按 sac-document-pipeline 执行对应模式。事实以当前 Practice 和用户输入为准；跳过 .env、
+按 sac-documentation 执行对应模式；sac-document-pipeline 仅为旧名兼容，不重复加载。事实以当前 Practice 和用户输入为准；跳过 .env、
 .secrets 和凭证文件。内容先进入统一文档模型，再按需生成正式 _zh/_en Markdown 和 DOCX。
 
 - analyze：只分析并输出标准稿，不写正式文档；

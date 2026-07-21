@@ -1,1056 +1,121 @@
 ---
 name: sac-rfs-practices
-description: |
-  Create and maintain Huawei Cloud RFS (Resource Formation Service) / OpenTofu solution
-  templates and deployment scripts. Use this skill whenever the user:
-  - Creates a new Huawei Cloud solution implementation template (.tf.json)
-  - Writes user_data bootstrap scripts or install shell scripts for ECS deployment
-  - Debugs deployment failures (Docker install hangs, GPG issues, apt prompts, image pulls)
-  - Adds random/unique naming, security groups, OBS uploads for RFS templates
-  - Needs to upload install scripts to an OBS bucket for RFS deployment
-  - Asks about "华为云解决方案实践", "RFS模板", "部署脚本", "tf.json",
-    "resources formation", or "一键部署" templates.
-  Also triggers when the user mentions "demo patterns", "antipitfall", or references
-  the n8n, Dify, or Hermes solution deployment experiences.
-metadata:
-  status: formal
-  scope: formal-delivery
-  owner: project
+description: Implement a frozen SAC architecture contract as Huawei Cloud RFS/OpenTofu Terraform with inline ECS bootstrap. Use for practice implementation, candidate revision, deployment debugging, or RFS policy validation.
 ---
 
 # Huawei Cloud RFS Solution Builder
 
-Build production-ready Huawei Cloud RFS (Resource Formation Service) solution templates.
-Follow standards from `assets/demo/` reference projects plus accumulated field-tested fixes.
+Implement the frozen contract as a self-contained local asset. This Skill never authorizes cloud changes,
+external publication, or Git operations.
 
-## 定位
+Load this Skill for Developer work after contract freeze. It is not a prerequisite for the Architect's
+system assessment or the main Agent's confirmation step.
 
-本 skill 是 **开发 Agent（sac-developer）** 的核心技术规范（Terraform 模板 + Shell 脚本 + Docker Compose），也可被 **测试 Agent（sac-tester）** 和 **安全 Agent（sac-security）** 加载用于验证参考。多 Agent 协作流程参见 `.claude/MULTI-AGENT-README.md`。
+## Inputs and conditional references
 
-### 单 Agent 模式（手动调用）
+Always read `sac-project-rules`, the complete user-confirmed `architecture_contract`, the closest formal
+practice, and `assets/demo/` baseline. Read references only when their condition applies:
 
-When asked to create or fix a Huawei Cloud RFS solution directly:
+- `decision-framework.md`: selecting between viable implementation patterns;
+- `region-mapping.md`: adding/changing a site or Region, or resolving regional behavior;
+- `docker-registry.md`: the confirmed runtime uses containers;
+- `validation-checklist.md`: final implementation validation or tester handoff.
 
-1. **Confirm decision points** (see Decision Points section below) — ask user for non-default choices
-2. **Write the .tf template**: Variables → data sources → VPC/subnet/secgroup → EIP → ECS with the selected user_data mode
-3. **Write the install script**: Independent `.sh` file with all deployment logic
-4. **Write documentation**: Two Markdown docs per site-level directory structure
-5. **Upload to OBS**: Template + script + docs, naming per Decision 7
-6. **Test with RFS**: Deploy, SSH in, verify services
+Stop before writing if site, Region, variant, runtime, endpoint, variables, fixed values, dependencies,
+resources, or allowed files are missing or conflicting. Return the gap to the main Agent; do not invent
+architecture defaults.
 
-### user_data Strategy Rule
+## Canonical implementation
 
-Two user_data modes are valid. Pick one explicitly in the decision points and keep it consistent for a practice/variant.
-
-#### Mode A: OBS script bootstrap
-
-The `.tf` file's `user_data` is minimal — only:
-1. Reset ECS password
-2. Download install script from OBS
-3. Execute the script
-4. Clean up
-
-```hcl
-user_data = "#!/bin/bash\necho 'root:${var.ecs_password}' | chpasswd\nwget -P /home/ https://{bucket}.obs.{region}.myhuaweicloud.com/{project}/install_{app}.sh\nbash /home/install_{app}.sh\nrm -rf /home/install_{app}.sh"
+```text
+practices/<project>/<cn|intl>/<region>/<standard|ha>/
+├── terraform/deploying-<project>_vN.tf   # or .tf.json when contracted
+└── .extension                            # optional
 ```
 
-This mode is now an exception path. Use it only when the user explicitly asks for external scripts or when a specific delivery constraint requires hot-fixable OBS-hosted scripts.
+Locale is not a Terraform dimension. Use HCL unless the contract requires `.tf.json`. A deployable
+instance contains exactly one Terraform file.
 
-#### Mode B: inline user_data
+## Provider and resources
 
-The `.tf` file is self-contained and writes configuration files via heredoc before starting services.
+Use only `huaweicloud` unless `project.config.json` records a cloud-validated exception:
 
-This is the SAC standard mode. Follow the LiteLLM/Supabase pattern: Terraform template contains infrastructure resources plus inline deployment logic, including package installation, configuration generation, service startup, health checks, and final outputs. `scripts/` is not a required delivery directory for standard RFS practices.
-
-Inline user_data must remain readable and auditable:
-- split logic into clear shell sections;
-- use heredoc for generated compose/config files;
-- keep health checks and final access information in the template;
-- avoid external OBS script dependencies unless the user explicitly approves an exception.
-
-Do not mix Mode A and Mode B in the same deployable instance.
-
-## Development Workflow (SAC 标准流程)
-
-参见 `sac-project-rules` Section 8（SAC 交付流程）获取完整阶段定义。
-
-### 阶段详解
-
-| 阶段 | 负责人 | 产出 |
-|------|--------|------|
-| 5. 开发 | AI | 内联 user_data 的 .tf 模板 + Markdown 文档（部署指南+方案详情） |
-| 6. 测试 OBS 上传 | AI | 上传到测试桶（桶名见本地开发记忆），用户验证 |
-| 8. 生产打包 | AI | 整理最终归档包，预置生产 OBS 路径的模板 |
-
-### OBS 桶规范
-
-参见 `skills/reference/obs-conventions.md`（OBS 目录结构、环境区分、RFS URL 格式、上传操作）。
-
-### 最终交付物
-
-每个方案最终交付：
-1. **RFS 页面 URL** — 预置好模板和参数，用户点击即可部署
-2. **归档包** — `{project}.zip`，包含 cn/ + intl/ 全部区域
-3. **Terraform 模板** — 测试候选为 `deploying-{project}_vN.tf`，用户确认后提升为 `deploying-{project}.tf` 正式入口；部署逻辑默认内联在 user_data 中
-4. **文档双件套** — 部署指南 + 方案详情（中文内容 `_zh`，英文内容 `_en`）
-
-`manifest.json` 不是 SAC 标准交付物。只有用户明确要求、测试桶临时索引、或外部自动化工具需要时，才可作为辅助文件生成，不得写入标准交付清单。
-
-### Terraform 候选与正式入口
-
-对新建或修改中的模板使用以下流程：
-
-1. 在目标 deployable instance 的 `terraform/` 下创建 `deploying-{solution}_v1.tf`；后续修改递增为 `_v2`、`_v3`。
-2. 保持候选文件不可变；不得原地覆盖已经实际测试的 `_vN`。
-3. 上传测试桶时使用带修订号候选，并记录对应 SAC 四级测试版本。
-4. 每次产生新修订后，向用户确认实际云上测试结果。
-5. 测试未通过时，立即删除该候选文件和待交付副本，在内部变更日志记录失败原因，并使用下一个未使用的 `_vN` 修复；不得复用已失败的修订号。
-6. 只有用户明确确认通过后，才将该候选重命名为 `deploying-{solution}.tf` 正式入口。不得复制后并存；同一 `terraform/` 目录只能有一个可加载模板。
-7. 历史无版本模板在下一次修改时开始渐进迁移，不批量破坏现有链接。
-
-模板版本、项目版本和发布门禁的完整规则以 `sac-project-rules` Section 13 为准。
-
-## User Constraints (用户约束)
-
-以下约束必须遵守，不可违反：
-
-### 0. 基准模板与参数契约
-
-实现前必须记录最接近的 `assets/demo/` 或正式 practice 路径，并先继承其资源形态、计费方式和参数风格。架构 handoff 必须冻结：客户可见变量、固定值、公网接口和允许的交付文件。
-
-- 上游默认的 host、端口、后端端口、健康检查端口、依赖 URL、镜像代理地址和内部 CIDR 不得暴露为客户参数；只有上游明确要求或用户确认后才可例外。
-- 应用启动必须沿用上游官方默认监听配置，不得通过环境变量或启动参数改写；安全组、健康检查和 output URL 与该官方默认入口保持一致。不得自行增加 Nginx/TLS 代理、替换端口或扩大交付物。
-- 中国站标准单 ECS 公网方案沿用 Hermes 基线：`bandwidth_size` 默认 300、范围 1-300，EIP 使用 `PER`、`traffic`、`5_bgp`、`postPaid`。偏离必须在架构阶段说明并取得用户确认。
-- 标准模式全部内联。不得在运行时下载安装脚本、requirements/lock、Compose 或配置文件；上游发布单元确有要求或用户明确批准时，才可声明例外模式。
-- 不得为了 Agent 自主的供应链或安全改造新增 requirements/lock、OBS 依赖、代理层或客户参数。发现风险先报告，由主 Agent组织决策。
-
-实例级固定值和例外写入 `project.config.json` 的 `quality_gate.practice_policies`，由 `scripts.tests.runner --check rfs_policy` 执行；不要把产品常量复制到多个工作流提示词。
-
-### 1. reference/ 目录只读
-
-`solution-practices/reference/` 目录仅用户可修改。AI 不得主动修改此目录下的任何文件，除非用户明确授权。
-
-### 2. 不硬编码凭证
-
-内联 user_data、可选安装脚本和配置文件中均不得硬编码 AK/SK、API Key 等凭证。SWR 镜像应设为公开访问，避免 `docker login`。如必须认证，通过环境变量或参数传入。
-
-### 3. 不修改第三方源码
-
-不得修改所部署开源项目的源代码。如需定制，通过配置文件、环境变量或 fork 后修改实现。
-
-### 4. 文档交付规范
-
-正式交付文档为 Markdown 格式（.md），按站点归类，固定为部署指南 + 方案详情两类：
-- **中国站中文** → `cn/docs/{Name}-部署指南_zh.md` + `cn/docs/{Name}-方案详情_zh.md`
-- **国际站中文** → `intl/docs/zh-cn/{Name}-部署指南_zh.md` + `intl/docs/zh-cn/{Name}-方案详情_zh.md`
-- **国际站英文** → `intl/docs/en-us/{Name}-Deployment-Guide_en.md` + `intl/docs/en-us/{Name}-Solution-Details_en.md`
-- 高可用与标准版合并为一篇文档，在"快速部署"章节按子章节区分
-
-文件名语言后缀必须跟随文档正文语言，而不是站点目录名：中文正文统一 `_zh`，英文正文统一 `_en`。
-
-国际站 Terraform 不再按语言复制：实现固定在 `intl/<region>/<variant>/`，一份双语 `.extension` 承担参数展示，只有文档保留 `zh-cn` / `en-us` 分支。
-
-### 5. 先确认再动手
-
-开发前必须确认决策点（地域、语言、Docker vs 直装等），不得擅自假设。
-
-Architect 必须返回 `rules_read`、`reference_templates`、`exposed_variables`、`fixed_values`、`public_endpoints`、`allowed_artifacts` 和 `deviations`。Developer 只能实现该合同；合同外变量、端口、代理层或外部依赖必须停止并回交主 Agent。
-
-### 6. OBS 命名规范
-
-参见 `skills/reference/obs-conventions.md`。
-
-### 7. user_data 策略
-
-标准模式为全内联 user_data：
-- `.tf` 自包含基础设施和应用部署逻辑；
-- 参考 LiteLLM、Supabase 这类实践，不做分布式脚本；
-- `scripts/` 不是标准交付目录，除非用户明确要求或存在必须外置脚本的技术约束。
-
-OBS 下载脚本仅作为例外模式：`.tf` 的 user_data 只做改密码、下载脚本、执行、清理；所有部署逻辑在 `.sh` 脚本中。启用前必须说明原因并获得用户确认。
-
-同一个 deployable instance 不得混用两种模式。
-
-## Recent Pitfalls (近期踩坑记录)
-
-### Pitfall 19: Provider 块显式 auth_url 导致 IMS 认证失败
-
-**现象：** RFS 部署报错 `error retrieving IMS images: Authentication failed`
-
-**根因：** Provider 块显式指定了 `auth_url`、`cloud`、`insecure`，与 RFS 内部认证机制冲突。
-
-**修复：** Provider 块只写 `region`，其他全部删掉。
-```hcl
-provider "huaweicloud" {
-  region = "ap-southeast-1"
-}
-```
-
-### Pitfall 20: Ubuntu 24.04 pip 安装被 PEP 668 阻止
-
-**现象：** `pip3 install` 报错 `externally-managed-environment`
-
-**根因：** Ubuntu 24.04 启用了 PEP 668，禁止 pip 系统级安装。
-
-**修复：** 必须加 `--break-system-packages --ignore-installed`，不要用 fallback 命令（会被 `2>/dev/null` 吞掉错误）。
-```bash
-pip3 install headroom-ai fastapi uvicorn 'httpx[http2]' transformers \
-  -i https://pypi.tuna.tsinghua.edu.cn/simple \
-  --break-system-packages --ignore-installed
-```
-
-### Pitfall 21: 系统预装包导致 pip 安装失败
-
-**现象：** `Cannot uninstall rich 13.7.1, RECORD file not found. Hint: The package was installed by debian.`
-
-**根因：** Ubuntu 系统预装的 `rich` 包，pip 无法覆盖。
-
-**修复：** 加 `--ignore-installed` 跳过已安装包检查。
-
-### Pitfall 22: Terraform `%{...}` 被解析为模板指令
-
-**现象：** `.tf` 文件中 curl 的 `%{http_code}` 报语法错误
-
-**根因：** `%{...}` 是 Terraform 模板指令语法（`%{if}`, `%{for}`），在 heredoc 中也会被解析。
-
-**修复：** 转义为 `%%{http_code}`。
-
-### Pitfall 23: 环境变量未注入到进程
-
-**现象：** `settings.json` 配置正确，但 Claude Code 不走代理
-
-**根因：** CLI 工具从进程环境读取环境变量，`settings.json` 的 `env` 配置不一定被所有版本读取。
-
-**修复：** 环境变量必须通过 `.bashrc` 的 `export` 注入，并 `source /root/.bashrc` 生效。
-
-### Pitfall 24: docker-compose 挂载的配置文件缺失
-
-**现象：** 容器报 `Failed to find configuration file`
-
-**根因：** docker-compose.yml 通过 volume 挂载了配置文件（如 `./project/.../config.js`），但安装脚本只下载了 compose 文件，没下载配置。
-
-**修复：** 用 `git clone --depth 1` 克隆整个仓库，而不是单独下载文件。
-
-### Pitfall 25: Headroom 代理上游未指向 MaaS
-
-**现象：** 代理运行正常但 stats 显示 0 压缩，请求没到达 MaaS
-
-**根因：** Headroom 代理默认转发到 `api.anthropic.com`，需要 `ANTHROPIC_TARGET_API_URL` 指向 MaaS。
-
-**修复：**
-```bash
-export ANTHROPIC_TARGET_API_URL=https://api.modelarts-maas.com/anthropic
-headroom proxy --host 0.0.0.0 --port 8787
-```
-
-### Pitfall 26: Headroom 不压缩对话消息
-
-**现象：** stats 显示 `no_compressible_content`，tokens_saved 为 0
-
-**根因：** Headroom 硬编码保护 user/system/assistant 消息，只压缩 tool 输出。简单对话没有可压缩内容。
-
-**修复：** 这是设计限制，不是配置问题。Headroom 适合工具密集型会话（大量 bash 输出、文件读取），简单聊天效果有限。
-
-### Pitfall 27: SWR 镜像拉取需要认证
-
-**现象：** `error from registry: You may not login yet - there is no X-Auth-Token`
-
-**根因：** SWR 镜像未设为公开，需要 `docker login` 认证。
-
-**修复：** 在 SWR 控制台把镜像设为公开，避免在脚本中硬编码凭证。
-
-### Pitfall 31: 手工精简上游 Compose 导致配置漂移
-
-**现象：** 多容器应用部分页面或 API 可用，但新功能报缺少环境变量，持久化目录不存在，或访问管理后台时没有出现预期的 HTTP Basic Auth 登录弹窗。例如 Supabase Studio 报 `SNIPPETS_MANAGEMENT_FOLDER env var is not set`。
-
-**根因：** 部署模板手工重写或只复制了上游 `docker-compose.yml` 的一部分，没有同步新版本增加的环境变量、数据卷、初始化 SQL、网关路由、认证插件或辅助脚本。此类应用的管理端登录弹窗通常由反向代理或 API 网关提供，不是由管理端容器自行提供；网关配置缺失时，只修管理端环境变量不能恢复认证。
-
-**修复：**
-
-1. 固定已审核的上游 tag 或 commit，不跟随滚动分支。
-2. 按上游发布单元复制完整目录，包含 Compose、`.env.example`、网关配置、初始化文件、挂载目录和官方辅助脚本，不再单独维护一份精简 Compose。
-3. 使用官方默认文件生成环境配置和密钥，并对敏感文件设置最小权限；禁止把生成的密钥输出到 cloud-init 日志。
-4. 启动前渲染最终 Compose 配置，静态断言必需环境变量、卷、服务集合和网关认证插件存在。
-5. 启动后同时验证“未认证请求被拒绝”、“已认证请求成功”、持久化路径可写以及重启后数据仍在。
-
-**Supabase 检查要点：** Studio 需同时具备 `SNIPPETS_MANAGEMENT_FOLDER=/app/snippets` 和对应持久化卷；Dashboard 的 Basic Auth 需在 Kong 中配置并分别验证未认证 `401` 与认证后成功响应。
-
-### Pitfall 32: RFS 变量 validation 不允许跨变量引用
-
-**现象：** RFS 在创建堆栈前报 `Failed to init workflow due to bad template. The condition for variable "..." can only refer to the variable itself`。
-
-**根因：** 某个输入变量的 `validation.condition` 引用了其他变量。例如在 `charging_period` 的校验中读取 `var.charging_unit`。部分新版 Terraform 能接受更宽的引用，但 RFS 当前模板解析器仍要求输入变量校验只引用自身；HCL 语法解析和 `terraform fmt` 不会发现这类语义兼容问题。
-
-**修复：** 每个 `variable` 块内的 `validation` 只引用同名变量：
-
-```hcl
-variable "charging_period" {
-  type = number
-  validation {
-    condition     = var.charging_period >= 1 && var.charging_period <= 9
-    error_message = "Period must be between 1 and 9."
-  }
-}
-```
-
-需要“按月 1-9、按年 1-3”这类关联约束时，在 RFS 兼容性未实测前，使用变量描述和 `.extension` 参数说明约束用户输入，不得把其他变量写入 `validation.condition`。质量门禁应另行扫描所有变量块的异名 `var.*` 引用。
-
-### Pitfall 33: 用密码正则回避 Shell 转义问题
-
-**现象：** RFS 在 plan 阶段报 `Invalid value for variable`，用户使用了强密码和特殊字符，却被模板自定义的“只允许字母数字”正则拒绝。
-
-**根因：** 模板为了避免密码在 Shell、`sed`、连接串或 dotenv 中的转义问题，把实现缺陷转化成了用户输入限制。这会拒绝合法的上游密码，并弱化可用密码空间。
-
-**修复：** 只保留云服务或上游官方明确要求的限制。应用密码不得为了方便 Shell 拼接而限制为字母数字；应先在 Terraform 中用 `base64encode()` 传入 cloud-init，再在实例上解码，写入 dotenv 时使用字面量引用并避免将密码直接嵌入 `sed` 替换式。
-
-### Pitfall 34: 严格 umask 使 APT 密钥对 `_apt` 不可读
-
-**现象：** Docker APT 源返回 `NO_PUBKEY`，但 root 使用同一 keyring 可以成功验证仓库签名。
-
-**根因：** cloud-init 为保护密钥设置了 `umask 077`，后续 `gpg --dearmor -o ...` 生成的公开 APT keyring 继承为 `0600`。APT 使用 `_apt` 沙箱用户读取 keyring，因无权读取而误报缺少子密钥。
-
-**修复：** 私密配置继续使用严格 umask，但公开软件源文件必须在创建后显式设置可读权限：
-
-```bash
-chmod 0644 /usr/share/keyrings/docker.gpg
-chmod 0644 /etc/apt/sources.list.d/docker.list
-runuser -u _apt -- test -r /usr/share/keyrings/docker.gpg
-```
-
-遇到 `NO_PUBKEY` 时必须同时核对密钥指纹和 `_apt` 读权限，不得直接关闭签名校验。
-
-### Pitfall 35: 国内 cloud-init 运行时直连 GitHub
-
-**现象：** Docker 已正确配置国内 registry mirror，但部署仍在 `git clone`、`git fetch` 或 GitHub Release 下载阶段反复超时，应用容器始终没有启动。
-
-**根因：** `docker.wangzhou3.top` 是 Docker Hub registry mirror，只代理容器镜像请求，不是 GitHub 通用代理。模板虽然解决了镜像拉取，却仍把上游源码或 Compose 文件留给国内 ECS 在首次启动时从 GitHub 下载。
-
-**修复：** 国内模板不得把 GitHub 可达性作为成功部署的必要条件。固定版本的小型运行资产可经确定性压缩、SHA-256 校验后内置；较大资产应按项目 OBS 规则发布后下载。内置前必须计算最终渲染的 `user_data` 大小，保持不超过华为云 ECS 的 32 KB 上限。Docker Hub 镜像继续保留官方名称，并通过 daemon `registry-mirrors` 使用 `https://docker.wangzhou3.top`；不得把 Git 下载 URL 伪装成 registry mirror URL。
-
-### Pitfall 36: Docker daemon 在写入 mirror 配置前已经启动
-
-**现象：** `/etc/docker/daemon.json` 明确包含 `registry-mirrors`，但 `docker info` 显示 `RegistryConfig.Mirrors=[]`，拉取日志仍访问 `registry-1.docker.io`。
-
-**根因：** Docker 软件包安装阶段已经自动启动 daemon，脚本随后才写入 `daemon.json`。此时执行 `systemctl enable --now docker` 不会重启已经运行的服务，因此新配置没有加载。
-
-**修复：** 写入配置后必须显式执行 `systemctl restart docker`，并在拉取镜像前使用 `docker info --format '{{json .RegistryConfig.Mirrors}}'` 断言目标 mirror 已由运行中的 daemon 加载。只检查配置文件内容不足以证明配置生效。
-
-### Case 1: 多阶段部署连续暴露不同阻塞点
-
-**案例：** Supabase 候选依次在 RFS 变量校验、密码输入限制、APT keyring 权限、GitHub 访问、Docker mirror 重载阶段失败；前一阶段未通过时，后一阶段从未真正执行，因此不能把“修复当前报错”等同于“部署已完整验证”。
-
-**通用排查顺序：** 按 `RFS 模板解析 → 云资源创建 → cloud-init/包管理 → 部署资产获取 → daemon 实际配置 → 镜像拉取 → Compose 启动 → 端口/API/鉴权` 分段确认。每段同时检查配置文件、运行时有效状态和最终业务行为；日志最后一行只代表当前第一个阻塞点。失败候选删除并递增版本，只有用户完成真实部署和关键入口验证后才晋级正式模板。
-
-## tf.json Template Standards
-
-Reference files: `assets/demo/` directory contains three reference projects.
-
-### Required Structure (top-level keys)
-
-```json
-{
-    "terraform": { "required_providers": { ... } },
-    "provider": { "huaweicloud": { ... } },
-    "variable": { ... },
-    "data": { ... },
-    "resource": { ... },
-    "output": { ... }
-}
-```
-
-### Provider Configuration
-
-**CRITICAL: Only specify `region`.** Do NOT add `auth_url`, `cloud`, or `insecure` — RFS auto-derives them. Explicit values cause IMS authentication errors.
-
-**JSON format:**
-```json
-"terraform": {
-    "required_providers": {
-        "huaweicloud": {
-            "source": "huawei.com/provider/huaweicloud",
-            "version": ">= 1.20.0"
-        }
-    }
-},
-"provider": {
-    "huaweicloud": {
-        "region": "cn-north-4"
-    }
-}
-```
-
-**HCL format:**
 ```hcl
 terraform {
   required_providers {
-    huaweicloud = {
-      source  = "huawei.com/provider/huaweicloud"
-      version = ">= 1.20.0"
-    }
+    huaweicloud = { source = "huawei.com/provider/huaweicloud", version = ">= 1.20.0" }
   }
 }
-
-provider "huaweicloud" {
-  region = "ap-southeast-1"
-}
+provider "huaweicloud" { region = "<confirmed-region>" }
 ```
 
-**Common regions:** 参见 `skills/reference/region-mapping.md`
+Do not set `auth_url`, `cloud`, or `insecure`; do not add `random`, `tls`, or another provider without
+an approved exception. Create only contracted resources, normally `VPC → Subnet → Security Group → EIP
+→ ECS`. Prefix stable names with `var.solution_name`; never use changing UUID/random names.
 
-**CRITICAL:** `required_providers` is an **OBJECT** keyed by provider name — NOT an array `[{...},{...}]`. Huawei Cloud RFS defaults to only the `huaweicloud` provider. Do NOT add `random`, `tls`, or other providers unless an already cloud-validated architecture is explicitly recorded under `quality_gate.architecture_exceptions` in `project.config.json`.
+Default to Ubuntu 24.04 unless upstream requires another image. Enable `hss,ces`. Set
+`delete_disks_on_termination = true` only when the confirmed durability model permits it.
 
-### Required Variables (7 core variables present in all demos)
+## Variables, secrets, and trust boundaries
 
-| Variable | Type | Default | Validation |
-|----------|------|---------|------------|
-| `vpc_name` | string | `"{project}-demo"` | 1-54 chars, Chinese/alphanumeric/underscore/hyphen/dot |
-| `security_group_name` | string | `"{project}-demo"` | 1-64 chars |
-| `ecs_name` | string | `"{project}-demo"` | 1-64 chars |
-| `ecs_flavor` | string | `"x1.4u.8g"` | Regex `x1.?u.?g` or ECS flavor format |
-| `ecs_password` | string (sensitive) | `""` | 8-26 chars, 3 of 4 char types |
-| `system_disk_size` | number | `60` or `100` | Range 40-1024 |
-| `bandwidth_size` | number | `10` or `300` | Range 1-300 |
-| `charging_mode` | string | `"postPaid"` | `["postPaid","prePaid"]` |
-| `charging_unit` | string | `"month"` | `["month","year"]` |
-| `charging_period` | number | `1` | 1-9 (month) or 1-3 (year) |
+Expose customer decisions only, typically `solution_name`, `ecs_flavor`, sensitive `ecs_password`, system
+disk, bandwidth, and contracted billing inputs. Keep official ports, health endpoint, internal CIDRs,
+image source, and service wiring fixed unless confirmed as choices. Each validation references only its
+own variable because RFS rejects cross-variable validation.
 
-### Resource Naming
+Encode sensitive Terraform values with `base64encode()` before crossing into `user_data`; decode on ECS,
+write with restrictive permissions, and never log them. Never interpolate raw credentials into Shell,
+`sed`, URLs, or unquoted dotenv content.
 
-Use `var.solution_name` directly as the resource name prefix. Each RFS deployment creates an independent resource stack with its own state:
+Allow SSH only from CloudShell `121.36.59.153/32`; open only contracted application ports. Public HTTP,
+administrative or credential-bearing endpoints, and `0.0.0.0/0` access require an explicit architecture
+decision. Never publicly expose databases, caches, Docker, or debuggers. Privileged containers, host
+networking, Docker socket mounts, broad host mounts, or mutable tags require an approved exception.
 
-```json
-"name": "${var.solution_name}-vpc"
-"name": "${var.solution_name}-subnet"
-"name": "${var.solution_name}-sg"
-"name": "${var.solution_name}-ecs"
-```
+## Inline bootstrap
 
-If a practice needs collision avoidance beyond `solution_name`, derive names from stable user input only. Do not generate changing names during plan/apply.
+All new practices use fully inline `user_data`: noninteractive OS preparation, confirmed runtime,
+generated configuration/service definitions, startup, bounded health verification, and sanitized local
+failure logs. Do not create or fetch an external installer. Pinned official packages and images remain
+allowed when the contract records source and version.
 
-**WARNING:** Do NOT use `substr(uuid(), 0, 8)` in locals. The `uuid()` function generates a new value on every `plan`/`apply`, causing ALL resources with that suffix to be **destroyed and recreated** on every deployment. This breaks idempotency and causes data loss.
+Keep rendered `user_data` within 32 KiB. China first boot must not depend on GitHub. If the official unit
+cannot fit or be fetched reliably, stop with an architecture constraint rather than adding a distribution
+channel.
 
-Also avoid `random_id` resource — the `random` provider is not available in Huawei Cloud RFS.
+For containers, use Docker Compose v2, preserve Compose `${NAME}` as `$${NAME}` in Terraform heredocs,
+keep Shell substitution as `$(command)`, and escape Terraform template sequences such as curl
+`%%{http_code}`. Use persistent directories with correct ownership. Never hide required setup/startup
+failure behind an unconditional fallback.
 
-### Data Sources
+## Regional invariants
 
-Always include:
-```json
-"data": {
-    "huaweicloud_images_image": {
-        "Ubuntu": {
-            "most_recent": true,
-            "name": "Ubuntu 24.04 server 64bit",
-            "visibility": "public"
-        }
-    }
-}
-```
+- `cn`: use approved Huawei Cloud Docker CE and domestic package mirrors; retain official image names,
+  configure the approved daemon registry mirror, restart Docker, and verify it loaded.
+- `intl`: use official package/runtime sources, omit China mirrors, default candidates to
+  `c7n.2xlarge.2` subject to availability, and never restrict validation to China-only `x1.*` flavors.
 
-### VPC/Subnet (standard pattern)
+Apply the upstream deployment unit completely. Do not trim required services, initialization assets,
+schemas, roles, volumes, gateways, or authentication. For stateful services, preserve idempotent bootstrap,
+ownership, persistence, restart behavior, and fail-fast database initialization. Do not replace a customized
+database with managed RDS until required extensions, roles, replication, and initialization are proven compatible.
 
-```json
-"huaweicloud_vpc": {
-    "vpc": {
-        "name": "${var.solution_name}-vpc",
-        "cidr": "172.16.0.0/16"
-    }
-},
-"huaweicloud_vpc_subnet": {
-    "subnet": {
-        "name": "${var.solution_name}-subnet",
-        "cidr": "172.16.1.0/24",
-        "gateway_ip": "172.16.1.1",
-        "vpc_id": "${huaweicloud_vpc.vpc.id}"
-    }
-}
-```
+## Candidate lifecycle
 
-### Security Group (core rules + app ports)
+Start a new instance at `_v1`. A revision is immutable after real testing begins. On failure, remove the
+failed local candidate, record why, and use the next unused `_vN`. Only explicit approval of that exact
+candidate permits renaming it to `deploying-<project>.tf`; never retain candidate and formal entries together.
+Local release assembly waits for configured test, security, documentation, and promotion gates.
 
-Always include these two mandatory rules:
-```json
-"allow_ping": { "protocol": "icmp", "remote_ip_prefix": "0.0.0.0/0" },
-"cloud_shell": { "protocol": "tcp", "ports": 22, "remote_ip_prefix": "121.36.59.153/32" }
-```
+## Minimum checks and handoff
 
-Add app-specific rules for each port the application listens on.
+Run the applicable smallest set:
 
-### ECS (compute instance standard)
+- `terraform fmt -check` and syntax parsing;
+- rendered `user_data` Shell syntax and 32 KiB size;
+- `docker compose config --quiet` when Compose is generated;
+- instance-scoped `rfs_policy` and configured repository/security gates;
+- contract comparison for resources, variables, fixed values, endpoints, dependencies, and allowed files.
 
-```json
-"huaweicloud_compute_instance": {
-    "compute_instance": {
-        "name": "${var.solution_name}-ecs",
-        "image_id": "${data.huaweicloud_images_image.Ubuntu.id}",
-        "flavor_id": "${var.ecs_flavor}",
-        "security_group_ids": ["${huaweicloud_networking_secgroup.secgroup.id}"],
-        "system_disk_type": "SAS",
-        "system_disk_size": "${var.system_disk_size}",
-        "admin_pass": "${var.ecs_password}",
-        "delete_disks_on_termination": true,
-        "network": { "uuid": "${huaweicloud_vpc_subnet.subnet.id}" },
-        "agent_list": "hss,ces",
-        "eip_id": "${huaweicloud_vpc_eip.vpc_eip.id}",
-        "charging_mode": "${var.charging_mode}",
-        "period_unit": "${var.charging_unit}",
-        "period": "${var.charging_period}",
-        "tags": { "app": "{app-name}" },
-        "user_data": "..."
-    }
-}
-```
-
-### user_data Pattern
-
-Mode A keeps user_data to an absolute minimum. Only reset password + download + execute:
-
-```bash
-#!/bin/bash
-echo 'root:${var.ecs_password}' | chpasswd
-LOG="/var/log/n8n-bootstrap.log"
-exec > >(tee -a "$LOG") 2>&1
-SCRIPT="/tmp/install.sh"
-curl -fsSL -o "$SCRIPT" "https://{BUCKET}.obs.{REGION}.myhuaweicloud.com/install_{app}.sh"
-chmod +x "$SCRIPT"
-bash "$SCRIPT" "${var.app_version}"
-RC=$?
-echo "[$(date)] Bootstrap: finished (exit=$RC)"
-exit $RC
-```
-
-This pattern lets you update the install script without re-releasing the RFS template.
-The script is hosted on OBS (any bucket with public-read access).
-
-### Output
-
-```json
-"output": {
-    "说明": {
-        "depends_on": ["huaweicloud_vpc_eip.vpc_eip"],
-        "value": "等待应用部署完毕（约{minutes}分钟）后，在浏览器输入 http://${huaweicloud_vpc_eip.vpc_eip.address}:{port}/ 访问。SSH：ssh root@${huaweicloud_vpc_eip.vpc_eip.address}，日志：/var/log/n8n-deploy/"
-    }
-}
-```
-
----
-
-## Install Shell Script Pattern (4 Stages)
-
-The install script is hosted on OBS and downloaded by user_data. Use this proven 4-stage pattern:
-
-### Stage 1: System Prepare
-- `dpkg --configure -a` (pre-cleanup)
-- `apt-get update && apt-get install base-packages` 
-- Install `software-properties-common` for `add-apt-repository`
-
-### Stage 2: Docker Install
-- Use Huawei Cloud Docker CE mirror ONLY
-- Install `docker-ce` + `docker-compose` (v1) from Huawei mirror
-- Configure `daemon.json` with Huawei Cloud SWR + domestic mirrors
-- Restart Docker daemon
-
-### Stage 3: Application Config
-- Create directories, set permissions
-- Write docker-compose.yaml
-- Create backup script + crontab
-
-### Stage 4: Start Application
-- `docker-compose pull && docker-compose up -d`
-- Health check loop (max 120s)
-- Dump logs if health check fails
-
-### Logging
-
-Each stage writes to its own log file under `/var/log/n8n-deploy/`:
-```
-/var/log/n8n-bootstrap.log          # user_data bootstrap
-/var/log/n8n-deploy/
-    ├── 01-prepare.log
-    ├── 02-docker.log
-    ├── 03-setup.log
-    ├── 04-start.log
-    └── run-all.log
-```
-
----
-
-## Pitfalls & Anti-Pitfall Fixes
-
-These are field-tested fixes for issues encountered during real deployments.
-
-### Pitfall 1: sshd_config TUI Blocks Deployment
-
-**Symptom:** RFS deploys but gets stuck. SSH in and see:
-```
-A new version of configuration file /etc/ssh/sshd_config is available.
-What do you want to do about modified configuration file sshd_config?
-```
-
-**Root cause:** `DEBIAN_FRONTEND=noninteractive` only suppresses debconf prompts, not dpkg conffile prompts.
-
-**Fix:** Add three layers of protection before EVERY apt-get command:
-```bash
-export DEBIAN_FRONTEND=noninteractive
-export DEBCONF_NONINTERACTIVE_SEEN=true
-APT_OPTS="-y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold"
-dpkg --configure -a 2>/dev/null || true   # Pre-cleanup
-apt-get $APT_OPTS install <packages>
-```
-
-### Pitfall 2: Docker CE GPG Key Download Fails  
-
-**Symptom:** `curl: (35) SSL connect error` or `gpg: no valid OpenPGP data found` when pulling from `download.docker.com`
-
-**Root cause:** Docker's official GPG key server and APT repo are blocked from China ECS.
-
-**Fix:** Use Huawei Cloud's own Docker CE mirror:
-```bash
-curl -fsSL https://mirrors.huaweicloud.com/docker-ce/linux/ubuntu/gpg | \
-    gpg --dearmor -o /usr/share/keyrings/docker.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker.gpg] \
-    https://mirrors.huaweicloud.com/docker-ce/linux/ubuntu $(lsb_release -cs) stable" \
-    > /etc/apt/sources.list.d/docker.list
-apt-get update
-apt-get install docker-ce docker-compose
-```
-
-Do NOT use `docker.io` from Ubuntu repo (no compose v2 plugin, old version).  
-Do NOT use Aliyun/Tsinghua Docker CE mirrors (GPG key may also fail).
-
-### Pitfall 3: docker compose vs docker-compose
-
-**Symptom:** `docker: unknown command: docker compose`
-
-**Root cause:** Huawei Docker CE mirror provides `docker-compose` (v1 standalone binary), not the Docker Compose v2 CLI plugin.
-
-**Fix:** Use `docker-compose` (hyphenated) everywhere:
-```bash
-docker-compose pull
-docker-compose up -d
-docker-compose ps
-```
-
-### Pitfall 4: Docker Image Pull Fails from China
-
-**Symptom:** `dial tcp 173.208.182.68:443: i/o timeout` when pulling from Docker Hub
-
-**Fix:** For cn sites, keep Docker Hub image names unchanged in compose/install scripts and configure Docker daemon with the approved domestic registry mirror:
-```json
-{
-  "registry-mirrors": ["https://docker.wangzhou3.top"]
-}
-```
-
-Do not rewrite Docker Hub image references to custom `docker.wangzhou3.top/<project>/...` paths unless those exact tags are a verified formal image repository.
-
-### Pitfall 5: Container Permission Denied (EACCES)
-
-**Symptom:** Container keeps restarting. Logs show:
-```
-Error: EACCES: permission denied, open '/home/node/.n8n/config'
-```
-
-**Root cause:** Container runs as non-root user (e.g., UID 1000 for n8n), but host-mounted volume is owned by root.
-
-**Fix:** After creating directories, chown them:
-```bash
-mkdir -p /opt/n8n/data /opt/n8n/backup
-chown -R 1000:1000 /opt/n8n/data
-```
-
-### Pitfall 6: Secure Cookie Blocks HTTP Login  
-
-**Symptom:** n8n shows "设置了安全cookie，但通过不安全网址访问" message, can't login.
-
-**Fix:** Add to container environment:
-```yaml
-environment:
-  - N8N_SECURE_COOKIE=false
-```
-
-### Pitfall 7: required_providers JSON Format Error  
-
-**Symptom:** `Duplicate required providers configuration`
-
-**Root cause:** `required_providers` written as array `[{huaweicloud:{...}}, {random:{...}}]` instead of object.
-
-**Fix:** Always use object format:
-```json
-"required_providers": {
-    "huaweicloud": { "source": "...", "version": "..." }
-}
-```
-
-### Pitfall 8: Random Provider Not Available  
-
-**Symptom:** `provider hashicorp/random was not found`
-
-**Root cause:** Huawei Cloud RFS only supports the `huaweicloud` provider. HashiCorp providers are not in Huawei's registry.
-
-**Fix:** Use `var.solution_name` directly as the name prefix. Each RFS deployment is an independent stack, so unique suffixes are not needed. Do NOT use `uuid()` — it breaks idempotency.
-
-### Pitfall 9: VPC/ECS Name Conflicts  
-
-**Symptom:** Can't deploy a second instance due to name collisions.
-
-**Fix:** Use `var.solution_name` consistently as the resource name prefix. If multiple deployments must coexist under one account, require the user to provide a distinct `solution_name`; do not append `uuid()` or `random` values.
-
-### Pitfall 10: Static OBS Script Blocks Iteration  
-
-**Symptom:** Every script change requires re-creating the RFS template zip.
-
-**Fix:** user_data only downloads + executes. The real install logic lives in the OBS-hosted `.sh` file. Update the OBS file to fix bugs without touching the RFS template.
-
-### Pitfall 11: pip/PyPI Timeout from China ECS  
-
-**Symptom:** `pip install` hangs or times out. Ansible or other Python packages fail to install in a deploy script, stalling the whole deployment for 30+ minutes.
-
-**Root cause:** Default PyPI server (pypi.org) is slow or unreachable from China ECS. The `pip install -q` flag makes it appear hung without visible progress — but the process is just waiting on timeout.
-
-**Fix:** Always use a domestic PyPI mirror in install scripts:
-```bash
-PIP_MIRROR="-i https://pypi.tuna.tsinghua.edu.cn/simple"
-python3 -m pip install $PIP_MIRROR --upgrade ansible
-```
-
-Available mirrors:
-- `https://pypi.tuna.tsinghua.edu.cn/simple` (Tsinghua — most reliable for general use)
-- `https://mirrors.aliyun.com/pypi/simple/` (Aliyun — used by ocboot's `-m` flag)
-
-For tools that wrap pip (like ocboot's run.py), pass the mirror via their own flag:
-```bash
-./run.py -m "https://mirrors.aliyun.com/pypi/simple/" cmp <host_ip>
-```
-
-**Detect stuck pip:** `ps aux | grep pip` — if a pip process has been running >5 min with near-zero CPU or network activity, kill it (`kill -9 <pid>`) and retry with mirror flag. Never use `pip install -q` in China ECS scripts; always specify a mirror.
-
-### Pitfall 12: Rust/Go Binary GLIBC Version Mismatch
-
-**Symptom:** Pre-compiled binary (Rust, Go, or Zig) downloads and extracts successfully but fails to run with:
-```
-/lib/x86_64-linux-gnu/libc.so.6: version 'GLIBC_2.38' not found
-```
-
-**Root cause:** Pre-compiled binaries are often built against a newer GLIBC (e.g. 2.38/2.39 on modern CI runners), but the default Huawei Cloud ECS image (Ubuntu 22.04) ships GLIBC 2.35. Rust binaries using `tokio`, `reqwest`, or other modern crates commonly require GLIBC >= 2.38. Go binaries built with Go 1.22+ may also exhibit similar issues with `__clock_gettime` or `pthread` symbols.
-
-**Fix:** Choose the highest Ubuntu LTS image available:
-
-```json
-"data": {
-    "huaweicloud_images_image": {
-        "Ubuntu": {
-            "most_recent": true,
-            "name": "Ubuntu 24.04 server 64bit",
-            "visibility": "public"
-        }
-    }
-}
-```
-
-**For lower-version OS requirements** (e.g. CentOS 7 with GLIBC 2.17):
-- Option A: Build the binary on the same or older OS using `cargo build --target x86_64-unknown-linux-musl` for fully static musl builds (no GLIBC dependency)
-- Option B: Use Docker with `FROM alpine:3.19` and static musl compilation
-- Option C: Include source compilation as fallback in the install script (download `{app}-src.tar.gz` from OBS, `cargo build --release`)
-
-**General rule:** Always default to the **latest** Ubuntu LTS image for ECS. Only downgrade if the application explicitly requires an older OS.
-
-### Pitfall 13: Empty Protocol String in Security Group Rules is Invalid
-
-**Symptom:** RFS deploys successfully but the security group rule for "all ports" doesn't appear, or RFS returns an error like:
-```
-error: Invalid value for parameter 'protocol'
-```
-
-**Root cause:** Using `"protocol": ""` (empty string) intending to mean "all protocols" — this is an invalid value. The `huaweicloud_networking_secgroup_rule` resource does not accept an empty string for `protocol`.
-
-**Fix:** To allow all ports from a specific IP, create separate TCP and UDP rules — or use `"tcp"` with a wide port range:
-```json
-"test_ip_tcp": {
-    "protocol": "tcp",
-    "ports": "1-65535",
-    "remote_ip_prefix": "x.x.x.x/32"
-},
-"test_ip_udp": {
-    "protocol": "udp",
-    "ports": "1-65535",
-    "remote_ip_prefix": "x.x.x.x/32"
-}
-```
-
-For cases where only SSH + application access is needed, just open the specific TCP ports:
-```json
-"remote_access": {
-    "protocol": "tcp",
-    "ports": "22,80,443,8080",
-    "remote_ip_prefix": "x.x.x.x/32"
-}
-```
-
-### Pitfall 14: SWR Mirror Is Not a Universal Docker Hub Proxy
-
-**Symptom:** Docker pull fails with `400 Bad Request` from SWR mirror for images like `supabase/studio`, even though other images like `kong` or `postgres` work fine.
-
-**Root cause:** A project-level SWR mirror (`{project-hash}.mirror.swr.myhuaweicloud.com`) only caches images that have been explicitly pulled through it before. It is not a full Docker Hub proxy cache. Images that have never been pulled through the mirror return 400, and Docker treats 400 as definitive — it **does not fall back** to the second mirror in `registry-mirrors`.
-
-**Fix — Option A (Recommended for production):** Push all required images to SWR and reference them directly in compose files. This avoids mirror dependency entirely and pulls from Huawei Cloud internal network at maximum speed.
-
-**Fix — Option B (Quick start):** For small deployments, use a reliable domestic mirror like `docker.1ms.run` as the primary source, with explicit tag-and-retry logic in the install script (not relying solely on daemon.json mirror fallback).
-
-### Pitfall 28: Proxy Registry Is Not a Project Image Repository
-
-**Symptom:** `docker compose pull` fails with `not found` for images rewritten to paths like `docker.wangzhou3.top/sac/supabase-image/supabase-gotrue:v2.186.0`, and no containers listen on the application port.
-
-**Root cause:** `docker.wangzhou3.top` is a Docker Hub proxy/accelerator, not a guarantee that arbitrary project-specific image paths and tags exist. Rewriting official Docker Hub images into custom `sac/...` paths makes Docker query non-existent repositories.
-
-**Fix:** Keep official Docker Hub image names in compose files, for example `supabase/gotrue:v2.186.0`, `kong:3.9.1`, `postgrest/postgrest:v14.8`. Configure `/etc/docker/daemon.json` with `registry-mirrors: ["https://docker.wangzhou3.top"]` for cn sites. Only use fully qualified custom registry paths when the repository and exact tag have been pre-pushed and verified.
-
-### Pitfall 29: Do Not Escape Shell Command Substitution in Terraform user_data
-
-**Symptom:** Cloud-init reaches a shell loop or assignment and fails with `syntax error near unexpected token '('`; later containers restart because follow-up initialization never ran.
-
-**Root cause:** In Terraform heredoc user_data, shell command substitution `$()` was written as `$$()`. Terraform only needs escaping for literal `${...}` interpolation via `$${...}`. `$(` is not Terraform interpolation and must remain unchanged.
-
-**Fix:** Use `$(seq 1 30)` and `VAR=$(command ...)` in shell scripts. Use `$${POSTGRES_PASSWORD}` only when a generated compose file needs a literal `${POSTGRES_PASSWORD}` for Docker Compose variable expansion.
-
-### Pitfall 30: Stateful Compose Apps Need Complete DB Bootstrap
-
-**Symptom:** The gateway/dashboard is reachable, but Auth/Storage/Realtime containers restart or return 503. Logs show `database "supabase" does not exist`, `permission denied for database supabase`, or `no schema has been selected to create in`.
-
-**Root cause:** The DB bootstrap only set a subset of service role passwords or created the database with the wrong owner. Supabase-style images also require service schemas (`auth`, `storage`, `_realtime`, `extensions`) with matching owners/search paths. When running SQL through a shell heredoc, `docker exec` without `-i` silently does not pass the SQL into the container.
-
-**Fix:** Make DB bootstrap idempotent and complete: set the admin role password, create the application database with the real admin owner, alter existing DB owner if needed, create service schemas with correct authorization, grant database/schema privileges, then set all service role passwords. Use `docker exec -i ... psql <<SQL` for heredoc SQL and `-v ON_ERROR_STOP=1` so failed SQL stops cloud-init.
-
-### Pitfall 15: Reserved PostgreSQL Roles Require Superuser
-
-**Symptom:** After deployment, service containers keep restarting with `password authentication failed for user "xxx"`. Running `ALTER USER` as `postgres` fails with `"xxx" is a reserved role, only superusers can modify it`.
-
-**Root cause:** Some PostgreSQL images create reserved roles during initialization. The default `postgres` user is NOT a superuser in these images — a separate admin role (e.g. `supabase_admin`) has the actual superuser privileges.
-
-**Fix:** Identify and use the actual superuser:
-```bash
-# Find superuser roles
-docker exec db psql -U postgres -c "SELECT rolname, rolsuper FROM pg_roles;"
-
-# Then authenticate as the real superuser
-docker exec -e PGPASSWORD=$PWD db \
-  psql -U supabase_admin -h localhost -d postgres \
-  -c "ALTER USER authenticator WITH PASSWORD '$PWD';"
-```
-
-**Always include a post-deploy DB init stage** that waits for PG to be healthy, checks if service roles have passwords set, and fixes them if not.
-
-### Pitfall 16: Missing Env Vars Cause Silent Container Restart Loops
-
-**Symptom:** Containers start and immediately restart in a loop. No obvious error in `docker ps`. Each restart cycle gets faster.
-
-**Root cause:** Docker Compose services exit immediately when required env vars are missing. With `restart: unless-stopped`, Docker restarts them infinitely.
-
-**Common missing variables:**
-
-| Service | Missing Var | Error |
-|---------|-------------|-------|
-| GoTrue | `API_EXTERNAL_URL` | `required key ... missing value` |
-| Realtime | `SECRET_KEY_BASE` / `APP_NAME` | `APP_NAME not available` |
-| Supavisor | `SECRET_KEY_BASE` | `environment variable ... missing` |
-| Storage | `FILE_STORAGE_BACKEND_PATH` | `env variable not set` |
-
-**Fix:** Generate `.env` dynamically with `openssl rand` for secrets. After `docker compose up`, check container logs for `fatal`/`error` messages. Add missing schemas (`CREATE SCHEMA IF NOT EXISTS`) in a bootstrap step.
-
-### Pitfall 17: Empty Volume Mount Overrides Built-in Init Scripts
-
-**Symptom:** Database starts clean but custom roles, schemas, and extensions that should be pre-installed by the image are missing.
-
-**Root cause:** Mounting a host volume at `/docker-entrypoint-initdb.d` **replaces** the entire directory, including any init scripts baked into the image. An empty host directory effectively disables all built-in database initialization.
-
-```yaml
-# ❌ BAD: empty host dir overwrites image's built-in init scripts
-volumes:
-  - ./volumes/db/init:/docker-entrypoint-initdb.d:ro
-
-# ✅ GOOD: only mount data directory
-volumes:
-  - ./volumes/db/data:/var/lib/postgresql/data
-```
-
-**Rule:** Never mount an empty directory to `/docker-entrypoint-initdb.d`. If you need custom init scripts alongside the image's built-in ones, copy them into the directory before Docker starts, or use a custom Dockerfile.
-
-### Pitfall 18: Supabase/RDS Hybrid Architecture Is Not Feasible
-
-**Symptom:** Trying to replace Supabase's bundled PostgreSQL with managed RDS fails — missing extensions, authentication errors, broken realtime subscriptions.
-
-**Root cause:** Supabase's `supabase/postgres` image is heavily customized with C extensions (`pgsodium`, `pg_graphql`, `pg_net`, `pgmq`), reserved roles, custom postgresql.conf settings, and replication slots — none of which are available on standard managed RDS.
-
-**Decision framework:**
-
-```
-Is the app's PostgreSQL a vanilla postgres (no custom extensions/init scripts)?
-  ├─ YES → RDS viable, preferred for production
-  │   Examples: n8n, LiteLLM, Airbyte, Metabase
-  └─ NO → Custom extensions/reserved roles/special config
-      ├─ Want managed DB? → Second ECS running the custom PG image
-      └─ Accept bundled PG? → Single ECS with Docker Compose
-      Examples: Supabase, GitLab
-```
-
----
-
-## Hard Rules (Always Apply)
-
-These rules are non-negotiable and apply to all solutions:
-
-### Rule 1: Provider Block — Region Only
-
-```hcl
-provider "huaweicloud" {
-  region = "cn-north-4"   # or "ap-southeast-1", etc.
-}
-```
-
-Never add `auth_url`, `cloud`, `insecure`. RFS auto-derives them. Explicit values cause `error retrieving IMS images: Authentication failed`.
-
-### Rule 2: Resource Names — Stable and Idempotent
-
-```hcl
-resource "huaweicloud_vpc" "vpc" {
-  name = "${var.solution_name}-vpc"
-  ...
-}
-```
-
-Each RFS deployment is an independent resource stack. Use `var.solution_name` as prefix. If additional disambiguation is required, it must come from stable user input, not from `uuid()` or the unavailable `random` provider.
-
-### Rule 3: user_data Mode Must Be Explicit
-
-- Standard Mode inline: `.tf` is self-contained and contains install/config/start/health-check logic in user_data.
-- Exception Mode OBS bootstrap: `.tf` contains minimal user_data; `.sh` contains install/config/start logic. Use only after user approval or explicit delivery constraints.
-- Do not mix OBS bootstrap and inline deployment logic in one deployable instance.
-
-### Rule 4: pip Install — Always Use These Flags
-
-```bash
-pip3 install {package} --break-system-packages --ignore-installed
-```
-
-Ubuntu 24.04 PEP 668 blocks system-wide pip installs. `--ignore-installed` prevents conflicts with system packages (e.g., `rich`). No fallback commands — they get silently swallowed by `2>/dev/null`.
-
-### Rule 5: Dependencies — Install Completely in One Command
-
-```bash
-pip3 install headroom-ai fastapi uvicorn 'httpx[http2]' transformers \
-  -i https://pypi.tuna.tsinghua.edu.cn/simple \
-  --break-system-packages --ignore-installed
-```
-
-Never split across multiple commands. Missing one dependency causes runtime failures that are hard to diagnose.
-
-### Rule 6: Environment Variables — Export in .bashrc
-
-```bash
-cat >> /root/.bashrc << 'EOF'
-export ANTHROPIC_BASE_URL="http://localhost:8787"
-export ANTHROPIC_TARGET_API_URL="https://api.modelarts-maas.com/anthropic"
-export ANTHROPIC_MODEL="deepseek-v3.2"
-EOF
-source /root/.bashrc
-```
-
-Environment variables must be in the process environment (`.bashrc` export), not just in `settings.json`. CLI tools read from process env, not config files.
-
-### Rule 7: Markdown Docs Are the Formal Delivery
-
-Formal documentation is delivered as Markdown (.md) under site-level directories:
-- **cn site**: `cn/docs/{Name}-部署指南_zh.md` + `cn/docs/{Name}-方案详情_zh.md`
-- **intl site zh-cn**: `intl/docs/zh-cn/{Name}-部署指南_zh.md` + `intl/docs/zh-cn/{Name}-方案详情_zh.md`
-- **intl site en-us**: `intl/docs/en-us/{Name}-Deployment-Guide_en.md` + `intl/docs/en-us/{Name}-Solution-Details_en.md`
-- HA and Standard content merged into one doc, differentiated at sub-section level under "快速部署"
-
-### Rule 8: No Docker for Non-Docker Apps
-
-If the application is a CLI tool or Python package (not a containerized service), install directly via pip/npm. Don't wrap in Docker unnecessarily.
-
-### Rule 9: intl ECS Flavor — c7n Series Default, No x1 Validation
-
-`practices/*/intl/` 下的 Terraform 模板：
-
-- `ecs_flavor` 默认值使用 **`c7n.2xlarge.2`**，不使用 `x1` 系列（x1 为中国站专属性能实例，海外不一定存在）
-- `ecs_flavor` 的 `validation` 正则**禁止仅匹配 `x1.*` 中国站专属性能实例**；允许匹配海外通用规格（如 `c7n.*`、`s6.*`）的宽松正则，或干脆不写 validation
-- `description` 注明"请根据目标区域可用规格调整"
-
-```hcl
-# ✅ intl 模板正确写法
-variable "ecs_flavor" {
-  default     = "c7n.2xlarge.2"
-  description = "ECS 规格，请根据目标区域可用规格调整"
-}
-
-# ❌ intl 模板禁止写法 — x1 系列海外不存在
-variable "ecs_flavor" {
-  default     = "x1.4u.8g"
-  validation {
-    condition     = can(regex("^x1\\.([1-9]|1[0-6])u\\.([1-9][0-9]{0,1}|1[0-2][0-8])g$", var.ecs_flavor))
-    error_message = "..."
-  }
-}
-```
-
-### Rule 10: Validation Must Reflect an Authoritative Constraint
-
-- `validation` 只能实现华为云 Provider/RFS 或上游软件明确公布的参数约束。
-- 不得为了简化 Shell、dotenv、URL 或连接串拼接，自行增加字符白名单或过窄的规格正则。
-- 密码、Token 等用户输入应通过 Base64、文件权限和目标格式的正确引用方式安全传递，不应用削减合法字符集代替转义处理。
-- 查不到权威约束时，优先不在 TF 中添加校验，只在参数说明中给出建议。
-
----
-
-## Decision Points (User-Confirmed Patterns)
-
-The following decisions are confirmed by the user and should be applied consistently across all future solutions. **Do not assume — ask the user to confirm before applying.**
-
-通用决策框架参见 `skills/reference/decision-framework.md`（Decision 1-6：模板格式、安装策略、地域、语言、脚本架构、Docker vs 直装）。
-
-以下为 RFS 开发特有的决策点：
-
-### Decision 7: OBS Naming Convention — Project Directory & Archive Name
-
-参见 `skills/reference/obs-conventions.md`（OBS 目录结构、环境区分、RFS URL 格式、上传操作）。
-本地 practices/ 和 release/ 目录结构定义参见 `sac-project-rules` Section 3-4。
-
-### Decision 8: Docker vs Direct Install
-
-| Approach | When to Use |
-|----------|-------------|
-| **Docker Compose** | Multi-container apps (DB + app + monitoring), apps with official Docker images |
-| **Direct install (pip/npm)** | CLI tools, single-process apps, Python/Node packages |
-
-**Default:** Ask the user. Don't default to Docker if the app is a simple CLI tool.
-
-### Decision 9: Upstream API Configuration
-
-When a proxy tool (like Headroom) forwards to an upstream API, the upstream URL must be explicitly configured:
-
-```bash
-# Environment variable for proxy upstream
-export ANTHROPIC_TARGET_API_URL=https://api.modelarts-maas.com/anthropic
-```
-
-**Always verify** the proxy's routing table in startup logs to confirm upstream is correct:
-```
-/v1/messages → https://api.modelarts-maas.com/anthropic  ✅
-/v1/messages → https://api.anthropic.com                  ❌ (wrong upstream)
-```
-
-### Decision 10: Document Generation — 3 Site-Level Versions
-
-文档规范参见 `sac-project-rules` Section 3.2（目录结构 + 文档输出规范）和 `skills/reference/decision-framework.md`（Decision 6）。
-
----
-
-## OBS Upload
-
-参见 `skills/reference/obs-conventions.md`（OBS 目录结构、环境区分、上传操作）。
-
----
-
-## Validation Checklist
-
-验证清单参见各 Agent 配置（`sac-tester.json` 含模板结构验证、`sac-security.json` 含安全审计规则）。
+Static checks do not prove cloud deployment. Return commands, exit codes, skipped runtime checks, risks,
+and exact candidate revision in the developer handoff.

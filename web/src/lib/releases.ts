@@ -9,7 +9,6 @@ export type ReleaseInfo = {
   hasHA: boolean
   version: string | null
   status: "本地已打包" | "开发中"
-  urlFile: string | null
 }
 
 const ROOT = join(process.cwd(), "..")
@@ -42,15 +41,6 @@ function scanReleaseRegions(releasePath: string): { code: string; site: string }
   return result
 }
 
-function readUrlFile(basePath: string): string | null {
-  for (const variant of ["standard", "ha"]) {
-    const urlFile = join(basePath, variant, "url.txt")
-    if (existsSync(urlFile)) return urlFile
-  }
-  const rootUrl = join(basePath, "url.txt")
-  return existsSync(rootUrl) ? rootUrl : null
-}
-
 function detectVersion(practicePath: string): string | null {
   const tfDir = join(practicePath, "terraform")
   if (!existsSync(tfDir)) return null
@@ -69,7 +59,6 @@ export function getReleases(): ReleaseInfo[] {
     const releasePath = join(RELEASES_DIR, slug)
     const sites = subdirs(releasePath).filter(s => s !== "docs")
     const regions = scanReleaseRegions(releasePath)
-    const urlFile = readUrlFile(releasePath)
 
     // 从 practices 获取 HA 和版本信息
     const cnPath = join(PRACTICES_DIR, slug, "cn", "cn-north-4")
@@ -91,7 +80,6 @@ export function getReleases(): ReleaseInfo[] {
       hasHA: hA,
       version: repoVersion || version,
       status: sites.length > 0 ? "本地已打包" : "开发中",
-      urlFile,
     }
   })
 }

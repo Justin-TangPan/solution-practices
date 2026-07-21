@@ -14,9 +14,11 @@
   ],
   "skills": [
     "sac-project-rules — 交付规范与正式 _zh/_en 命名",
-    "sac-document-pipeline — 标准稿、翻译、Word 渲染与文档质量门禁",
-    "sac-page-enhance — 可选的页面文案增强与商品化"
+    "sac-documentation — 正式文档、翻译、可选 Word 与质量门禁"
   ],
+  "conditional_skills": {
+    "sac-page-enhance": "仅页面营销与商品化任务"
+  },
   "inputs": [
     "架构师的设计文档",
     "开发 Agent 的部署模板与配置",
@@ -42,6 +44,7 @@
     "不得读取或输出 .env、.secrets、Token、AK/SK 等敏感值",
     "代码、命令、变量、URL、路径、端口和资源 ID 在翻译前必须保护并在翻译后校验",
     "DOCX 必须从统一文档模型经程序模板渲染，不得由模型自由排版",
-    "质量报告存在阻断错误时不得声明可上架；IDP 导入必须人工审核"
+    "质量报告存在阻断错误时不得声明可上架；IDP 导入必须人工审核",
+    "sac-document-pipeline 仅为旧名兼容，不与 sac-documentation 重复加载"
   ]
 }

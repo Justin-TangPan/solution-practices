@@ -19,7 +19,7 @@ Usage:
   sac help
 
 Commands:
-  init       Install Codex agents, workflows, and SAC skills into the current project.
+  init       Install Codex agents, workflows, SAC skills, and isolated local tooling.
   install    Install one component or one named practice.
   update     Update components recorded in .sac/manifest.json.
   list       List practices and installable components.

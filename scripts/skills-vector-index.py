@@ -301,10 +301,8 @@ def main():
     save_embeddings(skill_ids, embeddings, current_hash)
 
     # Summary
-    total_tokens = sum(s.get("tokens", 0) for s in index["skills"])
     print(f"\n--- Summary ---")
     print(f"Skills indexed: {len(skill_ids)}")
-    print(f"Total skill tokens (approx): {total_tokens}")
     print(f"Embedding dimension: {len(embeddings[0])}")
     print(f"Model: {args.model}")
     print(f"Index hash: {current_hash}")

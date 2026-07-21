@@ -1,11 +1,11 @@
 {
   "name": "web",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "build": "node scripts/prepare-downloads.mjs && next build",
+    "start": "python3 -m http.server ${PORT:-7878} --bind 0.0.0.0 -d out",
     "lint": "eslint"
   },
   "dependencies": {

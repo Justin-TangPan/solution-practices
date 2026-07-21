@@ -1,6 +1,6 @@
 ---
 name: sac-security
-description: Audit SAC Solution Practices for embedded credentials, unsafe network exposure, security-group scope, container privileges, dangerous mounts, data protection, dependency and image provenance, and OBS permissions. Use for security reviews, SAC audit workflows, release gates, or remediation verification.
+description: Audit SAC Solution Practices for embedded credentials, unsafe network exposure, security-group scope, container privileges, dangerous mounts, data protection, dependency and image provenance, and sensitive local delivery artifacts. Use for security reviews, SAC audit workflows, release gates, or remediation verification.
 ---
 
 # SAC Security
@@ -9,8 +9,9 @@ Perform an evidence-based, read-only audit unless remediation is explicitly requ
 
 ## Required inputs
 
-Read `skills/reference/security-check-rules.md`, `skills/sac-project-rules/SKILL.md`, and the relevant
-sections of `skills/sac-rfs-practices/SKILL.md`. Confirm the exact practice and deployment scope.
+Read `skills/reference/security-check-rules.md`, `skills/sac-project-rules/SKILL.md`, the frozen architecture
+contract, and the exact practice scope. Do not load the full RFS Skill; use contract deviations and configured
+exceptions to distinguish approved exposure from defects.
 
 ## Workflow
 
@@ -21,8 +22,8 @@ sections of `skills/sac-rfs-practices/SKILL.md`. Confirm the exact practice and 
 3. Review container privilege, host networking, Docker socket and host mounts, image provenance, mutable
    tags, and runtime user choices.
 4. Review password generation and storage, database exposure, TLS assumptions, file permissions, logs,
-   backups, and OBS read/write policy.
-5. Distinguish public production bucket names and the documented public image proxy from credentials.
+   backups, and local delivery artifacts.
+5. Distinguish documented public image proxies from credentials.
 6. Report only findings supported by repository evidence. State untested runtime assumptions separately.
 
 ## Severity

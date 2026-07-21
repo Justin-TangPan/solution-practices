@@ -6,12 +6,11 @@
 
 ## 当前版本范围
 
-- 正式 practice：`litellm`、`supabase`，以 `project.config.json` 为准。
-- `web/` 是未来可视化原型，暂不进入正式版本质量门禁。
+- 正式 practice 清单只以 `project.config.json` 为准，不在本地摘要重复维护。
+- `web/` 是正式的只读可视化产品，但不是规则、Practice 范围或交付状态的权威来源。
 - `.claude/agents/` 和 `.claude/workflows/` 是本地协作配置，不作为公开交付包必要组成。
 - 历史半成品 practice 的旧文档、旧脚本或旧 catalog 记录不构成正式交付依据。
-- 所有修改批次必须记录到本地 `.var/log/internal-changelog.md`，使用时间戳 + 三级版本号；`.var/` 不提交、不上传远端。
-- 生产 OBS 桶地址和 `docker.wangzhou3.top` 镜像源均为公开发布信息，不作为安全风险点；测试桶和凭证仍视为敏感信息。
+- 所有修改批次必须记录到本地 `.var/log/internal-changelog.md`，使用时间戳 + 四级版本号；`.var/` 不提交、不上传远端。
 
 ## 本地开发环境
 

@@ -30,6 +30,7 @@ export type AuditReport = {
 }
 
 const ROOT = join(process.cwd(), "..")
+let cachedReport: AuditReport | undefined
 
 function guessPython(): string {
   const candidates = [
@@ -48,6 +49,7 @@ function guessPython(): string {
 }
 
 export function getAuditResults(): AuditReport {
+  if (cachedReport) return cachedReport
   const run = spawnSync(guessPython(), ["-m", "scripts.tests.runner", "--json"], { cwd: ROOT, encoding: "utf8", timeout: 60000 })
   const raw = `${run.stdout ?? ""}\n${run.stderr ?? ""}`
   if (!raw.trim()) {
@@ -105,11 +107,12 @@ export function getAuditResults(): AuditReport {
     return a.practice.localeCompare(b.practice)
   })
 
-  return {
+  cachedReport = {
     results,
     generated: new Date().toISOString(),
     totalErrors: results.reduce((s, r) => s + r.errors, 0),
     totalWarnings: results.reduce((s, r) => s + r.warnings, 0),
     totalPractices: results.length,
   }
+  return cachedReport
 }
